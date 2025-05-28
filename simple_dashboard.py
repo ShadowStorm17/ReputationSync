@@ -62,13 +62,29 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Database setup
 def get_db_path():
     if os.getenv("ENVIRONMENT") == "production":
-        return "dashboard.db"
-    return "dashboard.db"
+        return os.path.join(os.getcwd(), "dashboard.db")
+    return os.path.join(os.getcwd(), "dashboard.db")
 
-def init_db():
+def get_db():
     try:
         db_path = get_db_path()
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
         conn = sqlite3.connect(db_path)
+        return conn
+    except Exception as e:
+        print(f"Error connecting to database: {str(e)}")
+        raise
+
+def init_db():
+    conn = None
+    try:
+        db_path = get_db_path()
+        print(f"Initializing database at: {db_path}")
+        
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        
+        conn = get_db()
         c = conn.cursor()
         
         # Create tables with proper error handling
@@ -97,17 +113,29 @@ def init_db():
         for table_sql in tables:
             try:
                 c.execute(table_sql)
-                print(f"Successfully executed: {table_sql[:50]}...")
+                print(f"Successfully created table: {table_sql.split('CREATE TABLE IF NOT EXISTS')[1].split('(')[0].strip()}")
             except sqlite3.Error as e:
                 print(f"Error creating table: {str(e)}")
                 print(f"SQL: {table_sql}")
         
         conn.commit()
         print("Database initialization completed successfully")
+        
+        # Verify database is writable
+        try:
+            c.execute("INSERT INTO stats (endpoint, requests, success_rate, avg_response_time) VALUES (?, ?, ?, ?)",
+                     ("/test", 0, 0.0, 0.0))
+            conn.commit()
+            print("Database write test successful")
+        except Exception as e:
+            print(f"Database write test failed: {str(e)}")
+            
     except Exception as e:
         print(f"Error initializing database: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
     finally:
-        if 'conn' in locals():
+        if conn:
             conn.close()
 
 def get_real_stats():
@@ -280,6 +308,8 @@ def get_real_subscriptions():
 async def startup_event():
     try:
         print("Starting application...")
+        print(f"Environment: {os.getenv('ENVIRONMENT', 'development')}")
+        print(f"Current working directory: {os.getcwd()}")
         print("Initializing database...")
         init_db()
         print("Database initialized successfully")
@@ -289,6 +319,8 @@ async def startup_event():
         print("Startup complete!")
     except Exception as e:
         print(f"Error during startup: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         # Don't raise the exception - let the app continue to start
         # but log the error for debugging
 
@@ -301,16 +333,19 @@ def verify_password(plain_password, hashed_password):
         return False
 
 def get_user(username):
+    conn = None
     try:
-        conn = sqlite3.connect(get_db_path())
+        conn = get_db()
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE username=?", (username,))
         user = c.fetchone()
-        conn.close()
         return user
     except Exception as e:
         print(f"Database error in get_user: {str(e)}")
         return None
+    finally:
+        if conn:
+            conn.close()
 
 def authenticate_user(username: str, password: str):
     try:
@@ -319,9 +354,15 @@ def authenticate_user(username: str, password: str):
         if not user:
             print("User not found in database")
             return False
+        
+        # Debug print
+        print(f"Found user: {user}")
+        print(f"Stored password hash: {user[2]}")
+        
         if not verify_password(password, user[2]):
             print("Password verification failed")
             return False
+            
         print("Authentication successful")
         return user
     except Exception as e:
@@ -337,9 +378,10 @@ def create_access_token(data: dict):
 
 # Initialize admin user
 def init_admin():
+    conn = None
     try:
         print("Initializing admin user...")
-        conn = sqlite3.connect(get_db_path())
+        conn = get_db()
         c = conn.cursor()
         
         # Create users table if it doesn't exist
@@ -349,6 +391,8 @@ def init_admin():
         
         hashed_password = pwd_context.hash(ADMIN_PASSWORD)
         print(f"Admin username: {ADMIN_USERNAME}")
+        print(f"Generated password hash: {hashed_password}")
+        
         try:
             c.execute("""INSERT INTO users 
                         (username, password, email, name, avatar) 
@@ -365,8 +409,10 @@ def init_admin():
             print("Admin user password updated")
     except Exception as e:
         print(f"Error in init_admin: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
     finally:
-        if 'conn' in locals():
+        if conn:
             conn.close()
 
 # Routes
@@ -381,6 +427,11 @@ async def login_page(request: Request):
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         print(f"Login attempt with username: {form_data.username}")
+        
+        # Debug prints
+        print(f"Database path: {get_db_path()}")
+        print(f"Current working directory: {os.getcwd()}")
+        
         user = authenticate_user(form_data.username, form_data.password)
         if not user:
             print("Authentication failed, redirecting to login page")
@@ -392,12 +443,15 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            samesite='lax'
+            samesite='lax',
+            secure=os.getenv("ENVIRONMENT") == "production"
         )
         print("Login successful, redirecting to dashboard")
         return response
     except Exception as e:
         print(f"Login error: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         return RedirectResponse(url='/?error=1', status_code=303)
 
 @app.get("/dashboard")
