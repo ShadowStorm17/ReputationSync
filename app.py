@@ -47,10 +47,16 @@ SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-# CORS middleware
+# CORS middleware with specific origins for Render deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://*.onrender.com",
+        "http://localhost:8000",
+        "http://localhost:8080",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8080",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,7 +72,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 def get_db():
     try:
-        conn = sqlite3.connect('dashboard.db')
+        # Use DATABASE_URL from environment if available (for Render)
+        db_url = os.getenv("DATABASE_URL", "dashboard.db")
+        conn = sqlite3.connect(db_url)
         conn.row_factory = sqlite3.Row
         return conn
     except Exception as e:
@@ -126,7 +134,9 @@ def init_db():
             conn.close()
 
 # Initialize database on startup
-init_db()
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -160,6 +170,11 @@ def get_current_user(request: Request):
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Render"""
+    return {"status": "healthy"}
+
 @app.get("/", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse(
@@ -185,7 +200,7 @@ async def login(username: str = Form(...), password: str = Form(...)):
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,  # Enable in production with HTTPS
+            secure=True,
             samesite="lax",
             max_age=3600,
             path="/"
@@ -222,7 +237,7 @@ async def dashboard(request: Request, current_user: dict = Depends(get_current_u
         stats = {
             "total_requests": stats_row["total_requests"],
             "active_users": active_users,
-            "error_rate": 100 - stats_row["success_rate"],
+            "error_rate": 100 - stats_row["success_rate"] if stats_row["success_rate"] else 0,
             "avg_response_time": stats_row["avg_response_time"] or 0,
         }
         

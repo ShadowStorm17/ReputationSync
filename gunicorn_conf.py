@@ -23,7 +23,7 @@ errorlog = "-"
 loglevel = "info"
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(L)s'
 
-# SSL
+# SSL (if provided by Render)
 keyfile = os.getenv("SSL_KEYFILE")
 certfile = os.getenv("SSL_CERTFILE")
 
@@ -40,6 +40,7 @@ reload = False
 max_requests = 1000
 max_requests_jitter = 50
 
+# Event handlers
 def post_fork(server, worker):
     server.log.info("Worker spawned (pid: %s)", worker.pid)
 
