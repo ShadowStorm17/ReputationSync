@@ -66,33 +66,49 @@ def get_db_path():
     return "dashboard.db"
 
 def init_db():
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    
-    # Create tables
-    c.execute('''CREATE TABLE IF NOT EXISTS stats
-                 (id INTEGER PRIMARY KEY, endpoint TEXT, requests INTEGER, 
-                  success_rate REAL, avg_response_time REAL)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT,
-                  email TEXT, name TEXT, avatar TEXT, last_active TEXT)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS api_keys
-                 (id TEXT PRIMARY KEY, name TEXT, key TEXT, user_id INTEGER,
-                  created_at TEXT, revoked INTEGER DEFAULT 0)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS subscriptions
-                 (id TEXT PRIMARY KEY, user_id INTEGER, plan_name TEXT,
-                  expires_at TEXT, status TEXT)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS usage_stats
-                 (id INTEGER PRIMARY KEY, timestamp TEXT, endpoint TEXT,
-                  response_time INTEGER, success INTEGER)''')
-    
-    conn.commit()
-    conn.close()
+    try:
+        db_path = get_db_path()
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        
+        # Create tables with proper error handling
+        tables = [
+            '''CREATE TABLE IF NOT EXISTS stats
+               (id INTEGER PRIMARY KEY, endpoint TEXT, requests INTEGER, 
+                success_rate REAL, avg_response_time REAL)''',
+            
+            '''CREATE TABLE IF NOT EXISTS users
+               (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT,
+                email TEXT, name TEXT, avatar TEXT, last_active TEXT)''',
+            
+            '''CREATE TABLE IF NOT EXISTS api_keys
+               (id TEXT PRIMARY KEY, name TEXT, key TEXT, user_id INTEGER,
+                created_at TEXT, revoked INTEGER DEFAULT 0)''',
+            
+            '''CREATE TABLE IF NOT EXISTS subscriptions
+               (id TEXT PRIMARY KEY, user_id INTEGER, plan_name TEXT,
+                expires_at TEXT, status TEXT)''',
+            
+            '''CREATE TABLE IF NOT EXISTS usage_stats
+               (id INTEGER PRIMARY KEY, timestamp TEXT, endpoint TEXT,
+                response_time INTEGER, success INTEGER)'''
+        ]
+        
+        for table_sql in tables:
+            try:
+                c.execute(table_sql)
+                print(f"Successfully executed: {table_sql[:50]}...")
+            except sqlite3.Error as e:
+                print(f"Error creating table: {str(e)}")
+                print(f"SQL: {table_sql}")
+        
+        conn.commit()
+        print("Database initialization completed successfully")
+    except Exception as e:
+        print(f"Error initializing database: {str(e)}")
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 def get_real_stats():
     conn = sqlite3.connect(get_db_path())
@@ -262,36 +278,55 @@ def get_real_subscriptions():
 
 @app.on_event("startup")
 async def startup_event():
-    print("Starting application...")
-    print("Initializing database...")
-    init_db()
-    print("Initializing admin user...")
-    init_admin()
-    print("Startup complete!")
+    try:
+        print("Starting application...")
+        print("Initializing database...")
+        init_db()
+        print("Database initialized successfully")
+        print("Initializing admin user...")
+        init_admin()
+        print("Admin user initialized successfully")
+        print("Startup complete!")
+    except Exception as e:
+        print(f"Error during startup: {str(e)}")
+        # Don't raise the exception - let the app continue to start
+        # but log the error for debugging
 
 # Authentication
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Password verification error: {str(e)}")
+        return False
 
 def get_user(username):
-    conn = sqlite3.connect(get_db_path())
-    c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username=?", (username,))
-    user = c.fetchone()
-    conn.close()
-    return user
+    try:
+        conn = sqlite3.connect(get_db_path())
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE username=?", (username,))
+        user = c.fetchone()
+        conn.close()
+        return user
+    except Exception as e:
+        print(f"Database error in get_user: {str(e)}")
+        return None
 
 def authenticate_user(username: str, password: str):
-    print(f"Attempting login with username: {username}")
-    user = get_user(username)
-    if not user:
-        print("User not found in database")
+    try:
+        print(f"Attempting login with username: {username}")
+        user = get_user(username)
+        if not user:
+            print("User not found in database")
+            return False
+        if not verify_password(password, user[2]):
+            print("Password verification failed")
+            return False
+        print("Authentication successful")
+        return user
+    except Exception as e:
+        print(f"Authentication error: {str(e)}")
         return False
-    if not verify_password(password, user[2]):
-        print("Password verification failed")
-        return False
-    print("Authentication successful")
-    return user
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -302,26 +337,37 @@ def create_access_token(data: dict):
 
 # Initialize admin user
 def init_admin():
-    print("Initializing admin user...")
-    conn = sqlite3.connect(get_db_path())
-    c = conn.cursor()
-    hashed_password = pwd_context.hash(ADMIN_PASSWORD)
-    print(f"Admin username: {ADMIN_USERNAME}")
     try:
-        c.execute("""INSERT INTO users 
-                    (username, password, email, name, avatar) 
-                    VALUES (?, ?, ?, ?, ?)""",
-                 (ADMIN_USERNAME, hashed_password,
-                  "admin@example.com", "Administrator",
-                  "https://ui-avatars.com/api/?name=Administrator"))
-        conn.commit()
-        print("Admin user created successfully")
-    except sqlite3.IntegrityError:
-        c.execute("UPDATE users SET password = ? WHERE username = ?",
-                 (hashed_password, ADMIN_USERNAME))
-        conn.commit()
-        print("Admin user password updated")
-    conn.close()
+        print("Initializing admin user...")
+        conn = sqlite3.connect(get_db_path())
+        c = conn.cursor()
+        
+        # Create users table if it doesn't exist
+        c.execute('''CREATE TABLE IF NOT EXISTS users
+                    (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT,
+                    email TEXT, name TEXT, avatar TEXT, last_active TEXT)''')
+        
+        hashed_password = pwd_context.hash(ADMIN_PASSWORD)
+        print(f"Admin username: {ADMIN_USERNAME}")
+        try:
+            c.execute("""INSERT INTO users 
+                        (username, password, email, name, avatar) 
+                        VALUES (?, ?, ?, ?, ?)""",
+                    (ADMIN_USERNAME, hashed_password,
+                    "admin@example.com", "Administrator",
+                    "https://ui-avatars.com/api/?name=Administrator"))
+            conn.commit()
+            print("Admin user created successfully")
+        except sqlite3.IntegrityError:
+            c.execute("UPDATE users SET password = ? WHERE username = ?",
+                    (hashed_password, ADMIN_USERNAME))
+            conn.commit()
+            print("Admin user password updated")
+    except Exception as e:
+        print(f"Error in init_admin: {str(e)}")
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 # Routes
 @app.get("/", response_class=HTMLResponse)
@@ -333,20 +379,26 @@ async def login_page(request: Request):
 
 @app.post("/token")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
-    print(f"Login attempt with username: {form_data.username}")
-    user = authenticate_user(form_data.username, form_data.password)
-    if not user:
+    try:
+        print(f"Login attempt with username: {form_data.username}")
+        user = authenticate_user(form_data.username, form_data.password)
+        if not user:
+            print("Authentication failed, redirecting to login page")
+            return RedirectResponse(url='/?error=1', status_code=303)
+        
+        access_token = create_access_token(data={"sub": user[1]})
+        response = RedirectResponse(url='/dashboard', status_code=303)
+        response.set_cookie(
+            key="access_token",
+            value=f"Bearer {access_token}",
+            httponly=True,
+            samesite='lax'
+        )
+        print("Login successful, redirecting to dashboard")
+        return response
+    except Exception as e:
+        print(f"Login error: {str(e)}")
         return RedirectResponse(url='/?error=1', status_code=303)
-    
-    access_token = create_access_token(data={"sub": user[1]})
-    response = RedirectResponse(url='/dashboard', status_code=303)
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {access_token}",
-        httponly=True,
-        samesite='lax'
-    )
-    return response
 
 @app.get("/dashboard")
 async def dashboard(request: Request):
