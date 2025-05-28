@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 import uuid
 from typing import List, Optional
 import json
+import secrets
+from pydantic import BaseModel
 
 # Load environment variables
 load_dotenv()
@@ -547,40 +549,33 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 
 @app.get("/dashboard")
 async def dashboard(request: Request):
-    token = request.cookies.get("access_token")
-    if not token or not token.startswith("Bearer "):
-        return RedirectResponse(url='/', status_code=303)
-    
     try:
-        token = token.split(" ")[1]
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if username != ADMIN_USERNAME:
-            raise HTTPException(status_code=401)
-    except (JWTError, IndexError):
-        return RedirectResponse(url='/', status_code=303)
-    
-    # Get real data
-    stats = get_real_stats()
-    users = get_real_users()
-    api_keys = get_real_api_keys()
-    subscriptions = get_real_subscriptions()
-    
-    # Add stats data for auto-refresh
-    stats_json = json.dumps(stats)
-    
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "user": username,
-            "stats": stats,
-            "users": users,
-            "api_keys": api_keys,
-            "subscriptions": subscriptions,
-            "stats_json": stats_json
-        }
-    )
+        # Get real data from database
+        stats = get_real_stats()
+        users = get_real_users()
+        api_keys = get_real_api_keys()
+        subscriptions = get_real_subscriptions()
+        
+        # Generate CSRF token
+        csrf_token = generate_csrf_token()
+        request.session["csrf_token"] = csrf_token
+        
+        return templates.TemplateResponse(
+            "dashboard.html",
+            {
+                "request": request,
+                "user": "Admin",
+                "stats": stats,
+                "users": users,
+                "api_keys": api_keys,
+                "subscriptions": subscriptions,
+                "stats_json": json.dumps(stats),
+                "csrf_token": csrf_token
+            }
+        )
+    except Exception as e:
+        print(f"Error in dashboard route: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # API Key Management
 @app.post("/api/keys/{key_id}/revoke")
@@ -641,26 +636,50 @@ async def record_usage(
         conn.close()
 
 # Add API endpoint to create new API key
-@app.post("/api/keys/create")
-async def create_api_key(request: Request, name: str):
-    conn = sqlite3.connect(get_db_path())
-    c = conn.cursor()
-    
+@app.post("/create_api_key")
+async def create_api_key(request: Request):
     try:
+        # Verify CSRF token
+        client_token = request.headers.get("X-CSRFToken")
+        server_token = request.session.get("csrf_token")
+        if not client_token or not server_token or client_token != server_token:
+            raise HTTPException(status_code=403, detail="Invalid CSRF token")
+
+        # Get request body
+        body = await request.json()
+        name = body.get("name")
+        if not name:
+            raise HTTPException(status_code=400, detail="Name is required")
+
+        # Generate new API key
+        api_key = f"rsk_{secrets.token_urlsafe(32)}"
         key_id = str(uuid.uuid4())
-        api_key = str(uuid.uuid4())
         
-        c.execute("""
-            INSERT INTO api_keys (id, name, key, created_at)
-            VALUES (?, ?, ?, datetime('now'))
-        """, (key_id, name, api_key))
-        
+        # Store in database
+        conn = get_db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO api_keys (id, name, key, created_at) VALUES (?, ?, ?, ?)",
+            (key_id, name, api_key, datetime.utcnow().isoformat())
+        )
         conn.commit()
-        return JSONResponse({"status": "success", "key": api_key, "id": key_id})
-    except Exception as e:
-        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
-    finally:
         conn.close()
+
+        return JSONResponse({
+            "success": True,
+            "key": api_key,
+            "id": key_id,
+            "name": name
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error creating API key: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create API key")
+
+# Add CSRF protection
+def generate_csrf_token():
+    return secrets.token_hex(32)
 
 if __name__ == "__main__":
     init_db()

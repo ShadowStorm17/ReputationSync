@@ -1,12 +1,12 @@
 # FastAPI and ASGI server
-fastapi==0.104.1
-uvicorn==0.24.0
+fastapi==0.68.0
+uvicorn==0.15.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-python-dotenv==1.0.0
-python-multipart==0.0.6
+python-dotenv==0.19.0
+python-multipart==0.0.5
 requests==2.31.0
-jinja2==3.1.2
+jinja2==3.0.1
 aiosqlite==0.19.0
 python-dateutil==2.8.2
 gunicorn==21.2.0
@@ -47,4 +47,12 @@ mkdocs==1.5.3
 mkdocs-material==9.5.3
 
 # Security
-cryptography==41.0.7 
+cryptography==41.0.7
+
+# CSRF protection and session management
+aiofiles==0.7.0
+itsdangerous==2.0.1
+python-jose==3.3.0
+pydantic==1.8.2
+starlette==0.14.2
+fastapi-sessions==0.3.2 
