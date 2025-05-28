@@ -1,8 +1,9 @@
 # FastAPI and ASGI server
-fastapi>=0.79.0
+fastapi==0.104.1
 uvicorn==0.24.0
 python-jose[cryptography]==3.3.0
-passlib==1.7.4
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
 bcrypt==4.1.2
 python-multipart==0.0.6
 python-dotenv==1.0.0
@@ -51,4 +52,5 @@ cryptography==41.0.7
 itsdangerous==2.2.0
 starlette>=0.27.0
 pydantic>=2.0.0
-fastapi-sessions==0.3.2 
+fastapi-sessions==0.3.2
+aiofiles==23.2.1 

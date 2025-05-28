@@ -1,16 +1,27 @@
 from datetime import datetime, timedelta
-import jwt
+import PyJWT as jwt
 from fastapi import FastAPI, Request, HTTPException, Depends, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
 import sqlite3
 import random
 import secrets
 from pydantic import BaseModel
 import logging
+import uuid
+import uvicorn
+import os
+from pathlib import Path
+from typing import List, Optional
+import json
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,52 +30,116 @@ logger = logging.getLogger(__name__)
 class APIKeyCreate(BaseModel):
     name: str
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    email: str
+    name: str
 
-# JWT Configuration
-SECRET_KEY = "your-secret-key"  # In production, use a secure secret key
+app = FastAPI(
+    title="Admin Dashboard",
+    description="Admin dashboard for monitoring API usage and statistics",
+    version="1.0.0"
+)
+
+# Security settings
+SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
 ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Templates
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 def get_db():
     try:
-        conn = sqlite3.connect('reputation_sync.db')
+        conn = sqlite3.connect('dashboard.db')
         conn.row_factory = sqlite3.Row
         return conn
     except Exception as e:
-        logger.error(f"Database connection error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Database connection failed")
+        logger.error(f"Error connecting to database: {str(e)}")
+        raise
 
 def init_db():
+    conn = None
     try:
         conn = get_db()
-        cursor = conn.cursor()
+        c = conn.cursor()
         
-        # Create api_keys table if it doesn't exist
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS api_keys (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            key TEXT UNIQUE NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_used TIMESTAMP,
-            usage_count INTEGER DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1
-        )
-        ''')
+        # Create tables
+        tables = [
+            '''CREATE TABLE IF NOT EXISTS stats
+               (id INTEGER PRIMARY KEY, endpoint TEXT, requests INTEGER, 
+                success_rate REAL, avg_response_time REAL)''',
+            
+            '''CREATE TABLE IF NOT EXISTS users
+               (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT,
+                email TEXT, name TEXT, avatar TEXT, last_active TEXT,
+                is_admin BOOLEAN DEFAULT FALSE)''',
+            
+            '''CREATE TABLE IF NOT EXISTS api_keys
+               (id TEXT PRIMARY KEY, name TEXT, key TEXT, user_id INTEGER,
+                created_at TEXT, revoked INTEGER DEFAULT 0,
+                FOREIGN KEY(user_id) REFERENCES users(id))''',
+            
+            '''CREATE TABLE IF NOT EXISTS usage_stats
+               (id INTEGER PRIMARY KEY, timestamp TEXT, endpoint TEXT,
+                response_time INTEGER, success INTEGER, api_key TEXT,
+                FOREIGN KEY(api_key) REFERENCES api_keys(id))'''
+        ]
+        
+        for table_sql in tables:
+            c.execute(table_sql)
+        
+        # Create default admin user if not exists
+        default_admin = os.getenv("ADMIN_USERNAME", "admin")
+        default_password = os.getenv("ADMIN_PASSWORD", "admin123")
+        
+        c.execute("SELECT * FROM users WHERE username = ?", (default_admin,))
+        if not c.fetchone():
+            hashed_password = get_password_hash(default_password)
+            c.execute(
+                "INSERT INTO users (username, password, email, name, is_admin) VALUES (?, ?, ?, ?, ?)",
+                (default_admin, hashed_password, "admin@example.com", "Administrator", True)
+            )
         
         conn.commit()
-        conn.close()
-        logger.info("Database initialized successfully")
+        
     except Exception as e:
-        logger.error(f"Database initialization error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to initialize database")
+        logger.error(f"Error initializing database: {str(e)}")
+        raise
+    finally:
+        if conn:
+            conn.close()
 
 # Initialize database on startup
 init_db()
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
 def get_current_user(request: Request):
     token = request.cookies.get("access_token")
@@ -72,185 +147,152 @@ def get_current_user(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ?", (payload.get("sub"),))
+        user = cursor.fetchone()
+        conn.close()
+        
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+            
+        return dict(user)
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.get("/", response_class=HTMLResponse)
 async def login_page(request: Request):
-    try:
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": None}
-        )
-    except Exception as e:
-        logger.error(f"Error rendering login page: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request}
+    )
 
 @app.post("/login")
 async def login(username: str = Form(...), password: str = Form(...)):
     try:
-        logger.info(f"Login attempt for username: {username}")
-        
-        if not username or not password:
-            logger.warning("Missing username or password")
-            raise HTTPException(status_code=400, detail="Username and password are required")
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
+        conn.close()
 
-        # For demo purposes - in production, validate against database
-        if username == "admin" and password == "admin123":
-            # Create token with expiration
-            token_data = {
-                "sub": username,
-                "exp": datetime.utcnow() + timedelta(days=1)
-            }
-            
-            try:
-                access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
-                logger.info(f"Login successful for user: {username}")
-                
-                # Create response with cookie
-                response = JSONResponse({"status": "success", "message": "Login successful"})
-                response.set_cookie(
-                    key="access_token",
-                    value=access_token,
-                    httponly=True,
-                    max_age=86400,  # 1 day in seconds
-                    path="/"
-                )
-                return response
-                
-            except Exception as e:
-                logger.error(f"Token generation error: {str(e)}")
-                raise HTTPException(status_code=500, detail="Error generating authentication token")
-        else:
-            logger.warning(f"Invalid credentials for username: {username}")
+        if not user or not verify_password(password, user["password"]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
-            
-    except HTTPException:
-        raise
+
+        access_token = create_access_token({"sub": username})
+        response = JSONResponse({"status": "success"})
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,  # Enable in production with HTTPS
+            samesite="lax",
+            max_age=3600,
+            path="/"
+        )
+        return response
     except Exception as e:
-        logger.error(f"Unexpected login error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
+        logger.error(f"Login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, current_user: dict = Depends(get_current_user)):
     try:
-        # Generate some sample data for the dashboard
-        stats = {
-            "total_requests": random.randint(10000, 50000),
-            "active_users": random.randint(100, 500),
-            "error_rate": round(random.uniform(0.5, 5.0), 2),
-            "avg_response_time": round(random.uniform(100, 500), 2),
-        }
-        
-        # Generate sample API usage data for the last 24 hours
-        hours = [(datetime.now() - timedelta(hours=x)).strftime('%H:00') for x in range(23, -1, -1)]
-        hourly_usage = [random.randint(100, 1000) for _ in range(24)]
-        
-        stats_data = {
-            "hours": hours,
-            "hourly_usage": hourly_usage
-        }
-        
-        # Get actual API keys from database
         conn = get_db()
         cursor = conn.cursor()
+        
+        # Get real statistics
         cursor.execute("""
-            SELECT id, name, created_at, usage_count, 
-                CASE 
-                    WHEN last_used IS NULL THEN 'Never'
-                    WHEN (julianday('now') - julianday(last_used)) * 24 < 1 THEN 'Less than an hour ago'
-                    WHEN (julianday('now') - julianday(last_used)) * 24 < 24 THEN round((julianday('now') - julianday(last_used)) * 24) || ' hours ago'
-                    ELSE round(julianday('now') - julianday(last_used)) || ' days ago'
-                END as last_used
-            FROM api_keys 
-            WHERE is_active = 1 
-            ORDER BY created_at DESC
+            SELECT COUNT(*) as total_requests,
+                   AVG(CASE WHEN success = 1 THEN 1 ELSE 0 END) * 100 as success_rate,
+                   AVG(response_time) as avg_response_time
+            FROM usage_stats
+            WHERE timestamp >= datetime('now', '-24 hours')
         """)
-        api_keys = [dict(row) for row in cursor.fetchall()]
+        stats_row = cursor.fetchone()
         
-        # Sample users
-        users = [
-            {"name": "John Doe", "email": "john@example.com", "avatar": "https://i.pravatar.cc/150?img=1", "last_active": "2 minutes ago", "success_rate": 98.5},
-            {"name": "Jane Smith", "email": "jane@example.com", "avatar": "https://i.pravatar.cc/150?img=2", "last_active": "15 minutes ago", "success_rate": 97.8}
-        ]
+        # Get active API keys
+        cursor.execute("""
+            SELECT COUNT(DISTINCT api_key) as active_users
+            FROM usage_stats
+            WHERE timestamp >= datetime('now', '-24 hours')
+        """)
+        active_users = cursor.fetchone()["active_users"]
         
-        # Sample subscriptions
-        subscriptions = [
-            {"id": "1", "plan_name": "Enterprise", "user_email": "enterprise@example.com", "api_calls": 50000, "success_rate": 99.1, "expires_at": "2024-12-31", "days_left": 300},
-            {"id": "2", "plan_name": "Professional", "user_email": "pro@example.com", "api_calls": 10000, "success_rate": 98.5, "expires_at": "2024-06-30", "days_left": 120}
-        ]
+        stats = {
+            "total_requests": stats_row["total_requests"],
+            "active_users": active_users,
+            "error_rate": 100 - stats_row["success_rate"],
+            "avg_response_time": stats_row["avg_response_time"] or 0,
+        }
+        
+        # Get hourly usage data
+        cursor.execute("""
+            SELECT strftime('%H:00', timestamp) as hour,
+                   COUNT(*) as requests
+            FROM usage_stats
+            WHERE timestamp >= datetime('now', '-24 hours')
+            GROUP BY strftime('%H', timestamp)
+            ORDER BY hour DESC
+        """)
+        usage_data = cursor.fetchall()
+        
+        hours = [row["hour"] for row in usage_data]
+        hourly_usage = [row["requests"] for row in usage_data]
+        
+        conn.close()
         
         return templates.TemplateResponse(
             "dashboard.html",
             {
                 "request": request,
                 "stats": stats,
-                "stats_data": stats_data,
-                "api_keys": api_keys,
-                "users": users,
-                "subscriptions": subscriptions
+                "hours": hours,
+                "hourly_usage": hourly_usage,
+                "user": current_user
             }
         )
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/usage")
-async def get_api_usage(current_user: dict = Depends(get_current_user)):
-    try:
-        # Generate sample API usage data for the last 24 hours
-        hours = [(datetime.now() - timedelta(hours=x)).strftime('%H:00') for x in range(23, -1, -1)]
-        hourly_usage = [random.randint(100, 1000) for _ in range(24)]
-        
-        return {
-            "hours": hours,
-            "hourly_usage": hourly_usage
-        }
-    except Exception as e:
-        logger.error(f"API usage error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/create_api_key")
-async def create_api_key(request: Request):
+async def create_api_key(
+    request: Request,
+    current_user: dict = Depends(get_current_user)
+):
     try:
-        # First verify the user is authenticated
-        current_user = get_current_user(request)
-        
-        # Get the request body
         body = await request.json()
         name = body.get('name')
         
         if not name:
             raise HTTPException(status_code=400, detail="API key name is required")
         
-        # Generate a secure API key
         api_key = f"rsk_{secrets.token_urlsafe(32)}"
         
-        # Store in database
         conn = get_db()
         cursor = conn.cursor()
         
-        try:
-            cursor.execute(
-                "INSERT INTO api_keys (name, key) VALUES (?, ?)",
-                (name, api_key)
-            )
-            conn.commit()
-            logger.info(f"Created new API key with name: {name}")
-            
-            return {"status": "success", "key": api_key}
-        except sqlite3.IntegrityError as e:
-            logger.error(f"Database integrity error: {str(e)}")
-            raise HTTPException(status_code=400, detail="API key name must be unique")
-        except Exception as e:
-            logger.error(f"Database error: {str(e)}")
-            raise HTTPException(status_code=500, detail="Failed to create API key")
-        finally:
-            conn.close()
-            
-    except HTTPException:
-        raise
+        cursor.execute(
+            "INSERT INTO api_keys (id, name, key, user_id, created_at) VALUES (?, ?, ?, ?, ?)",
+            (str(uuid.uuid4()), name, api_key, current_user["id"], datetime.utcnow().isoformat())
+        )
+        conn.commit()
+        conn.close()
+        
+        return {"status": "success", "key": api_key}
+    except sqlite3.IntegrityError as e:
+        logger.error(f"API key creation error: {str(e)}")
+        raise HTTPException(status_code=400, detail="API key name already exists")
     except Exception as e:
-        logger.error(f"Unexpected error in create_api_key: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") 
+        logger.error(f"API key creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/")
+    response.delete_cookie("access_token")
+    return response
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True) 

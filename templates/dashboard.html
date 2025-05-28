@@ -525,7 +525,7 @@
                             <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 text-3d">Welcome back, {{ user }}</h1>
                             <p class="text-gray-400 mt-2">Here's what's happening with your API</p>
                         </div>
-                        <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-4">
                             <button onclick="refreshData()" class="bg-gradient-to-r from-blue-500 to-blue-700 px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-800 transition-all duration-300 flex items-center shadow-lg hover:shadow-blue-500/20">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -533,14 +533,14 @@
                                 Refresh
                             </button>
                             <button onclick="logout()" class="bg-gradient-to-r from-red-500 to-red-700 px-4 py-2 rounded-lg hover:from-red-600 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-red-500/20">
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </header>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
 
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="stat-card card-3d bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-blue-500/20">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-blue-100">Total Requests</h3>
@@ -583,7 +583,7 @@
                         </div>
                         <div id="avg-response-time" class="text-4xl font-bold text-white mb-2">{{ stats.avg_response_time }}ms</div>
                         <div class="text-sm text-purple-200">Last hour</div>
-                    </div>
+                </div>
                 </div>
 
                 <!-- Main Sections -->
@@ -615,10 +615,10 @@
                                         Success rate: {{ user.success_rate }}%
                                     </div>
                                 </div>
-                            </div>
+                </div>
                             {% endfor %}
-                        </div>
-                    </div>
+                </div>
+            </div>
 
                     <!-- API Keys -->
                     <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
@@ -630,11 +630,11 @@
                                 </svg>
                                 Create New Key
                             </button>
-                        </div>
+                </div>
                         <div id="api-keys-list" class="space-y-4">
                             {% for key in api_keys %}
                             <div class="p-4 bg-gray-700 rounded-lg">
-                                <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center">
                                     <div>
                                         <div class="font-medium">{{ key.name }}</div>
                                         <div class="text-sm text-gray-400">Created: {{ key.created_at }}</div>
@@ -674,13 +674,13 @@
                                         <button onclick="cancelSubscription('{{ sub.id }}')" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700 transition-colors">Cancel</button>
                                     </div>
                                 </div>
-                            </div>
-                            {% endfor %}
+                        </div>
+                        {% endfor %}
                         </div>
                     </div>
                 </div>
             </main>
-        </div>
+            </div>
     </div>
 
     <script>
@@ -1032,7 +1032,7 @@
                     }
                 },
                 yaxis: {
-                    labels: {
+                        labels: {
                         style: {
                             colors: '#86868b'
                         },
@@ -1087,7 +1087,7 @@
                 y: 20,
                 duration: 0.3,
                 onComplete: () => {
-                    window.location.href = '/';
+            window.location.href = '/';
                 }
             });
         }
