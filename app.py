@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import jwt
-from fastapi import FastAPI, Request, HTTPException, Depends, Body
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, HTTPException, Depends, Form
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer
@@ -88,13 +88,8 @@ async def login_page(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/login")
-async def login(request: Request):
+async def login(username: str = Form(...), password: str = Form(...)):
     try:
-        # Get form data
-        form_data = await request.form()
-        username = form_data.get("username")
-        password = form_data.get("password")
-        
         logger.info(f"Login attempt for username: {username}")
         
         if not username or not password:
