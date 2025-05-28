@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>2024 ReputationSync Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -12,6 +15,138 @@
     <script src="https://unpkg.com/gsap@3.12.0/dist/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
+        /* Modern Professional Design System */
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --accent-color: #3b82f6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --border-radius: 8px;
+            --transition-speed: 0.2s;
+        }
+
+        /* Global Typography */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: 0.01em;
+        }
+
+        /* Typography Scale */
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        /* Card Design */
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .stat-card .text-4xl {
+            font-size: 1.875rem;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        /* Navigation */
+        .nav-item {
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        /* Table Typography */
+        th {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        td {
+            font-size: 0.9375rem;
+        }
+
+        /* Remove the 3D text effect */
+        .text-3d {
+            text-shadow: none;
+        }
+
+        /* Adjust button text */
+        .btn {
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        /* Chart labels */
+        .apexcharts-text {
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        /* Adjust spacing for better readability */
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+
+        .space-y-8 > * + * {
+            margin-top: 2rem;
+        }
+
+        /* Remove the glassmorphism effect for better readability */
+        .glass-effect {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Adjust card hover effect */
+        .stat-card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+
+        /* Remove the 3D card effect */
+        .card-3d {
+            transform-style: unset;
+        }
+
+        .card-3d:hover {
+            transform: translateY(-2px);
+        }
+
         /* Modern Apple-inspired Design System */
         :root {
             --primary-bg: #000000;
@@ -129,11 +264,6 @@
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        th {
-            font-weight: 500;
-            color: var(--text-secondary);
         }
 
         tr:hover td {
@@ -279,22 +409,6 @@
             }
         }
 
-        /* 3D Text Effect */
-        .text-3d {
-            text-shadow: 0 1px 0 #ccc,
-                        0 2px 0 #c9c9c9,
-                        0 3px 0 #bbb,
-                        0 4px 0 #b9b9b9,
-                        0 5px 0 #aaa,
-                        0 6px 1px rgba(0,0,0,.1),
-                        0 0 5px rgba(0,0,0,.1),
-                        0 1px 3px rgba(0,0,0,.3),
-                        0 3px 5px rgba(0,0,0,.2),
-                        0 5px 10px rgba(0,0,0,.25),
-                        0 10px 10px rgba(0,0,0,.2),
-                        0 20px 20px rgba(0,0,0,.15);
-        }
-
         /* Smooth Scroll */
         .smooth-scroll {
             position: relative;
@@ -333,16 +447,6 @@
             opacity: 1 !important;
             transform: none !important;
             transition: box-shadow 0.3s ease-in-out !important;
-        }
-
-        /* 3D Card Effect */
-        .card-3d {
-            transform-style: preserve-3d;
-            transition: transform 0.5s ease;
-        }
-
-        .card-3d:hover {
-            transform: translateZ(20px) rotateX(5deg) rotateY(5deg);
         }
 
         /* Cinematic Parallax Effect */
@@ -599,13 +703,12 @@
 
             showLoading();
             try {
-                const response = await fetch('/create_api_key', {  // Update the endpoint
+                const response = await fetch('/create_api_key', {
                     method: 'POST',
                     headers: { 
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name })
+                    body: JSON.stringify({ name: name })
                 });
 
                 if (!response.ok) throw new Error('Failed to create API key');

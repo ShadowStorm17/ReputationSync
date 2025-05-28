@@ -8,6 +8,11 @@ from fastapi.security import HTTPBearer
 from passlib.context import CryptContext
 import sqlite3
 import random
+import secrets
+from pydantic import BaseModel
+
+class APIKeyCreate(BaseModel):
+    name: str
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -23,6 +28,29 @@ def get_db():
     conn = sqlite3.connect('reputation_sync.db')
     conn.row_factory = sqlite3.Row
     return conn
+
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Create api_keys table if it doesn't exist
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS api_keys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        key TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_used TIMESTAMP,
+        usage_count INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT 1
+    )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+# Initialize database on startup
+init_db()
 
 def get_current_user(request: Request):
     token = request.cookies.get("access_token")
@@ -118,4 +146,24 @@ async def get_api_usage(current_user: dict = Depends(get_current_user)):
     return {
         "hours": hours,
         "hourly_usage": hourly_usage
-    } 
+    }
+
+@app.post("/create_api_key")
+async def create_api_key(key_data: APIKeyCreate, current_user: dict = Depends(get_current_user)):
+    try:
+        # Generate a secure API key
+        api_key = f"rsk_{secrets.token_urlsafe(32)}"
+        
+        # Store in database
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO api_keys (name, key) VALUES (?, ?)",
+            (key_data.name, api_key)
+        )
+        conn.commit()
+        conn.close()
+        
+        return {"status": "success", "key": api_key}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 
