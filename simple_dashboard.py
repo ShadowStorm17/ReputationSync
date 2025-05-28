@@ -27,6 +27,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.on_event("startup")
+async def startup_event():
+    print("Starting application...")
+    print("Initializing database...")
+    init_db()
+    print("Initializing admin user...")
+    init_admin()
+    print("Startup complete!")
+
 # Security settings
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
 ALGORITHM = "HS256"
@@ -54,7 +63,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Database setup
 def get_db_path():
     if os.getenv("ENVIRONMENT") == "production":
-        return os.path.join(os.getenv("DATABASE_URL", "sqlite:///./prod.db"))
+        return "dashboard.db"  # Store in the current directory
     return "dashboard.db"
 
 def init_db():
@@ -71,18 +80,22 @@ def init_db():
 
 # Initialize admin user
 def init_admin():
+    print("Initializing admin user...")  # Debug log
     conn = sqlite3.connect(get_db_path())
     c = conn.cursor()
     hashed_password = pwd_context.hash(ADMIN_PASSWORD)
+    print(f"Admin username: {ADMIN_USERNAME}")  # Debug log
     try:
         c.execute("INSERT INTO users (username, password) VALUES (?, ?)", 
                  (ADMIN_USERNAME, hashed_password))
         conn.commit()
+        print("Admin user created successfully")  # Debug log
     except sqlite3.IntegrityError:
         # Update password if admin exists
         c.execute("UPDATE users SET password = ? WHERE username = ?",
                  (hashed_password, ADMIN_USERNAME))
         conn.commit()
+        print("Admin user password updated")  # Debug log
     conn.close()
 
 # Authentication
@@ -98,11 +111,15 @@ def get_user(username):
     return user
 
 def authenticate_user(username: str, password: str):
+    print(f"Attempting login with username: {username}")  # Debug log
     user = get_user(username)
     if not user:
+        print("User not found in database")  # Debug log
         return False
     if not verify_password(password, user[2]):
+        print("Password verification failed")  # Debug log
         return False
+    print("Authentication successful")  # Debug log
     return user
 
 def create_access_token(data: dict):
@@ -177,8 +194,6 @@ def get_mock_stats():
     }
 
 if __name__ == "__main__":
-    init_db()
-    init_admin()
     uvicorn.run(
         app,
         host="127.0.0.1",
