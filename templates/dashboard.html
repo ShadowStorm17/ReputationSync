@@ -14,6 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://unpkg.com/gsap@3.12.0/dist/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
     <style>
         /* Modern Professional Design System */
         :root {
@@ -30,1067 +31,331 @@
             --transition-speed: 0.2s;
         }
 
-        /* Global Typography */
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--primary-bg);
-            color: var(--text-primary);
-            line-height: 1.6;
-            font-size: 15px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            letter-spacing: 0.01em;
+        .dashboard-container {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas: 
+                "sidebar header"
+                "sidebar main";
         }
 
-        /* Typography Scale */
-        h1 {
-            font-size: 2rem;
-            font-weight: 600;
-            line-height: 1.3;
-            letter-spacing: -0.01em;
-        }
-
-        h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .text-sm {
-            font-size: 0.875rem;
-            line-height: 1.5;
-        }
-
-        /* Card Design */
-        .stat-card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        .stat-card .text-4xl {
-            font-size: 1.875rem;
-            font-weight: 600;
-            line-height: 1.2;
-            letter-spacing: -0.02em;
-        }
-
-        /* Navigation */
-        .nav-item {
-            font-weight: 500;
-            letter-spacing: 0.01em;
-        }
-
-        /* Table Typography */
-        th {
-            font-weight: 500;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        td {
-            font-size: 0.9375rem;
-        }
-
-        /* Remove the 3D text effect */
-        .text-3d {
-            text-shadow: none;
-        }
-
-        /* Adjust button text */
-        .btn {
-            font-weight: 500;
-            letter-spacing: 0.01em;
-        }
-
-        /* Chart labels */
-        .apexcharts-text {
-            font-family: 'Inter', sans-serif !important;
-        }
-
-        /* Adjust spacing for better readability */
-        .space-y-4 > * + * {
-            margin-top: 1rem;
-        }
-
-        .space-y-8 > * + * {
-            margin-top: 2rem;
-        }
-
-        /* Remove the glassmorphism effect for better readability */
-        .glass-effect {
-            background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Adjust card hover effect */
-        .stat-card:hover {
-            transform: translateY(-2px);
-            transition: transform 0.2s ease;
-        }
-
-        /* Remove the 3D card effect */
-        .card-3d {
-            transform-style: unset;
-        }
-
-        .card-3d:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Modern Apple-inspired Design System */
-        :root {
-            --primary-bg: #000000;
-            --secondary-bg: #1c1c1e;
-            --card-bg: rgba(28, 28, 30, 0.8);
-            --accent-color: #0066cc;
-            --text-primary: #ffffff;
-            --text-secondary: #86868b;
-            --success-color: #28cd41;
-            --warning-color: #ff9f0a;
-            --error-color: #ff453a;
-            --border-radius: 12px;
-            --transition-speed: 0.3s;
-        }
-
-        /* Global Styles */
-        body {
-            font-family: Arial, sans-serif;
-            background: var(--primary-bg);
-            color: var(--text-primary);
-            line-height: 1.5;
-        }
-
-        /* Glassmorphism */
-        .glass-effect {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        /* Modern Card Design */
-        .stat-card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            transition: all var(--transition-speed) ease-in-out;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        /* Button Styles */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-weight: 500;
-            transition: all var(--transition-speed) ease-in-out;
-            background: var(--accent-color);
-            color: var(--text-primary);
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
-        }
-
-        .btn-danger {
-            background: var(--error-color);
-        }
-
-        .btn-danger:hover {
-            box-shadow: 0 4px 16px rgba(255, 69, 58, 0.3);
-        }
-
-        /* Navigation */
-        .nav-item {
-            padding: 0.75rem 1rem;
-            border-radius: var(--border-radius);
-            color: var(--text-secondary);
-            transition: all var(--transition-speed) ease-in-out;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-item:hover, .nav-item.active {
+        .sidebar {
+            grid-area: sidebar;
             background: var(--secondary-bg);
-            color: var(--text-primary);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
         }
 
-        .nav-item svg {
-            width: 1.25rem;
-            height: 1.25rem;
-        }
-
-        /* Typography */
-        h1, h2, h3, h4, h5, h6 {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
-
-        /* Table Styles */
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin: 1.5rem 0;
-        }
-
-        th, td {
-            padding: 1rem;
-            text-align: left;
+        .header {
+            grid-area: header;
+            padding: 1.5rem 2rem;
+            background: var(--primary-bg);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        tr:hover td {
-            background: rgba(255, 255, 255, 0.05);
+        .main-content {
+            grid-area: main;
+            padding: 2rem;
+            background: var(--primary-bg);
+            overflow-y: auto;
         }
 
-        /* Form Elements */
-        input, select, textarea {
-            background: var(--secondary-bg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .stat-card {
+            background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 0.75rem 1rem;
-            color: var(--text-primary);
-            font-size: 1rem;
-            width: 100%;
-            transition: all var(--transition-speed) ease-in-out;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2);
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
-        /* Loading Animation */
-        .loading {
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 2rem;
+        }
+
+        .api-key-form {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
             justify-content: center;
-            z-index: 9999;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            opacity: 0;
-            transition: opacity var(--transition-speed) ease-in-out;
+            align-items: center;
+            z-index: 1000;
         }
 
         .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: var(--accent-color);
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--text-secondary);
+            border-top: 3px solid var(--accent-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        /* Notifications */
-        .notification {
+        .toast {
             position: fixed;
             top: 1rem;
             right: 1rem;
             padding: 1rem 1.5rem;
             border-radius: var(--border-radius);
-            background: var(--accent-color);
-            color: var(--text-primary);
-            font-weight: 500;
-            z-index: 9999;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-            transform: translateY(-1rem);
+            color: white;
             opacity: 0;
-            transition: all var(--transition-speed) ease-in-out;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
         }
 
-        .notification.show {
-            transform: translateY(0);
+        .toast.success {
+            background: var(--success-color);
+        }
+
+        .toast.error {
+            background: var(--error-color);
+        }
+
+        .toast.show {
             opacity: 1;
+            transform: translateY(0);
         }
 
-        /* Charts */
-        .chart-container {
-            background: var(--card-bg);
+        .btn {
+            padding: 0.75rem 1.5rem;
             border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
         }
 
-        ::-webkit-scrollbar-track {
-            background: var(--secondary-bg);
+        .btn-primary:hover {
+            background: color-mix(in srgb, var(--accent-color) 80%, black);
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: var(--text-secondary);
-            border-radius: 4px;
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-primary);
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in {
-            animation: fadeIn var(--transition-speed) ease-out;
-        }
-
-        /* Grid Layout */
-        .grid {
-            display: grid;
-            gap: 1.5rem;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .stat-card {
-                padding: 1rem;
-            }
-
-            .btn {
-                padding: 0.5rem 1rem;
-            }
-
-            .nav-item {
-                padding: 0.5rem 0.75rem;
-            }
-        }
-
-        /* Smooth Scroll */
-        .smooth-scroll {
-            position: relative;
-            min-height: 100vh;
-        }
-
-        /* Interactive Hover Effects */
-        .nav-item {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.5s ease;
-        }
-
-        .nav-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.2),
-                transparent
-            );
-            transition: 0.5s;
-        }
-
-        .nav-item:hover::before {
-            left: 100%;
-        }
-
-        /* Remove sliding animations for stats */
-        .stat-card {
-            opacity: 1 !important;
-            transform: none !important;
-            transition: box-shadow 0.3s ease-in-out !important;
-        }
-
-        /* Cinematic Parallax Effect */
-        .parallax-section {
-            position: relative;
-            overflow: hidden;
-            height: 100vh;
-            perspective: 1000px;
-        }
-
-        .parallax-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: translateZ(-50px) scale(1.5);
+        .btn-danger:hover {
+            background: color-mix(in srgb, var(--error-color) 80%, black);
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    <div>
-        <!-- Loading Screen -->
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-        </div>
+<body class="bg-gray-900 text-gray-100">
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="mb-8">
+                <h1 class="text-2xl font-semibold mb-2">ReputationSync</h1>
+                <p class="text-sm text-gray-400">Admin Dashboard</p>
+            </div>
+            <nav class="space-y-2">
+                <a href="#overview" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 transition-colors">Overview</a>
+                <a href="#api-keys" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 transition-colors">API Keys</a>
+                <a href="#settings" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 transition-colors">Settings</a>
+                <a href="/logout" class="nav-item block px-4 py-2 rounded hover:bg-red-700 transition-colors mt-8 bg-red-600">Logout</a>
+            </nav>
+        </aside>
 
-        <div class="flex">
-            <!-- Sidebar -->
-            <aside class="fixed left-0 top-0 h-screen w-64 bg-gray-800 p-4 transform transition-transform duration-300 ease-in-out z-50">
-                <div class="flex items-center mb-8">
-                    <div class="text-xl font-bold ml-2">ReputationSync</div>
-                </div>
-                <nav class="space-y-2">
-                    <a href="#dashboard" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                            </svg>
-                            <span class="ml-2">Dashboard</span>
-                        </div>
-                    </a>
-                    <a href="#users" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                            </svg>
-                            <span class="ml-2">Users</span>
-                        </div>
-                    </a>
-                    <a href="#subscriptions" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
-                            </svg>
-                            <span class="ml-2">Subscriptions</span>
-                        </div>
-                    </a>
-                    <a href="#api-keys" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                            </svg>
-                            <span class="ml-2">API Keys</span>
-                        </div>
-                    </a>
-                </nav>
-            </aside>
-
-            <!-- Main Content -->
-            <main class="ml-64 p-8 w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen">
-                <!-- Header with 3D effect -->
-                <header class="mb-8">
-                    <div class="flex justify-between items-center">
-                        <div class="transform perspective-1000">
-                            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 text-3d">Welcome back, {{ user }}</h1>
-                            <p class="text-gray-400 mt-2">Here's what's happening with your API</p>
-                        </div>
-                <div class="flex items-center space-x-4">
-                            <button onclick="refreshData()" class="bg-gradient-to-r from-blue-500 to-blue-700 px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-800 transition-all duration-300 flex items-center shadow-lg hover:shadow-blue-500/20">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
-                                Refresh
-                            </button>
-                            <button onclick="logout()" class="bg-gradient-to-r from-red-500 to-red-700 px-4 py-2 rounded-lg hover:from-red-600 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-red-500/20">
-                        Logout
-                    </button>
-                </div>
+        <!-- Header -->
+        <header class="header flex justify-between items-center">
+            <h2 class="text-xl font-semibold">Dashboard Overview</h2>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-400">Welcome, {{ user.name }}</span>
             </div>
         </header>
 
+        <!-- Main Content -->
+        <main class="main-content">
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="stat-card card-3d bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-blue-500/20">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-blue-100">Total Requests</h3>
-                            <svg class="w-6 h-6 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <div id="total-requests" class="text-4xl font-bold text-white mb-2">{{ stats.total_requests }}</div>
-                        <div class="text-sm text-blue-200">Last 24 hours</div>
-                    </div>
-
-                    <div class="stat-card card-3d bg-gradient-to-br from-green-500 to-green-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-green-500/20">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-green-100">Active Users</h3>
-                            <svg class="w-6 h-6 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                            </svg>
-                        </div>
-                        <div id="active-users" class="text-4xl font-bold text-white mb-2">{{ stats.active_users }}</div>
-                        <div class="text-sm text-green-200">Last hour</div>
-                    </div>
-
-                    <div class="stat-card card-3d bg-gradient-to-br from-amber-500 to-amber-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-amber-500/20">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-amber-100">Error Rate</h3>
-                            <svg class="w-6 h-6 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div id="error-rate" class="text-4xl font-bold text-white mb-2">{{ stats.error_rate }}%</div>
-                        <div class="text-sm text-amber-200">Last hour</div>
-                    </div>
-
-                    <div class="stat-card card-3d bg-gradient-to-br from-purple-500 to-purple-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-purple-500/20">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-purple-100">Response Time</h3>
-                            <svg class="w-6 h-6 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div id="avg-response-time" class="text-4xl font-bold text-white mb-2">{{ stats.avg_response_time }}ms</div>
-                        <div class="text-sm text-purple-200">Last hour</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="stat-card">
+                    <h3 class="text-gray-400 mb-2">Total Requests</h3>
+                    <p class="text-4xl font-semibold">{{ stats.total_requests }}</p>
+                    <div class="mt-2 text-sm text-gray-400">Last 24 hours</div>
                 </div>
+                <div class="stat-card">
+                    <h3 class="text-gray-400 mb-2">Active Users</h3>
+                    <p class="text-4xl font-semibold">{{ stats.active_users }}</p>
+                    <div class="mt-2 text-sm text-gray-400">Unique API keys</div>
                 </div>
-
-                <!-- Main Sections -->
-                <div class="space-y-8">
-                    <!-- API Usage Chart -->
-                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">API Usage Trends</h3>
-                        <div id="api-usage-chart" class="w-full h-64"></div>
-                    </div>
-
-                    <!-- Recent Users -->
-                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Recent Users</h3>
-                        <div id="users-list" class="space-y-4">
-                            {% for user in users %}
-                            <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
-                                <div class="flex items-center">
-                                    <img src="{{ user.avatar }}" alt="{{ user.name }}" class="w-10 h-10 rounded-full">
-                                    <div class="ml-3">
-                                        <div class="font-medium">{{ user.name }}</div>
-                                        <div class="text-sm text-gray-400">{{ user.email }}</div>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-sm text-gray-400">
-                                        Last active: {{ user.last_active }}
-                                    </div>
-                                    <div class="text-sm text-gray-400">
-                                        Success rate: {{ user.success_rate }}%
-                                    </div>
-                                </div>
+                <div class="stat-card">
+                    <h3 class="text-gray-400 mb-2">Error Rate</h3>
+                    <p class="text-4xl font-semibold">{{ "%.1f"|format(stats.error_rate) }}%</p>
+                    <div class="mt-2 text-sm text-gray-400">Average</div>
                 </div>
-                            {% endfor %}
+                <div class="stat-card">
+                    <h3 class="text-gray-400 mb-2">Response Time</h3>
+                    <p class="text-4xl font-semibold">{{ "%.1f"|format(stats.avg_response_time) }}ms</p>
+                    <div class="mt-2 text-sm text-gray-400">Average</div>
                 </div>
             </div>
 
-                    <!-- API Keys -->
-                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold">API Keys</h3>
-                            <button onclick="createApiKey()" class="px-4 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                </svg>
-                                Create New Key
-                            </button>
-                </div>
-                        <div id="api-keys-list" class="space-y-4">
-                            {% for key in api_keys %}
-                            <div class="p-4 bg-gray-700 rounded-lg">
-                        <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="font-medium">{{ key.name }}</div>
-                                        <div class="text-sm text-gray-400">Created: {{ key.created_at }}</div>
-                                        <div class="text-sm text-gray-400">Usage: {{ key.usage_count }} requests</div>
-                                        <div class="text-sm text-gray-400">Last used: {{ key.last_used }}</div>
-                                    </div>
-                                    <div class="flex space-x-2">
-                                        <button onclick="revokeKey('{{ key.id }}')" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700 transition-colors">Revoke</button>
-                                        <button onclick="regenerateKey('{{ key.id }}')" class="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700 transition-colors">Regenerate</button>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Subscriptions -->
-                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Active Subscriptions</h3>
-                        <div id="subscriptions-list" class="space-y-4">
-                            {% for sub in subscriptions %}
-                            <div class="p-4 bg-gray-700 rounded-lg">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="font-medium">{{ sub.plan_name }}</div>
-                                        <div class="text-sm text-gray-400">User: {{ sub.user_email }}</div>
-                                        <div class="text-sm text-gray-400">API Calls: {{ sub.api_calls }}</div>
-                                        <div class="text-sm text-gray-400">Success Rate: {{ sub.success_rate }}%</div>
-                                    </div>
-                                    <div class="flex items-center space-x-4">
-                                        <div class="text-right">
-                                            <div class="text-sm text-gray-400">Expires: {{ sub.expires_at }}</div>
-                                            <div class="text-sm {% if sub.days_left < 7 %}text-red-400{% else %}text-gray-400{% endif %}">
-                                                {{ sub.days_left }} days left
-                                            </div>
-                                        </div>
-                                        <button onclick="cancelSubscription('{{ sub.id }}')" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700 transition-colors">Cancel</button>
-                                    </div>
-                                </div>
-                        </div>
-                        {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </main>
+            <!-- Usage Chart -->
+            <div class="chart-container">
+                <h3 class="text-xl font-semibold mb-4">API Usage</h3>
+                <canvas id="usageChart" height="100"></canvas>
             </div>
+
+            <!-- API Key Management -->
+            <div class="api-key-form">
+                <h3 class="text-xl font-semibold mb-4">Create New API Key</h3>
+                <form id="apiKeyForm" class="space-y-4">
+                    <div>
+                        <label for="keyName" class="block text-sm font-medium text-gray-400 mb-2">Key Name</label>
+                        <input type="text" id="keyName" name="name" required
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate API Key</button>
+                </form>
+            </div>
+        </main>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
     <script>
-        // Update the navigation handling
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const section = e.currentTarget.getAttribute('data-section');
-                const target = document.querySelector(`#${section}`);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
+        // Initialize usage chart
+        const ctx = document.getElementById('usageChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ hours|tojson }},
+                datasets: [{
+                    label: 'API Requests',
+                    data: {{ hourly_usage|tojson }},
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
                 }
-            });
+            }
         });
 
-        // Update API Key creation function
-        async function createApiKey() {
-            const name = prompt('Enter a name for the new API key:');
-            if (!name) return;
+        // API Key Form Handler
+        document.getElementById('apiKeyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const toast = document.getElementById('toast');
 
-            showLoading();
             try {
+                loadingOverlay.style.display = 'flex';
+                const formData = new FormData(form);
                 const response = await fetch('/create_api_key', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name: name })
+                    body: JSON.stringify(Object.fromEntries(formData))
                 });
 
-                if (!response.ok) throw new Error('Failed to create API key');
-                
                 const data = await response.json();
-                showNotification('API Key created successfully!');
-                
-                // Show key in a modal or copy to clipboard
-                const keyText = `API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`;
-                if (navigator.clipboard) {
+
+                if (response.ok) {
+                    // Show success message
+                    toast.textContent = 'API key created successfully!';
+                    toast.className = 'toast success';
+                    toast.classList.add('show');
+                    
+                    // Copy API key to clipboard
                     await navigator.clipboard.writeText(data.key);
-                    alert(keyText + '\n\nThe key has been copied to your clipboard.');
+                    
+                    // Reset form
+                    form.reset();
                 } else {
-                    alert(keyText);
+                    throw new Error(data.detail || 'Failed to create API key');
                 }
-                
-                await refreshData();
             } catch (error) {
-                console.error('Error:', error);
-                showNotification('Failed to create API key', 'error');
+                toast.textContent = error.message;
+                toast.className = 'toast error';
+                toast.classList.add('show');
             } finally {
-                hideLoading();
+                loadingOverlay.style.display = 'none';
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
             }
-        }
-
-        // Show loading animation with fade
-        function showLoading() {
-            const loading = document.getElementById('loading');
-            loading.style.display = 'flex';
-            loading.style.opacity = '0';
-            setTimeout(() => loading.style.opacity = '1', 10);
-        }
-
-        // Hide loading animation with fade
-        function hideLoading() {
-            const loading = document.getElementById('loading');
-            loading.style.opacity = '0';
-            setTimeout(() => loading.style.display = 'none', 300);
-        }
-
-        // Refresh data with improved error handling and animations
-        async function refreshData() {
-            showLoading();
-            try {
-                const response = await fetch(window.location.href);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                // Update stats with animations
-                const stats = ['total-requests', 'active-users', 'error-rate', 'avg-response-time'];
-                stats.forEach(id => {
-                    const element = document.getElementById(id);
-                    const newValue = doc.getElementById(id).textContent;
-                    animateNumber(element, newValue);
-                });
-                
-                // Update lists with fade animations
-                ['users-list', 'api-keys-list', 'subscriptions-list'].forEach(id => {
-                    const element = document.getElementById(id);
-                    const newContent = doc.getElementById(id).innerHTML;
-                    fadeContent(element, newContent);
-                });
-                
-                // Update chart with animation
-                try {
-                    const statsData = JSON.parse(doc.getElementById('stats-data').textContent);
-                    apiUsageChart.updateSeries([{
-                        data: statsData.hourly_usage
-                    }], true);
-                    apiUsageChart.updateOptions({
-                        xaxis: {
-                            categories: statsData.hours
-                        }
-                    });
-                } catch (chartError) {
-                    console.error('Error updating chart:', chartError);
-                }
-                
-            } catch (error) {
-                console.error('Error refreshing data:', error);
-                showNotification('Error refreshing data. Please try again.', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Animate number changes
-        function animateNumber(element, newValue) {
-            const start = parseFloat(element.textContent.replace(/[^0-9.-]/g, ''));
-            const end = parseFloat(newValue.replace(/[^0-9.-]/g, ''));
-            const duration = 1000;
-            const startTime = performance.now();
-            
-            function update(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                const current = start + (end - start) * easeOutQuart(progress);
-                element.textContent = newValue.replace(/[0-9.]+/, Math.round(current));
-                
-                if (progress < 1) {
-                    requestAnimationFrame(update);
-                }
-            }
-            
-            requestAnimationFrame(update);
-        }
-
-        // Easing function for smooth animations
-        function easeOutQuart(x) {
-            return 1 - Math.pow(1 - x, 4);
-        }
-
-        // Fade content replacement
-        function fadeContent(element, newContent) {
-            gsap.to(element, {
-                opacity: 0,
-                duration: 0.2,
-                onComplete: () => {
-                    element.innerHTML = newContent;
-                    gsap.to(element, {
-                        opacity: 1,
-                        duration: 0.2,
-                        onComplete: () => {
-                            gsap.from(element.children, {
-                                y: 20,
-                                opacity: 0,
-                                duration: 0.3,
-                                stagger: 0.05
-                            });
-                        }
-                    });
-                }
-            });
-        }
-
-        // Show notification
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white transform transition-all duration-300 ${
-                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-            }`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            gsap.fromTo(notification,
-                { opacity: 0, y: -20 },
-                { opacity: 1, y: 0, duration: 0.3 }
-            );
-            
-            setTimeout(() => {
-                gsap.to(notification, {
-                    opacity: 0,
-                    y: -20,
-                    duration: 0.3,
-                    onComplete: () => notification.remove()
-                });
-            }, 3000);
-        }
-
-        // API Key Management with improved feedback
-        async function revokeKey(keyId) {
-            if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
-                return;
-            }
-
-            showLoading();
-            try {
-                const response = await fetch(`/api/keys/${keyId}/revoke`, {
-                    method: 'POST'
-                });
-
-                if (!response.ok) throw new Error('Failed to revoke API key');
-                
-                showNotification('API Key revoked successfully');
-                await refreshData();
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('Failed to revoke API key', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function regenerateKey(keyId) {
-            if (!confirm('Are you sure you want to regenerate this API key? The old key will stop working immediately.')) {
-                return;
-            }
-
-            showLoading();
-            try {
-                const response = await fetch(`/api/keys/${keyId}/regenerate`, {
-                    method: 'POST'
-                });
-
-                if (!response.ok) throw new Error('Failed to regenerate API key');
-                
-                const data = await response.json();
-                showNotification('API Key regenerated successfully');
-                
-                // Show new key in a modal or copy to clipboard
-                const keyText = `New API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`;
-                if (navigator.clipboard) {
-                    await navigator.clipboard.writeText(data.key);
-                    alert(keyText + '\n\nThe key has been copied to your clipboard.');
-                } else {
-                    alert(keyText);
-                }
-                
-                await refreshData();
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('Failed to regenerate API key', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Subscription Management with improved feedback
-        async function cancelSubscription(subId) {
-            if (!confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) {
-                return;
-            }
-
-            showLoading();
-            try {
-                const response = await fetch(`/api/subscriptions/${subId}/cancel`, {
-                    method: 'POST'
-                });
-
-                if (!response.ok) throw new Error('Failed to cancel subscription');
-                
-                showNotification('Subscription cancelled successfully');
-                await refreshData();
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('Failed to cancel subscription', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Auto-refresh data every minute
-        setInterval(refreshData, 60000);
-
-        // Initialize API Usage Chart
-        let apiUsageChart;
-        
-        function initializeChart() {
-            const options = {
-                series: [{
-                    name: 'API Calls',
-                    data: {{ stats_data.hourly_usage | tojson }}
-                }],
-                chart: {
-                    type: 'area',
-                    height: 256,
-                    toolbar: {
-                        show: false
-                    },
-                    animations: {
-                        enabled: true,
-                        easing: 'easeinout',
-                        speed: 800,
-                        animateGradually: {
-                            enabled: true,
-                            delay: 150
-                        },
-                        dynamicAnimation: {
-                            enabled: true,
-                            speed: 350
-                        }
-                    }
-                },
-                colors: ['#0066cc'],
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.7,
-                        opacityTo: 0.2,
-                        stops: [0, 90, 100]
-                    }
-                },
-                dataLabels: {
-                    enabled: false
-                },
-                stroke: {
-                    curve: 'smooth',
-                    width: 2
-                },
-                grid: {
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    strokeDashArray: 4,
-                    xaxis: {
-                        lines: {
-                            show: true
-                        }
-                    },
-                    yaxis: {
-                        lines: {
-                            show: true
-                        }
-                    }
-                },
-                xaxis: {
-                    categories: {{ stats_data.hours | tojson }},
-                    labels: {
-                        style: {
-                            colors: '#86868b'
-                        }
-                    },
-                    axisBorder: {
-                        show: false
-                    },
-                    axisTicks: {
-                        show: false
-                    }
-                },
-                yaxis: {
-                        labels: {
-                        style: {
-                            colors: '#86868b'
-                        },
-                        formatter: function (value) {
-                            return Math.round(value).toLocaleString();
-                        }
-                    }
-                },
-                tooltip: {
-                    theme: 'dark',
-                    x: {
-                        format: 'HH:mm'
-                    }
-                }
-            };
-
-            apiUsageChart = new ApexCharts(document.querySelector("#api-usage-chart"), options);
-            apiUsageChart.render();
-        }
-
-        // Initialize page
-        window.addEventListener('load', () => {
-            hideLoading();
-            initializeChart();
-            
-            // Initial animations
-            gsap.from('.stat-card', {
-                y: 20,
-                opacity: 0,
-                duration: 0.5,
-                stagger: 0.1,
-                ease: 'power2.out'
-            });
-            
-            gsap.from('.scale-in', {
-                scale: 0.95,
-                opacity: 0,
-                duration: 0.3,
-                stagger: 0.1,
-                ease: 'power2.out',
-                delay: 0.5
-            });
         });
 
-        // Smooth logout
-        function logout() {
-            showLoading();
-            document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            
-            gsap.to('main', {
-                opacity: 0,
-                y: 20,
-                duration: 0.3,
-                onComplete: () => {
-            window.location.href = '/';
-                }
-            });
-        }
+        // Initialize animations
+        gsap.from(".stat-card", {
+            duration: 0.8,
+            y: 20,
+            opacity: 0,
+            stagger: 0.2,
+            ease: "power3.out"
+        });
+
+        gsap.from(".chart-container", {
+            duration: 1,
+            y: 30,
+            opacity: 0,
+            delay: 0.5,
+            ease: "power3.out"
+        });
     </script>
 </body>
 </html> 
