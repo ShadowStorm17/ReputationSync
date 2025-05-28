@@ -324,6 +324,11 @@ async def startup_event():
         # Don't raise the exception - let the app continue to start
         # but log the error for debugging
 
+# Simplified authentication for admin
+def verify_admin_credentials(username: str, password: str) -> bool:
+    """Simple verification for admin credentials"""
+    return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
+
 # Authentication
 def verify_password(plain_password, hashed_password):
     try:
@@ -428,16 +433,12 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
     try:
         print(f"Login attempt with username: {form_data.username}")
         
-        # Debug prints
-        print(f"Database path: {get_db_path()}")
-        print(f"Current working directory: {os.getcwd()}")
-        
-        user = authenticate_user(form_data.username, form_data.password)
-        if not user:
+        if not verify_admin_credentials(form_data.username, form_data.password):
             print("Authentication failed, redirecting to login page")
             return RedirectResponse(url='/?error=1', status_code=303)
         
-        access_token = create_access_token(data={"sub": user[1]})
+        # Create access token
+        access_token = create_access_token(data={"sub": form_data.username})
         response = RedirectResponse(url='/dashboard', status_code=303)
         response.set_cookie(
             key="access_token",
@@ -469,15 +470,71 @@ async def dashboard(request: Request):
     except (JWTError, IndexError):
         return RedirectResponse(url='/', status_code=303)
     
+    # Mock data for initial dashboard
+    mock_stats = {
+        "total_requests": 1000,
+        "active_users": 50,
+        "error_rate": 2.5,
+        "avg_response_time": 150,
+        "hourly_usage": [45, 52, 38, 65, 72, 58, 49, 55, 63, 58, 50, 47],
+        "hours": ["12 AM", "1 AM", "2 AM", "3 AM", "4 AM", "5 AM", 
+                 "6 AM", "7 AM", "8 AM", "9 AM", "10 AM", "11 AM"]
+    }
+    
+    mock_users = [
+        {
+            "name": "John Doe",
+            "email": "john@example.com",
+            "avatar": "https://ui-avatars.com/api/?name=John+Doe",
+            "last_active": "2 hours ago"
+        },
+        {
+            "name": "Jane Smith",
+            "email": "jane@example.com",
+            "avatar": "https://ui-avatars.com/api/?name=Jane+Smith",
+            "last_active": "5 minutes ago"
+        }
+    ]
+    
+    mock_api_keys = [
+        {
+            "id": "key1",
+            "name": "Production API Key",
+            "created_at": "2024-01-01"
+        },
+        {
+            "id": "key2",
+            "name": "Development API Key",
+            "created_at": "2024-01-15"
+        }
+    ]
+    
+    mock_subscriptions = [
+        {
+            "id": "sub1",
+            "plan_name": "Pro Plan",
+            "user_email": "company@example.com",
+            "expires_at": "2024-12-31",
+            "status": "active"
+        },
+        {
+            "id": "sub2",
+            "plan_name": "Basic Plan",
+            "user_email": "startup@example.com",
+            "expires_at": "2024-06-30",
+            "status": "active"
+        }
+    ]
+    
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "user": username,
-            "stats": get_real_stats(),
-            "users": get_real_users(),
-            "api_keys": get_real_api_keys(),
-            "subscriptions": get_real_subscriptions()
+            "stats": mock_stats,
+            "users": mock_users,
+            "api_keys": mock_api_keys,
+            "subscriptions": mock_subscriptions
         }
     )
 
