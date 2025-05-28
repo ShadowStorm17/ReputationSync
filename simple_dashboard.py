@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -158,24 +158,42 @@ async def login_page(request: Request):
     )
 
 @app.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+    print(f"Login attempt with username: {form_data.username}")  # Debug log
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        return RedirectResponse(url='/?error=1', status_code=303)
+    
     access_token = create_access_token(data={"sub": user[1]})
-    return {"access_token": access_token, "token_type": "bearer"}
+    response = RedirectResponse(url='/dashboard', status_code=303)
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        samesite='lax'
+    )
+    return response
 
 @app.get("/dashboard")
-async def dashboard(request: Request, current_user: str = Depends(get_current_user)):
+async def dashboard(request: Request):
+    token = request.cookies.get("access_token")
+    if not token or not token.startswith("Bearer "):
+        return RedirectResponse(url='/', status_code=303)
+    
+    try:
+        token = token.split(" ")[1]
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username != ADMIN_USERNAME:
+            raise HTTPException(status_code=401)
+    except (JWTError, IndexError):
+        return RedirectResponse(url='/', status_code=303)
+    
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
-            "user": current_user,
+            "user": username,
             "stats": get_mock_stats()
         }
     )
