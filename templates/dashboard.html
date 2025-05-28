@@ -6,57 +6,163 @@
     <title>Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        .slide-in { animation: slideIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .stat-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+    </style>
 </head>
 <body class="bg-gray-900 text-white">
     <div class="min-h-screen">
-        <!-- Header -->
-        <header class="bg-gray-800 p-4">
-            <div class="container mx-auto flex justify-between items-center">
-                <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-                <div class="flex items-center space-x-4">
-                    <span>Welcome, {{ user }}</span>
-                    <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700">
-                        Logout
-                    </button>
-                </div>
+        <!-- Sidebar -->
+        <aside class="fixed left-0 top-0 h-screen w-64 bg-gray-800 p-4 transform transition-transform duration-300 ease-in-out">
+            <div class="flex items-center mb-8">
+                <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_uwR49r.json" background="transparent" speed="1" style="width: 40px; height: 40px;" autoplay loop></lottie-player>
+                <h1 class="text-xl font-bold ml-2">Admin Panel</h1>
             </div>
-        </header>
+            <nav class="space-y-2">
+                <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors active">Dashboard</a>
+                <a href="#users" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">Users</a>
+                <a href="#subscriptions" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">Subscriptions</a>
+                <a href="#api-keys" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">API Keys</a>
+                <a href="#monitoring" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">Monitoring</a>
+            </nav>
+        </aside>
 
         <!-- Main Content -->
-        <main class="container mx-auto p-6">
+        <main class="ml-64 p-8">
+            <!-- Header -->
+            <header class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold fade-in">Welcome back, {{ user }}</h1>
+                    <p class="text-gray-400">Here's what's happening with your API</p>
+                </div>
+                <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition-colors">
+                    Logout
+                </button>
+            </header>
+
+            <!-- Hidden stats data for auto-refresh -->
+            <script id="stats-data" type="application/json">
+                {{ stats|tojson }}
+            </script>
+
             <!-- Stats Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-gray-400 mb-2">Total Requests</h3>
-                    <div class="text-2xl font-bold">{{ stats.total_requests }}</div>
+                <div class="stat-card bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.1s">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-gray-100">Total Requests</h3>
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qp1q7msk.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
+                    </div>
+                    <div class="text-3xl font-bold mt-2">{{ stats.total_requests }}</div>
+                    <div class="text-sm text-gray-200 mt-2">↑ 12% from last month</div>
                 </div>
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-gray-400 mb-2">Active Users</h3>
-                    <div class="text-2xl font-bold">{{ stats.active_users }}</div>
+                <div class="stat-card bg-gradient-to-br from-green-600 to-green-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-gray-100">Active Users</h3>
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_ukjcyxsc.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
+                    </div>
+                    <div class="text-3xl font-bold mt-2">{{ stats.active_users }}</div>
+                    <div class="text-sm text-gray-200 mt-2">↑ 8% from last week</div>
                 </div>
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-gray-400 mb-2">Error Rate</h3>
-                    <div class="text-2xl font-bold">{{ stats.error_rate }}%</div>
+                <div class="stat-card bg-gradient-to-br from-yellow-600 to-yellow-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-gray-100">Error Rate</h3>
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_yqyt1ikq.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
+                    </div>
+                    <div class="text-3xl font-bold mt-2">{{ stats.error_rate }}%</div>
+                    <div class="text-sm text-gray-200 mt-2">↓ 3% improvement</div>
                 </div>
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-gray-400 mb-2">Avg Response Time</h3>
-                    <div class="text-2xl font-bold">{{ stats.avg_response_time }}ms</div>
+                <div class="stat-card bg-gradient-to-br from-purple-600 to-purple-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.4s">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-gray-100">Response Time</h3>
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qqtavvc0.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
+                    </div>
+                    <div class="text-3xl font-bold mt-2">{{ stats.avg_response_time }}ms</div>
+                    <div class="text-sm text-gray-200 mt-2">↓ 15ms improvement</div>
                 </div>
             </div>
 
-            <!-- Charts -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-lg font-semibold mb-4">API Usage by Endpoint</h3>
-                    <canvas id="endpointChart" height="300"></canvas>
+            <!-- Main Sections -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- API Usage Chart -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.5s">
+                    <h3 class="text-xl font-semibold mb-4">API Usage Trends</h3>
+                    <div id="apiUsageChart" class="h-80"></div>
                 </div>
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+
+                <!-- Recent Users -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.6s">
+                    <h3 class="text-xl font-semibold mb-4">Recent Users</h3>
                     <div class="space-y-4">
-                        {% for endpoint in stats.endpoints %}
-                        <div class="flex justify-between items-center">
-                            <span>{{ endpoint.name }}</span>
-                            <span class="text-gray-400">{{ endpoint.requests }} requests</span>
+                        {% for user in users %}
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                            <div class="flex items-center">
+                                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="w-10 h-10 rounded-full">
+                                <div class="ml-3">
+                                    <div class="font-medium">{{ user.name }}</div>
+                                    <div class="text-sm text-gray-400">{{ user.email }}</div>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-400">
+                                Last active: {{ user.last_active }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- API Keys -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.7s">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">API Keys</h3>
+                        <button onclick="createApiKey()" class="px-4 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Create New Key
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        {% for key in api_keys %}
+                        <div class="p-4 bg-gray-700 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-medium">{{ key.name }}</div>
+                                    <div class="text-sm text-gray-400">Created: {{ key.created_at }}</div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="revokeKey('{{ key.id }}')" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700 transition-colors">Revoke</button>
+                                    <button onclick="regenerateKey('{{ key.id }}')" class="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700 transition-colors">Regenerate</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Subscriptions -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.8s">
+                    <h3 class="text-xl font-semibold mb-4">Active Subscriptions</h3>
+                    <div class="space-y-4">
+                        {% for sub in subscriptions %}
+                        <div class="p-4 bg-gray-700 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-medium">{{ sub.plan_name }}</div>
+                                    <div class="text-sm text-gray-400">User: {{ sub.user_email }}</div>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-sm text-gray-400">
+                                        Expires: {{ sub.expires_at }}
+                                    </div>
+                                    <button onclick="cancelSubscription('{{ sub.id }}')" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700 transition-colors">Cancel</button>
+                                </div>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -66,74 +172,172 @@
     </div>
 
     <script>
-        // Check authentication
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/';
-        }
-
-        // Initialize charts
-        const ctx = document.getElementById('endpointChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: {{ stats.endpoints|map(attribute='name')|list|tojson }},
-                datasets: [{
-                    label: 'Requests',
-                    data: {{ stats.endpoints|map(attribute='requests')|list|tojson }},
-                    backgroundColor: 'rgba(99, 102, 241, 0.5)',
-                    borderColor: 'rgb(99, 102, 241)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        }
+        // Initialize API Usage Chart
+        const apiUsageOptions = {
+            chart: {
+                type: 'area',
+                height: 320,
+                foreColor: '#ccc',
+                toolbar: { show: false },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 150
                     },
-                    x: {
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        }
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 350
                     }
                 }
-            }
-        });
+            },
+            colors: ['#6366f1'],
+            series: [{
+                name: 'API Calls',
+                data: {{ stats.hourly_usage|tojson }}
+            }],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.3,
+                }
+            },
+            xaxis: {
+                categories: {{ stats.hours|tojson }},
+                labels: { style: { colors: '#ccc' } }
+            },
+            yaxis: { labels: { style: { colors: '#ccc' } } },
+            grid: { borderColor: '#404040' },
+            theme: { mode: 'dark' }
+        };
+        
+        const apiUsageChart = new ApexCharts(document.querySelector("#apiUsageChart"), apiUsageOptions);
+        apiUsageChart.render();
 
-        // Logout function
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = '/';
+        // API Key Management
+        async function createApiKey() {
+            const name = prompt('Enter a name for the new API key:');
+            if (!name) return;
+
+            try {
+                const response = await fetch('/api/keys/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`New API Key created!\n\nKey: ${data.key}\n\nPlease save this key as it won't be shown again.`);
+                    location.reload();
+                } else {
+                    alert('Failed to create API key');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to create API key');
+            }
         }
 
-        // Add authentication header to all requests
-        fetch = new Proxy(fetch, {
-            apply: function(target, thisArg, argumentsList) {
-                const [url, config = {}] = argumentsList;
-                config.headers = {
-                    ...config.headers,
-                    'Authorization': `Bearer ${token}`
-                };
-                return target.apply(thisArg, [url, config]);
+        async function revokeKey(keyId) {
+            if (confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/api/keys/${keyId}/revoke`, {
+                        method: 'POST',
+                    });
+
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Failed to revoke API key');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to revoke API key');
+                }
             }
-        });
+        }
+
+        async function regenerateKey(keyId) {
+            if (confirm('Are you sure you want to regenerate this API key? The old key will stop working immediately.')) {
+                try {
+                    const response = await fetch(`/api/keys/${keyId}/regenerate`, {
+                        method: 'POST',
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(`New API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`);
+                        location.reload();
+                    } else {
+                        alert('Failed to regenerate API key');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to regenerate API key');
+                }
+            }
+        }
+
+        // Subscription Management
+        async function cancelSubscription(subId) {
+            if (confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/api/subscriptions/${subId}/cancel`, {
+                        method: 'POST',
+                    });
+
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Failed to cancel subscription');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to cancel subscription');
+                }
+            }
+        }
+
+        // Auto-refresh data every 5 minutes
+        setInterval(() => {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Update stats
+                    const stats = JSON.parse(doc.getElementById('stats-data').textContent);
+                    document.getElementById('total-requests').textContent = stats.total_requests;
+                    document.getElementById('active-users').textContent = stats.active_users;
+                    document.getElementById('error-rate').textContent = stats.error_rate + '%';
+                    document.getElementById('avg-response-time').textContent = stats.avg_response_time + 'ms';
+                    
+                    // Update chart
+                    apiUsageChart.updateSeries([{
+                        data: stats.hourly_usage
+                    }]);
+                    apiUsageChart.updateOptions({
+                        xaxis: {
+                            categories: stats.hours
+                        }
+                    });
+                })
+                .catch(console.error);
+        }, 5 * 60 * 1000); // 5 minutes
+
+        // Logout
+        function logout() {
+            document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = '/';
+        }
     </script>
 </body>
 </html> 
