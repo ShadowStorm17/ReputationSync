@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Keys Management - Instagram Stats API</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.31"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #4f46e5;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f1f5f9;
+        }
+        body {
+            background-color: var(--background);
+            color: var(--text);
+        }
+        .card {
+            background-color: var(--surface);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex">
+        <!-- Sidebar (same as dashboard.html) -->
+        <nav class="w-64 bg-gray-900 p-4">
+            <!-- ... sidebar content ... -->
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <!-- Header -->
+            <header class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold">API Keys Management</h2>
+                <button @click="showCreateKeyModal = true" class="bg-indigo-600 px-4 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>
+                    Create New Key
+                </button>
+            </header>
+
+            <!-- API Keys Table -->
+            <div class="card overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th class="px-6 py-3 text-left">Key ID</th>
+                            <th class="px-6 py-3 text-left">Client</th>
+                            <th class="px-6 py-3 text-left">Plan</th>
+                            <th class="px-6 py-3 text-left">Created</th>
+                            <th class="px-6 py-3 text-left">Expires</th>
+                            <th class="px-6 py-3 text-left">Status</th>
+                            <th class="px-6 py-3 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <tr v-for="key in apiKeys" :key="key.id" class="hover:bg-gray-800">
+                            <td class="px-6 py-4">
+                                <span class="font-mono">{{ key.id }}</span>
+                            </td>
+                            <td class="px-6 py-4">{{ key.client }}</td>
+                            <td class="px-6 py-4">
+                                <span :class="{
+                                    'px-2 py-1 rounded text-xs font-semibold': true,
+                                    'bg-green-900 text-green-300': key.plan === 'Enterprise',
+                                    'bg-purple-900 text-purple-300': key.plan === 'Pro',
+                                    'bg-blue-900 text-blue-300': key.plan === 'Free'
+                                }">{{ key.plan }}</span>
+                            </td>
+                            <td class="px-6 py-4">{{ key.created }}</td>
+                            <td class="px-6 py-4">
+                                <span :class="{
+                                    'text-red-500': isExpiringSoon(key.expires),
+                                    'text-gray-400': !isExpiringSoon(key.expires)
+                                }">{{ key.expires }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span :class="{
+                                    'px-2 py-1 rounded text-xs font-semibold': true,
+                                    'bg-green-900 text-green-300': key.status === 'Active',
+                                    'bg-red-900 text-red-300': key.status === 'Revoked',
+                                    'bg-yellow-900 text-yellow-300': key.status === 'Expiring'
+                                }">{{ key.status }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex space-x-2">
+                                    <button @click="rotateKey(key.id)" class="text-indigo-400 hover:text-indigo-300">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button @click="revokeKey(key.id)" class="text-red-400 hover:text-red-300">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    <button @click="viewDetails(key.id)" class="text-gray-400 hover:text-gray-300">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Create Key Modal -->
+            <div v-if="showCreateKeyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div class="card p-6 w-96">
+                    <h3 class="text-xl font-bold mb-4">Create New API Key</h3>
+                    <form @submit.prevent="createKey">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Client Name</label>
+                            <input v-model="newKey.client" type="text" class="w-full bg-gray-800 rounded p-2">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Plan</label>
+                            <select v-model="newKey.plan" class="w-full bg-gray-800 rounded p-2">
+                                <option value="Free">Free</option>
+                                <option value="Pro">Pro</option>
+                                <option value="Enterprise">Enterprise</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" @click="showCreateKeyModal = false" class="px-4 py-2 rounded bg-gray-700">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 py-2 rounded bg-indigo-600">
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    apiKeys: [
+                        {
+                            id: 'ist_1234567890',
+                            client: 'Example Corp',
+                            plan: 'Enterprise',
+                            created: '2024-03-01',
+                            expires: '2024-05-30',
+                            status: 'Active'
+                        },
+                        // Add more sample data
+                    ],
+                    showCreateKeyModal: false,
+                    newKey: {
+                        client: '',
+                        plan: 'Free'
+                    }
+                }
+            },
+            methods: {
+                isExpiringSoon(date) {
+                    const expiry = new Date(date);
+                    const now = new Date();
+                    const days = (expiry - now) / (1000 * 60 * 60 * 24);
+                    return days <= 14;
+                },
+                async rotateKey(id) {
+                    // Implementation
+                },
+                async revokeKey(id) {
+                    // Implementation
+                },
+                viewDetails(id) {
+                    // Implementation
+                },
+                async createKey() {
+                    // Implementation
+                    this.showCreateKeyModal = false;
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html> 

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-gray-800 p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+                <div class="flex items-center space-x-4">
+                    <span>Welcome, {{ user }}</span>
+                    <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-6">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-gray-400 mb-2">Total Requests</h3>
+                    <div class="text-2xl font-bold">{{ stats.total_requests }}</div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-gray-400 mb-2">Active Users</h3>
+                    <div class="text-2xl font-bold">{{ stats.active_users }}</div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-gray-400 mb-2">Error Rate</h3>
+                    <div class="text-2xl font-bold">{{ stats.error_rate }}%</div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-gray-400 mb-2">Avg Response Time</h3>
+                    <div class="text-2xl font-bold">{{ stats.avg_response_time }}ms</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">API Usage by Endpoint</h3>
+                    <canvas id="endpointChart" height="300"></canvas>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+                    <div class="space-y-4">
+                        {% for endpoint in stats.endpoints %}
+                        <div class="flex justify-between items-center">
+                            <span>{{ endpoint.name }}</span>
+                            <span class="text-gray-400">{{ endpoint.requests }} requests</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // Initialize charts
+        const ctx = document.getElementById('endpointChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ stats.endpoints|map(attribute='name')|list|tojson }},
+                datasets: [{
+                    label: 'Requests',
+                    data: {{ stats.endpoints|map(attribute='requests')|list|tojson }},
+                    backgroundColor: 'rgba(99, 102, 241, 0.5)',
+                    borderColor: 'rgb(99, 102, 241)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        // Add authentication header to all requests
+        fetch = new Proxy(fetch, {
+            apply: function(target, thisArg, argumentsList) {
+                const [url, config = {}] = argumentsList;
+                config.headers = {
+                    ...config.headers,
+                    'Authorization': `Bearer ${token}`
+                };
+                return target.apply(thisArg, [url, config]);
+            }
+        });
+    </script>
+</body>
+</html> 

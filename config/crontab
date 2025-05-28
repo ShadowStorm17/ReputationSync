@@ -1,0 +1,16 @@
+# Instagram Stats API Crontab Configuration
+
+# Run API key rotation script daily at 1 AM
+0 1 * * * /opt/instagram_stats_api/venv/bin/python /opt/instagram_stats_api/scripts/rotate_api_keys.py >> /var/log/instagram_api/key_rotation.log 2>&1
+
+# Backup Redis data every 6 hours
+0 */6 * * * /usr/bin/redis-cli save && cp /var/lib/redis/dump.rdb /opt/instagram_stats_api/backups/redis_$(date +\%Y\%m\%d_\%H\%M).rdb >> /var/log/instagram_api/redis_backup.log 2>&1
+
+# Clean up old Redis backups (keep last 7 days)
+0 2 * * * find /opt/instagram_stats_api/backups -name "redis_*.rdb" -mtime +7 -delete
+
+# Check SSL certificate expiration daily
+0 0 * * * /opt/instagram_stats_api/venv/bin/python -c "from scripts.monitor import MonitoringManager; MonitoringManager().check_ssl_certificate()" >> /var/log/instagram_api/ssl_check.log 2>&1
+
+# Rotate logs weekly
+0 0 * * 0 /usr/sbin/logrotate /etc/logrotate.d/instagram_api 

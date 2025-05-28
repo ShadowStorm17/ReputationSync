@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Instagram Stats API</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.31"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #4f46e5;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f1f5f9;
+        }
+        body {
+            background-color: var(--background);
+            color: var(--text);
+        }
+        .card {
+            background-color: var(--surface);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex">
+        <!-- Sidebar (same as dashboard.html) -->
+        <nav class="w-64 bg-gray-900 p-4">
+            <!-- ... sidebar content ... -->
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <!-- Header -->
+            <header class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold">Analytics</h2>
+                    <p class="text-gray-400">Detailed insights and trends</p>
+                </div>
+                <div class="flex space-x-4">
+                    <select v-model="timeRange" class="bg-gray-800 rounded px-4 py-2">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                    </select>
+                    <button @click="refreshData" class="bg-indigo-600 px-4 py-2 rounded-lg">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Refresh
+                    </button>
+                </div>
+            </header>
+
+            <!-- Usage Metrics -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">API Usage by Endpoint</h3>
+                    <div class="chart-container" id="endpointUsageChart"></div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Response Times</h3>
+                    <div class="chart-container" id="responseTimeChart"></div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Error Rates</h3>
+                    <div class="chart-container" id="errorRateChart"></div>
+                </div>
+            </div>
+
+            <!-- Geographic Distribution -->
+            <div class="card p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4">Geographic Distribution</h3>
+                <div class="h-96" id="geoMap"></div>
+            </div>
+
+            <!-- Usage Patterns -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Usage by Time of Day</h3>
+                    <div class="chart-container" id="timeOfDayChart"></div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Usage by Plan Type</h3>
+                    <div class="chart-container" id="planUsageChart"></div>
+                </div>
+            </div>
+
+            <!-- Top Users Table -->
+            <div class="card overflow-hidden">
+                <div class="p-6 border-b border-gray-700">
+                    <h3 class="text-lg font-semibold">Top API Users</h3>
+                </div>
+                <table class="w-full">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th class="px-6 py-3 text-left">Client</th>
+                            <th class="px-6 py-3 text-left">Plan</th>
+                            <th class="px-6 py-3 text-left">Requests (24h)</th>
+                            <th class="px-6 py-3 text-left">Success Rate</th>
+                            <th class="px-6 py-3 text-left">Avg Response Time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <tr v-for="user in topUsers" :key="user.client" class="hover:bg-gray-800">
+                            <td class="px-6 py-4">{{ user.client }}</td>
+                            <td class="px-6 py-4">
+                                <span :class="{
+                                    'px-2 py-1 rounded text-xs font-semibold': true,
+                                    'bg-green-900 text-green-300': user.plan === 'Enterprise',
+                                    'bg-purple-900 text-purple-300': user.plan === 'Pro',
+                                    'bg-blue-900 text-blue-300': user.plan === 'Free'
+                                }">{{ user.plan }}</span>
+                            </td>
+                            <td class="px-6 py-4">{{ user.requests }}</td>
+                            <td class="px-6 py-4">
+                                <span :class="{
+                                    'text-green-400': user.successRate >= 99,
+                                    'text-yellow-400': user.successRate < 99 && user.successRate >= 95,
+                                    'text-red-400': user.successRate < 95
+                                }">{{ user.successRate }}%</span>
+                            </td>
+                            <td class="px-6 py-4">{{ user.avgResponseTime }}ms</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    timeRange: '24h',
+                    topUsers: [
+                        {
+                            client: 'Example Corp',
+                            plan: 'Enterprise',
+                            requests: 150000,
+                            successRate: 99.9,
+                            avgResponseTime: 120
+                        },
+                        // Add more sample data
+                    ]
+                }
+            },
+            methods: {
+                async refreshData() {
+                    await this.fetchAnalytics();
+                    this.initCharts();
+                },
+                async fetchAnalytics() {
+                    // Implementation
+                },
+                initCharts() {
+                    // Endpoint Usage Chart
+                    new ApexCharts(document.querySelector("#endpointUsageChart"), {
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            background: 'transparent',
+                            theme: { mode: 'dark' }
+                        },
+                        series: [{
+                            name: 'Requests',
+                            data: [44000, 55000, 57000, 56000, 61000]
+                        }],
+                        xaxis: {
+                            categories: ['/stats/profile', '/stats/posts', '/stats/engagement', '/stats/audience', '/auth']
+                        }
+                    }).render();
+
+                    // Response Time Chart
+                    new ApexCharts(document.querySelector("#responseTimeChart"), {
+                        chart: {
+                            type: 'line',
+                            height: 350,
+                            background: 'transparent',
+                            theme: { mode: 'dark' }
+                        },
+                        series: [{
+                            name: 'Response Time (ms)',
+                            data: [120, 132, 125, 140, 135, 150, 145]
+                        }],
+                        xaxis: {
+                            categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        }
+                    }).render();
+
+                    // Error Rate Chart
+                    new ApexCharts(document.querySelector("#errorRateChart"), {
+                        chart: {
+                            type: 'area',
+                            height: 350,
+                            background: 'transparent',
+                            theme: { mode: 'dark' }
+                        },
+                        series: [{
+                            name: 'Error Rate (%)',
+                            data: [0.2, 0.3, 0.1, 0.4, 0.2, 0.3, 0.2]
+                        }],
+                        xaxis: {
+                            categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        }
+                    }).render();
+
+                    // Time of Day Chart
+                    new ApexCharts(document.querySelector("#timeOfDayChart"), {
+                        chart: {
+                            type: 'heatmap',
+                            height: 350,
+                            background: 'transparent',
+                            theme: { mode: 'dark' }
+                        },
+                        series: Array(7).fill(0).map((_, i) => ({
+                            name: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+                            data: Array(24).fill(0).map((_, j) => ({
+                                x: j + ':00',
+                                y: Math.floor(Math.random() * 1000)
+                            }))
+                        }))
+                    }).render();
+
+                    // Plan Usage Chart
+                    new ApexCharts(document.querySelector("#planUsageChart"), {
+                        chart: {
+                            type: 'donut',
+                            height: 350,
+                            background: 'transparent',
+                            theme: { mode: 'dark' }
+                        },
+                        series: [44, 55, 13],
+                        labels: ['Enterprise', 'Pro', 'Free'],
+                        colors: ['#10B981', '#8B5CF6', '#3B82F6']
+                    }).render();
+                }
+            },
+            mounted() {
+                this.initCharts();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html> 

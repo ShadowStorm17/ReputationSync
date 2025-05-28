@@ -1,0 +1,118 @@
+name: Instagram Stats API Status
+description: Current system status and incident history
+
+# Component definitions
+components:
+  - name: API Endpoints
+    description: Core API functionality
+    group: API
+    status_url: /health
+
+  - name: Authentication
+    description: API key and request signing
+    group: API
+    status_url: /auth/health
+
+  - name: Rate Limiting
+    description: Request throttling system
+    group: API
+    status_url: /health/ratelimit
+
+  - name: Cache System
+    description: Redis caching layer
+    group: Infrastructure
+    status_url: /health/cache
+
+  - name: Database
+    description: Primary data storage
+    group: Infrastructure
+    status_url: /health/db
+
+# Metric definitions
+metrics:
+  - name: API Response Time
+    description: Average response time across all endpoints
+    query: 'rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])'
+    unit: seconds
+    warning_threshold: 0.5
+    critical_threshold: 1.0
+
+  - name: Error Rate
+    description: Percentage of requests resulting in errors
+    query: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100'
+    unit: percentage
+    warning_threshold: 1
+    critical_threshold: 5
+
+  - name: Request Rate
+    description: Total requests per second
+    query: 'sum(rate(http_requests_total[5m]))'
+    unit: requests/second
+
+# Incident templates
+incident_templates:
+  api_degraded:
+    name: API Performance Degraded
+    message: We are experiencing elevated response times
+    components:
+      - API Endpoints
+    status: degraded
+
+  api_down:
+    name: API Service Disruption
+    message: The API is currently unavailable
+    components:
+      - API Endpoints
+      - Authentication
+    status: down
+
+  maintenance:
+    name: Scheduled Maintenance
+    message: System maintenance in progress
+    components:
+      - API Endpoints
+      - Authentication
+      - Rate Limiting
+    status: maintenance
+
+# Status page settings
+settings:
+  refresh_rate: 60
+  history_days: 90
+  timezone: UTC
+  support_url: https://support.example.com
+  status_webhook: https://hooks.slack.com/services/XXX/YYY/ZZZ
+
+# Notification channels
+notifications:
+  - type: email
+    name: System Alerts
+    recipients:
+      - ops@example.com
+      - oncall@example.com
+
+  - type: slack
+    name: #incidents
+    webhook: https://hooks.slack.com/services/XXX/YYY/ZZZ
+
+  - type: pagerduty
+    name: API Incidents
+    service_key: xxxxxxxxxxxxx
+
+# Maintenance windows
+maintenance_windows:
+  - name: Weekly Database Backup
+    description: Regular database maintenance and backup
+    schedule: "0 0 * * 0"  # Every Sunday at midnight
+    duration: 60  # minutes
+    components:
+      - Database
+
+  - name: Monthly System Updates
+    description: System updates and security patches
+    schedule: "0 0 1 * *"  # First day of each month
+    duration: 120  # minutes
+    components:
+      - API Endpoints
+      - Authentication
+      - Rate Limiting 
