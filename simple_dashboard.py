@@ -62,7 +62,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Database setup
 def get_db_path():
     if os.getenv("ENVIRONMENT") == "production":
-        return os.path.join(os.getcwd(), "dashboard.db")
+        # On Render, use the /data directory which is persistent
+        data_dir = os.path.join(os.getcwd(), "data")
+        os.makedirs(data_dir, exist_ok=True)
+        return os.path.join(data_dir, "dashboard.db")
     return os.path.join(os.getcwd(), "dashboard.db")
 
 def get_db():
@@ -139,170 +142,257 @@ def init_db():
             conn.close()
 
 def get_real_stats():
-    conn = sqlite3.connect(get_db_path())
-    c = conn.cursor()
-    
-    # Get total requests
-    c.execute("SELECT COUNT(*) FROM usage_stats")
-    total_requests = c.fetchone()[0]
-    
-    # Get active users (users with activity in last 24 hours)
-    c.execute("""
-        SELECT COUNT(DISTINCT user_id) FROM usage_stats 
-        WHERE datetime(timestamp) > datetime('now', '-24 hours')
-    """)
-    active_users = c.fetchone()[0]
-    
-    # Calculate error rate
-    c.execute("""
-        SELECT 
-            ROUND(
-                (CAST(COUNT(CASE WHEN success = 0 THEN 1 END) AS FLOAT) / 
-                CAST(COUNT(*) AS FLOAT)) * 100,
-                2
-            )
-        FROM usage_stats
-        WHERE datetime(timestamp) > datetime('now', '-24 hours')
-    """)
-    error_rate = c.fetchone()[0] or 0
-    
-    # Calculate average response time
-    c.execute("""
-        SELECT ROUND(AVG(response_time), 2)
-        FROM usage_stats
-        WHERE datetime(timestamp) > datetime('now', '-24 hours')
-    """)
-    avg_response_time = c.fetchone()[0] or 0
-    
-    # Get hourly usage for the last 12 hours
-    c.execute("""
-        SELECT 
-            strftime('%I %p', datetime(timestamp, 'localtime')) as hour,
-            COUNT(*) as requests
-        FROM usage_stats
-        WHERE datetime(timestamp) > datetime('now', '-12 hours')
-        GROUP BY hour
-        ORDER BY datetime(timestamp)
-    """)
-    hourly_data = c.fetchall()
-    
-    hours = [row[0] for row in hourly_data] if hourly_data else []
-    hourly_usage = [row[1] for row in hourly_data] if hourly_data else []
-    
-    conn.close()
-    
-    return {
-        "total_requests": total_requests,
-        "active_users": active_users,
-        "error_rate": error_rate,
-        "avg_response_time": avg_response_time,
-        "hourly_usage": hourly_usage,
-        "hours": hours
-    }
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get total requests (last 24 hours)
+        c.execute("""
+            SELECT COUNT(*) FROM usage_stats 
+            WHERE datetime(timestamp) > datetime('now', '-24 hours')
+        """)
+        total_requests = c.fetchone()[0] or 0
+        
+        # Get active users (last hour)
+        c.execute("""
+            SELECT COUNT(DISTINCT user_id) FROM usage_stats 
+            WHERE datetime(timestamp) > datetime('now', '-1 hour')
+        """)
+        active_users = c.fetchone()[0] or 0
+        
+        # Calculate error rate (last hour)
+        c.execute("""
+            SELECT 
+                ROUND(
+                    (CAST(COUNT(CASE WHEN success = 0 THEN 1 END) AS FLOAT) / 
+                    NULLIF(CAST(COUNT(*) AS FLOAT), 0)) * 100,
+                    2
+                )
+            FROM usage_stats
+            WHERE datetime(timestamp) > datetime('now', '-1 hour')
+        """)
+        error_rate = c.fetchone()[0] or 0
+        
+        # Calculate average response time (last hour)
+        c.execute("""
+            SELECT ROUND(AVG(response_time), 2)
+            FROM usage_stats
+            WHERE datetime(timestamp) > datetime('now', '-1 hour')
+        """)
+        avg_response_time = c.fetchone()[0] or 0
+        
+        # Get hourly usage for the last 12 hours
+        c.execute("""
+            SELECT 
+                strftime('%H:00', datetime(timestamp, 'localtime')) as hour,
+                COUNT(*) as requests
+            FROM usage_stats
+            WHERE datetime(timestamp) > datetime('now', '-12 hours')
+            GROUP BY hour
+            ORDER BY hour DESC
+            LIMIT 12
+        """)
+        hourly_data = c.fetchall()
+        
+        # Format hours and usage data
+        hours = []
+        hourly_usage = []
+        
+        for hour, requests in hourly_data:
+            hours.append(f"{hour}")
+            hourly_usage.append(requests)
+        
+        # If less than 12 hours of data, pad with zeros
+        while len(hours) < 12:
+            hours.append("00:00")
+            hourly_usage.append(0)
+            
+        # Reverse to show oldest first
+        hours.reverse()
+        hourly_usage.reverse()
+        
+        conn.close()
+        
+        return {
+            "total_requests": total_requests,
+            "active_users": active_users,
+            "error_rate": error_rate,
+            "avg_response_time": avg_response_time,
+            "hourly_usage": hourly_usage,
+            "hours": hours
+        }
+    except Exception as e:
+        print(f"Error getting stats: {str(e)}")
+        return {
+            "total_requests": 0,
+            "active_users": 0,
+            "error_rate": 0,
+            "avg_response_time": 0,
+            "hourly_usage": [0] * 12,
+            "hours": [f"{i}:00" for i in range(12)]
+        }
 
 def get_real_users():
-    conn = sqlite3.connect(get_db_path())
-    c = conn.cursor()
-    
-    # Get most recently active users
-    c.execute("""
-        SELECT 
-            u.name,
-            u.email,
-            u.avatar,
-            MAX(us.timestamp) as last_active
-        FROM users u
-        LEFT JOIN usage_stats us ON us.user_id = u.id
-        GROUP BY u.id
-        ORDER BY last_active DESC
-        LIMIT 5
-    """)
-    users = []
-    for row in c.fetchall():
-        # Calculate relative time
-        last_active = row[3]
-        if last_active:
-            try:
-                last_active_dt = datetime.fromisoformat(last_active.replace('Z', '+00:00'))
-                now = datetime.utcnow()
-                diff = now - last_active_dt
-                
-                if diff.days > 0:
-                    relative_time = f"{diff.days} days ago"
-                elif diff.seconds >= 3600:
-                    hours = diff.seconds // 3600
-                    relative_time = f"{hours} hours ago"
-                elif diff.seconds >= 60:
-                    minutes = diff.seconds // 60
-                    relative_time = f"{minutes} minutes ago"
-                else:
-                    relative_time = "just now"
-            except:
-                relative_time = "never"
-        else:
-            relative_time = "never"
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get most recently active users with their stats
+        c.execute("""
+            SELECT 
+                u.name,
+                u.email,
+                u.avatar,
+                MAX(us.timestamp) as last_active,
+                COUNT(us.id) as total_requests,
+                ROUND(AVG(CASE WHEN us.success = 1 THEN 1 ELSE 0 END) * 100, 2) as success_rate
+            FROM users u
+            LEFT JOIN usage_stats us ON us.user_id = u.id
+            GROUP BY u.id
+            ORDER BY last_active DESC
+            LIMIT 5
+        """)
+        
+        users = []
+        for row in c.fetchall():
+            name, email, avatar, last_active, total_requests, success_rate = row
             
-        users.append({
-            "name": row[0],
-            "email": row[1],
-            "avatar": row[2] or f"https://ui-avatars.com/api/?name={row[0].replace(' ', '+')}",
-            "last_active": relative_time
-        })
-    
-    conn.close()
-    return users
+            # Calculate relative time
+            if last_active:
+                try:
+                    last_active_dt = datetime.fromisoformat(last_active.replace('Z', '+00:00'))
+                    now = datetime.utcnow()
+                    diff = now - last_active_dt
+                    
+                    if diff.days > 0:
+                        relative_time = f"{diff.days}d ago"
+                    elif diff.seconds >= 3600:
+                        hours = diff.seconds // 3600
+                        relative_time = f"{hours}h ago"
+                    elif diff.seconds >= 60:
+                        minutes = diff.seconds // 60
+                        relative_time = f"{minutes}m ago"
+                    else:
+                        relative_time = "just now"
+                except:
+                    relative_time = "never"
+            else:
+                relative_time = "never"
+                
+            users.append({
+                "name": name or "Anonymous",
+                "email": email or "unknown@example.com",
+                "avatar": avatar or f"https://ui-avatars.com/api/?name={name or 'Anonymous'}&background=random",
+                "last_active": relative_time,
+                "total_requests": total_requests,
+                "success_rate": success_rate
+            })
+        
+        conn.close()
+        return users
+    except Exception as e:
+        print(f"Error getting users: {str(e)}")
+        return []
 
 def get_real_api_keys():
-    conn = sqlite3.connect(get_db_path())
-    c = conn.cursor()
-    
-    c.execute("""
-        SELECT id, name, created_at
-        FROM api_keys
-        WHERE revoked = 0
-        ORDER BY created_at DESC
-    """)
-    
-    api_keys = []
-    for row in c.fetchall():
-        api_keys.append({
-            "id": row[0],
-            "name": row[1],
-            "created_at": datetime.fromisoformat(row[2].replace('Z', '+00:00')).strftime('%Y-%m-%d')
-        })
-    
-    conn.close()
-    return api_keys
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT 
+                k.id,
+                k.name,
+                k.created_at,
+                COUNT(us.id) as usage_count,
+                MAX(us.timestamp) as last_used
+            FROM api_keys k
+            LEFT JOIN usage_stats us ON us.api_key_id = k.id
+            WHERE k.revoked = 0
+            GROUP BY k.id
+            ORDER BY last_used DESC NULLS LAST
+        """)
+        
+        api_keys = []
+        for row in c.fetchall():
+            key_id, name, created_at, usage_count, last_used = row
+            
+            # Format last used time
+            if last_used:
+                try:
+                    last_used_dt = datetime.fromisoformat(last_used.replace('Z', '+00:00'))
+                    last_used_str = last_used_dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    last_used_str = "Never"
+            else:
+                last_used_str = "Never"
+            
+            api_keys.append({
+                "id": key_id,
+                "name": name,
+                "created_at": datetime.fromisoformat(created_at.replace('Z', '+00:00')).strftime('%Y-%m-%d'),
+                "usage_count": usage_count,
+                "last_used": last_used_str
+            })
+        
+        conn.close()
+        return api_keys
+    except Exception as e:
+        print(f"Error getting API keys: {str(e)}")
+        return []
 
 def get_real_subscriptions():
-    conn = sqlite3.connect(get_db_path())
-    c = conn.cursor()
-    
-    c.execute("""
-        SELECT 
-            s.id,
-            s.plan_name,
-            u.email as user_email,
-            s.expires_at,
-            s.status
-        FROM subscriptions s
-        JOIN users u ON u.id = s.user_id
-        WHERE s.status != 'cancelled'
-        ORDER BY s.expires_at ASC
-    """)
-    
-    subscriptions = []
-    for row in c.fetchall():
-        subscriptions.append({
-            "id": row[0],
-            "plan_name": row[1],
-            "user_email": row[2],
-            "expires_at": datetime.fromisoformat(row[3].replace('Z', '+00:00')).strftime('%Y-%m-%d'),
-            "status": row[4]
-        })
-    
-    conn.close()
-    return subscriptions
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT 
+                s.id,
+                s.plan_name,
+                u.email as user_email,
+                s.expires_at,
+                s.status,
+                COUNT(us.id) as api_calls,
+                ROUND(AVG(CASE WHEN us.success = 1 THEN 1 ELSE 0 END) * 100, 2) as success_rate
+            FROM subscriptions s
+            JOIN users u ON u.id = s.user_id
+            LEFT JOIN usage_stats us ON us.user_id = u.id
+            WHERE s.status != 'cancelled'
+            GROUP BY s.id
+            ORDER BY s.expires_at ASC
+        """)
+        
+        subscriptions = []
+        for row in c.fetchall():
+            sub_id, plan_name, email, expires_at, status, api_calls, success_rate = row
+            
+            # Calculate days until expiration
+            try:
+                expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                now = datetime.utcnow()
+                days_left = (expires_dt - now).days
+                if days_left < 0:
+                    status = "expired"
+            except:
+                days_left = 0
+            
+            subscriptions.append({
+                "id": sub_id,
+                "plan_name": plan_name,
+                "user_email": email,
+                "expires_at": datetime.fromisoformat(expires_at.replace('Z', '+00:00')).strftime('%Y-%m-%d'),
+                "status": status,
+                "days_left": days_left,
+                "api_calls": api_calls,
+                "success_rate": success_rate
+            })
+        
+        conn.close()
+        return subscriptions
+    except Exception as e:
+        print(f"Error getting subscriptions: {str(e)}")
+        return []
 
 @app.on_event("startup")
 async def startup_event():
@@ -470,71 +560,25 @@ async def dashboard(request: Request):
     except (JWTError, IndexError):
         return RedirectResponse(url='/', status_code=303)
     
-    # Mock data for initial dashboard
-    mock_stats = {
-        "total_requests": 1000,
-        "active_users": 50,
-        "error_rate": 2.5,
-        "avg_response_time": 150,
-        "hourly_usage": [45, 52, 38, 65, 72, 58, 49, 55, 63, 58, 50, 47],
-        "hours": ["12 AM", "1 AM", "2 AM", "3 AM", "4 AM", "5 AM", 
-                 "6 AM", "7 AM", "8 AM", "9 AM", "10 AM", "11 AM"]
-    }
+    # Get real data
+    stats = get_real_stats()
+    users = get_real_users()
+    api_keys = get_real_api_keys()
+    subscriptions = get_real_subscriptions()
     
-    mock_users = [
-        {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "avatar": "https://ui-avatars.com/api/?name=John+Doe",
-            "last_active": "2 hours ago"
-        },
-        {
-            "name": "Jane Smith",
-            "email": "jane@example.com",
-            "avatar": "https://ui-avatars.com/api/?name=Jane+Smith",
-            "last_active": "5 minutes ago"
-        }
-    ]
-    
-    mock_api_keys = [
-        {
-            "id": "key1",
-            "name": "Production API Key",
-            "created_at": "2024-01-01"
-        },
-        {
-            "id": "key2",
-            "name": "Development API Key",
-            "created_at": "2024-01-15"
-        }
-    ]
-    
-    mock_subscriptions = [
-        {
-            "id": "sub1",
-            "plan_name": "Pro Plan",
-            "user_email": "company@example.com",
-            "expires_at": "2024-12-31",
-            "status": "active"
-        },
-        {
-            "id": "sub2",
-            "plan_name": "Basic Plan",
-            "user_email": "startup@example.com",
-            "expires_at": "2024-06-30",
-            "status": "active"
-        }
-    ]
+    # Add stats data for auto-refresh
+    stats_json = json.dumps(stats)
     
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "user": username,
-            "stats": mock_stats,
-            "users": mock_users,
-            "api_keys": mock_api_keys,
-            "subscriptions": mock_subscriptions
+            "stats": stats,
+            "users": users,
+            "api_keys": api_keys,
+            "subscriptions": subscriptions,
+            "stats_json": stats_json
         }
     )
 
@@ -621,10 +665,12 @@ async def create_api_key(request: Request, name: str):
 if __name__ == "__main__":
     init_db()
     init_admin()
+    port = int(os.getenv("PORT", "8000"))
+    print(f"Starting server on port {port}")
     uvicorn.run(
         app,
-        host="127.0.0.1",
-        port=int(os.getenv("PORT", "8000")),
+        host="0.0.0.0",  # Required for Render
+        port=port,
         proxy_headers=True,
         forwarded_allow_ips="*"
     ) 

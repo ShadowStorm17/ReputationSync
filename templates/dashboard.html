@@ -8,16 +8,88 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://unpkg.com/gsap@3.12.0/dist/gsap.min.js"></script>
     <style>
         .fade-in { animation: fadeIn 0.5s ease-in; }
         .slide-in { animation: slideIn 0.5s ease-out; }
+        .scale-in { animation: scaleIn 0.3s ease-out; }
+        .pulse { animation: pulse 2s infinite; }
+        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .stat-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes pulse { 
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+            background-size: 200% 200%;
+            animation: gradientBG 15s ease infinite;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item:hover {
+            transform: translateX(10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-white">
-    <div class="min-h-screen">
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loading" class="loading">
+        <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_szviypry.json" background="transparent" speed="1" style="width: 150px; height: 150px;" autoplay loop></lottie-player>
+    </div>
+
+    <div class="flex">
         <!-- Sidebar -->
         <aside class="fixed left-0 top-0 h-screen w-64 bg-gray-800 p-4 transform transition-transform duration-300 ease-in-out">
             <div class="flex items-center mb-8">
@@ -25,30 +97,57 @@
                 <h1 class="text-xl font-bold ml-2">Admin Panel</h1>
             </div>
             <nav class="space-y-2">
-                <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors active">Dashboard</a>
-                <a href="#users" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">Users</a>
-                <a href="#subscriptions" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">Subscriptions</a>
-                <a href="#api-keys" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">API Keys</a>
-                <a href="#monitoring" class="block py-2 px-4 rounded hover:bg-gray-700 transition-colors">Monitoring</a>
+                <a href="#dashboard" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qp1q7msk.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <span class="ml-2">Dashboard</span>
+                    </div>
+                </a>
+                <a href="#users" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_ukjcyxsc.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <span class="ml-2">Users</span>
+                    </div>
+                </a>
+                <a href="#subscriptions" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_yqyt1ikq.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <span class="ml-2">Subscriptions</span>
+                    </div>
+                </a>
+                <a href="#api-keys" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qqtavvc0.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <span class="ml-2">API Keys</span>
+                    </div>
+                </a>
             </nav>
         </aside>
 
         <!-- Main Content -->
-        <main class="ml-64 p-8">
+        <main class="ml-64 p-8 w-full">
             <!-- Header -->
             <header class="mb-8 flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold fade-in">Welcome back, {{ user }}</h1>
                     <p class="text-gray-400">Here's what's happening with your API</p>
                 </div>
-                <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition-colors">
-                    Logout
-                </button>
+                <div class="flex items-center space-x-4">
+                    <button onclick="refreshData()" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                    <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition-colors">
+                        Logout
+                    </button>
+                </div>
             </header>
 
             <!-- Hidden stats data for auto-refresh -->
             <script id="stats-data" type="application/json">
-                {{ stats|tojson }}
+                {{ stats_json|safe }}
             </script>
 
             <!-- Stats Grid -->
@@ -58,32 +157,32 @@
                         <h3 class="text-gray-100">Total Requests</h3>
                         <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qp1q7msk.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
                     </div>
-                    <div class="text-3xl font-bold mt-2">{{ stats.total_requests }}</div>
-                    <div class="text-sm text-gray-200 mt-2">↑ 12% from last month</div>
+                    <div id="total-requests" class="text-3xl font-bold mt-2">{{ stats.total_requests }}</div>
+                    <div class="text-sm text-gray-200 mt-2">Last 24 hours</div>
                 </div>
                 <div class="stat-card bg-gradient-to-br from-green-600 to-green-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.2s">
                     <div class="flex items-center justify-between">
                         <h3 class="text-gray-100">Active Users</h3>
                         <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_ukjcyxsc.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
                     </div>
-                    <div class="text-3xl font-bold mt-2">{{ stats.active_users }}</div>
-                    <div class="text-sm text-gray-200 mt-2">↑ 8% from last week</div>
+                    <div id="active-users" class="text-3xl font-bold mt-2">{{ stats.active_users }}</div>
+                    <div class="text-sm text-gray-200 mt-2">Last hour</div>
                 </div>
                 <div class="stat-card bg-gradient-to-br from-yellow-600 to-yellow-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.3s">
                     <div class="flex items-center justify-between">
                         <h3 class="text-gray-100">Error Rate</h3>
                         <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_yqyt1ikq.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
                     </div>
-                    <div class="text-3xl font-bold mt-2">{{ stats.error_rate }}%</div>
-                    <div class="text-sm text-gray-200 mt-2">↓ 3% improvement</div>
+                    <div id="error-rate" class="text-3xl font-bold mt-2">{{ stats.error_rate }}%</div>
+                    <div class="text-sm text-gray-200 mt-2">Last hour</div>
                 </div>
                 <div class="stat-card bg-gradient-to-br from-purple-600 to-purple-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.4s">
                     <div class="flex items-center justify-between">
                         <h3 class="text-gray-100">Response Time</h3>
                         <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qqtavvc0.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
                     </div>
-                    <div class="text-3xl font-bold mt-2">{{ stats.avg_response_time }}ms</div>
-                    <div class="text-sm text-gray-200 mt-2">↓ 15ms improvement</div>
+                    <div id="avg-response-time" class="text-3xl font-bold mt-2">{{ stats.avg_response_time }}ms</div>
+                    <div class="text-sm text-gray-200 mt-2">Last hour</div>
                 </div>
             </div>
 
@@ -98,9 +197,9 @@
                 <!-- Recent Users -->
                 <div class="bg-gray-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.6s">
                     <h3 class="text-xl font-semibold mb-4">Recent Users</h3>
-                    <div class="space-y-4">
+                    <div id="users-list" class="space-y-4">
                         {% for user in users %}
-                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors scale-in">
                             <div class="flex items-center">
                                 <img src="{{ user.avatar }}" alt="{{ user.name }}" class="w-10 h-10 rounded-full">
                                 <div class="ml-3">
@@ -108,8 +207,13 @@
                                     <div class="text-sm text-gray-400">{{ user.email }}</div>
                                 </div>
                             </div>
-                            <div class="text-sm text-gray-400">
-                                Last active: {{ user.last_active }}
+                            <div class="text-right">
+                                <div class="text-sm text-gray-400">
+                                    Last active: {{ user.last_active }}
+                                </div>
+                                <div class="text-sm text-gray-400">
+                                    Success rate: {{ user.success_rate }}%
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -127,13 +231,15 @@
                             Create New Key
                         </button>
                     </div>
-                    <div class="space-y-4">
+                    <div id="api-keys-list" class="space-y-4">
                         {% for key in api_keys %}
-                        <div class="p-4 bg-gray-700 rounded-lg">
+                        <div class="p-4 bg-gray-700 rounded-lg scale-in">
                             <div class="flex justify-between items-center">
                                 <div>
                                     <div class="font-medium">{{ key.name }}</div>
                                     <div class="text-sm text-gray-400">Created: {{ key.created_at }}</div>
+                                    <div class="text-sm text-gray-400">Usage: {{ key.usage_count }} requests</div>
+                                    <div class="text-sm text-gray-400">Last used: {{ key.last_used }}</div>
                                 </div>
                                 <div class="flex space-x-2">
                                     <button onclick="revokeKey('{{ key.id }}')" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700 transition-colors">Revoke</button>
@@ -148,17 +254,22 @@
                 <!-- Subscriptions -->
                 <div class="bg-gray-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.8s">
                     <h3 class="text-xl font-semibold mb-4">Active Subscriptions</h3>
-                    <div class="space-y-4">
+                    <div id="subscriptions-list" class="space-y-4">
                         {% for sub in subscriptions %}
-                        <div class="p-4 bg-gray-700 rounded-lg">
+                        <div class="p-4 bg-gray-700 rounded-lg scale-in">
                             <div class="flex justify-between items-center">
                                 <div>
                                     <div class="font-medium">{{ sub.plan_name }}</div>
                                     <div class="text-sm text-gray-400">User: {{ sub.user_email }}</div>
+                                    <div class="text-sm text-gray-400">API Calls: {{ sub.api_calls }}</div>
+                                    <div class="text-sm text-gray-400">Success Rate: {{ sub.success_rate }}%</div>
                                 </div>
                                 <div class="flex items-center space-x-4">
-                                    <div class="text-sm text-gray-400">
-                                        Expires: {{ sub.expires_at }}
+                                    <div class="text-right">
+                                        <div class="text-sm text-gray-400">Expires: {{ sub.expires_at }}</div>
+                                        <div class="text-sm {% if sub.days_left < 7 %}text-red-400{% else %}text-gray-400{% endif %}">
+                                            {{ sub.days_left }} days left
+                                        </div>
                                     </div>
                                     <button onclick="cancelSubscription('{{ sub.id }}')" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700 transition-colors">Cancel</button>
                                 </div>
@@ -172,7 +283,7 @@
     </div>
 
     <script>
-        // Initialize API Usage Chart
+        // Initialize API Usage Chart with animations
         const apiUsageOptions = {
             chart: {
                 type: 'area',
@@ -204,24 +315,102 @@
                     shadeIntensity: 1,
                     opacityFrom: 0.7,
                     opacityTo: 0.3,
+                    stops: [0, 90, 100]
                 }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
             },
             xaxis: {
                 categories: {{ stats.hours|tojson }},
-                labels: { style: { colors: '#ccc' } }
+                labels: { 
+                    style: { colors: '#ccc' },
+                    rotateAlways: true,
+                    rotate: -45
+                }
             },
-            yaxis: { labels: { style: { colors: '#ccc' } } },
+            yaxis: { 
+                labels: { style: { colors: '#ccc' } },
+                tickAmount: 5
+            },
             grid: { borderColor: '#404040' },
-            theme: { mode: 'dark' }
+            theme: { mode: 'dark' },
+            tooltip: {
+                theme: 'dark',
+                x: {
+                    show: true
+                }
+            }
         };
         
         const apiUsageChart = new ApexCharts(document.querySelector("#apiUsageChart"), apiUsageOptions);
         apiUsageChart.render();
 
+        // Show loading animation
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        // Hide loading animation
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Refresh data
+        async function refreshData() {
+            showLoading();
+            try {
+                const response = await fetch(window.location.href);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update stats
+                document.getElementById('total-requests').textContent = doc.getElementById('total-requests').textContent;
+                document.getElementById('active-users').textContent = doc.getElementById('active-users').textContent;
+                document.getElementById('error-rate').textContent = doc.getElementById('error-rate').textContent;
+                document.getElementById('avg-response-time').textContent = doc.getElementById('avg-response-time').textContent;
+                
+                // Update lists
+                document.getElementById('users-list').innerHTML = doc.getElementById('users-list').innerHTML;
+                document.getElementById('api-keys-list').innerHTML = doc.getElementById('api-keys-list').innerHTML;
+                document.getElementById('subscriptions-list').innerHTML = doc.getElementById('subscriptions-list').innerHTML;
+                
+                // Update chart
+                const statsData = JSON.parse(doc.getElementById('stats-data').textContent);
+                apiUsageChart.updateSeries([{
+                    data: statsData.hourly_usage
+                }]);
+                apiUsageChart.updateOptions({
+                    xaxis: {
+                        categories: statsData.hours
+                    }
+                });
+                
+                // Animate new elements
+                gsap.from('.scale-in', {
+                    scale: 0.95,
+                    opacity: 0,
+                    duration: 0.3,
+                    stagger: 0.1,
+                    ease: 'power2.out'
+                });
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
         // API Key Management
         async function createApiKey() {
+            showLoading();
             const name = prompt('Enter a name for the new API key:');
-            if (!name) return;
+            if (!name) {
+                hideLoading();
+                return;
+            }
 
             try {
                 const response = await fetch('/api/keys/create', {
@@ -235,103 +424,117 @@
                 if (response.ok) {
                     const data = await response.json();
                     alert(`New API Key created!\n\nKey: ${data.key}\n\nPlease save this key as it won't be shown again.`);
-                    location.reload();
+                    refreshData();
                 } else {
                     alert('Failed to create API key');
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to create API key');
+            } finally {
+                hideLoading();
             }
         }
 
         async function revokeKey(keyId) {
-            if (confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
-                try {
-                    const response = await fetch(`/api/keys/${keyId}/revoke`, {
-                        method: 'POST',
-                    });
+            if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+                return;
+            }
 
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        alert('Failed to revoke API key');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
+            showLoading();
+            try {
+                const response = await fetch(`/api/keys/${keyId}/revoke`, {
+                    method: 'POST',
+                });
+
+                if (response.ok) {
+                    refreshData();
+                } else {
                     alert('Failed to revoke API key');
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to revoke API key');
+            } finally {
+                hideLoading();
             }
         }
 
         async function regenerateKey(keyId) {
-            if (confirm('Are you sure you want to regenerate this API key? The old key will stop working immediately.')) {
-                try {
-                    const response = await fetch(`/api/keys/${keyId}/regenerate`, {
-                        method: 'POST',
-                    });
+            if (!confirm('Are you sure you want to regenerate this API key? The old key will stop working immediately.')) {
+                return;
+            }
 
-                    if (response.ok) {
-                        const data = await response.json();
-                        alert(`New API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`);
-                        location.reload();
-                    } else {
-                        alert('Failed to regenerate API key');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
+            showLoading();
+            try {
+                const response = await fetch(`/api/keys/${keyId}/regenerate`, {
+                    method: 'POST',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`New API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`);
+                    refreshData();
+                } else {
                     alert('Failed to regenerate API key');
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to regenerate API key');
+            } finally {
+                hideLoading();
             }
         }
 
         // Subscription Management
         async function cancelSubscription(subId) {
-            if (confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) {
-                try {
-                    const response = await fetch(`/api/subscriptions/${subId}/cancel`, {
-                        method: 'POST',
-                    });
+            if (!confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) {
+                return;
+            }
 
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        alert('Failed to cancel subscription');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
+            showLoading();
+            try {
+                const response = await fetch(`/api/subscriptions/${subId}/cancel`, {
+                    method: 'POST',
+                });
+
+                if (response.ok) {
+                    refreshData();
+                } else {
                     alert('Failed to cancel subscription');
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to cancel subscription');
+            } finally {
+                hideLoading();
             }
         }
 
-        // Auto-refresh data every 5 minutes
-        setInterval(() => {
-            fetch(window.location.href)
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // Update stats
-                    const stats = JSON.parse(doc.getElementById('stats-data').textContent);
-                    document.getElementById('total-requests').textContent = stats.total_requests;
-                    document.getElementById('active-users').textContent = stats.active_users;
-                    document.getElementById('error-rate').textContent = stats.error_rate + '%';
-                    document.getElementById('avg-response-time').textContent = stats.avg_response_time + 'ms';
-                    
-                    // Update chart
-                    apiUsageChart.updateSeries([{
-                        data: stats.hourly_usage
-                    }]);
-                    apiUsageChart.updateOptions({
-                        xaxis: {
-                            categories: stats.hours
-                        }
-                    });
-                })
-                .catch(console.error);
-        }, 5 * 60 * 1000); // 5 minutes
+        // Auto-refresh data every minute
+        setInterval(refreshData, 60000);
+
+        // Hide loading screen on initial load
+        window.addEventListener('load', () => {
+            hideLoading();
+            
+            // Initial animations
+            gsap.from('.slide-in', {
+                y: 20,
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.1,
+                ease: 'power2.out'
+            });
+            
+            gsap.from('.scale-in', {
+                scale: 0.95,
+                opacity: 0,
+                duration: 0.3,
+                stagger: 0.1,
+                ease: 'power2.out'
+            });
+        });
 
         // Logout
         function logout() {
