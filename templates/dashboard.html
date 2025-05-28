@@ -10,46 +10,155 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://unpkg.com/gsap@3.12.0/dist/gsap.min.js"></script>
     <style>
-        .fade-in { animation: fadeIn 0.5s ease-in; }
-        .slide-in { animation: slideIn 0.5s ease-out; }
-        .scale-in { animation: scaleIn 0.3s ease-out; }
-        .pulse { animation: pulse 2s infinite; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes pulse { 
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        /* Modern Apple-inspired Design System */
+        :root {
+            --primary-bg: #000000;
+            --secondary-bg: #1c1c1e;
+            --card-bg: rgba(28, 28, 30, 0.8);
+            --accent-color: #0066cc;
+            --text-primary: #ffffff;
+            --text-secondary: #86868b;
+            --success-color: #28cd41;
+            --warning-color: #ff9f0a;
+            --error-color: #ff453a;
+            --border-radius: 12px;
+            --transition-speed: 0.3s;
         }
-        
+
+        /* Global Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Glassmorphism */
+        .glass-effect {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Modern Card Design */
         .stat-card {
-            transition: all 0.3s ease;
-            background-size: 200% 200%;
-            animation: gradientBG 15s ease infinite;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: all var(--transition-speed) ease-in-out;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
-        
+
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
-        
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+
+        /* Button Styles */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: all var(--transition-speed) ease-in-out;
+            background: var(--accent-color);
+            color: var(--text-primary);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
-        
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 4px 16px rgba(255, 69, 58, 0.3);
+        }
+
+        /* Navigation */
         .nav-item {
-            transition: all 0.3s ease;
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            color: var(--text-secondary);
+            transition: all var(--transition-speed) ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
-        
-        .nav-item:hover {
-            transform: translateX(10px);
-            background: rgba(255, 255, 255, 0.1);
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--secondary-bg);
+            color: var(--text-primary);
         }
-        
+
+        .nav-item svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 1.5rem 0;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Form Elements */
+        input, select, textarea {
+            background: var(--secondary-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            width: 100%;
+            transition: all var(--transition-speed) ease-in-out;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2);
+        }
+
+        /* Loading Animation */
         .loading {
             position: fixed;
             top: 0;
@@ -58,28 +167,116 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.8);
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             z-index: 9999;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity var(--transition-speed) ease-in-out;
         }
-        
-        /* Modern Scrollbar */
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            background: var(--accent-color);
+            color: var(--text-primary);
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1rem);
+            opacity: 0;
+            transition: all var(--transition-speed) ease-in-out;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Charts */
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
-        
+
         ::-webkit-scrollbar-track {
-            background: #1a1a1a;
+            background: var(--secondary-bg);
         }
-        
+
         ::-webkit-scrollbar-thumb {
-            background: #4a5568;
+            background: var(--text-secondary);
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
-            background: #718096;
+            background: var(--text-primary);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn var(--transition-speed) ease-out;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .btn {
+                padding: 0.5rem 1rem;
+            }
+
+            .nav-item {
+                padding: 0.5rem 0.75rem;
+            }
         }
     </style>
 </head>
@@ -93,31 +290,38 @@
         <!-- Sidebar -->
         <aside class="fixed left-0 top-0 h-screen w-64 bg-gray-800 p-4 transform transition-transform duration-300 ease-in-out">
             <div class="flex items-center mb-8">
-                <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_uwR49r.json" background="transparent" speed="1" style="width: 40px; height: 40px;" autoplay loop></lottie-player>
-                <h1 class="text-xl font-bold ml-2">Admin Panel</h1>
+                <div class="text-xl font-bold ml-2">Admin Panel</div>
             </div>
             <nav class="space-y-2">
                 <a href="#dashboard" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
                     <div class="flex items-center">
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qp1q7msk.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
                         <span class="ml-2">Dashboard</span>
                     </div>
                 </a>
                 <a href="#users" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
                     <div class="flex items-center">
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_ukjcyxsc.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
                         <span class="ml-2">Users</span>
                     </div>
                 </a>
                 <a href="#subscriptions" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
                     <div class="flex items-center">
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_yqyt1ikq.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                        </svg>
                         <span class="ml-2">Subscriptions</span>
                     </div>
                 </a>
                 <a href="#api-keys" class="nav-item block py-2 px-4 rounded hover:bg-gray-700 transition-colors">
                     <div class="flex items-center">
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qqtavvc0.json" background="transparent" speed="1" style="width: 24px; height: 24px;" autoplay loop></lottie-player>
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                        </svg>
                         <span class="ml-2">API Keys</span>
                     </div>
                 </a>
@@ -125,66 +329,79 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="ml-64 p-8 w-full">
+        <main class="ml-64 p-8 w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen">
             <!-- Header -->
-            <header class="mb-8 flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold fade-in">Welcome back, {{ user }}</h1>
-                    <p class="text-gray-400">Here's what's happening with your API</p>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button onclick="refreshData()" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Refresh
-                    </button>
-                    <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition-colors">
-                        Logout
-                    </button>
+            <header class="mb-8">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">Welcome back, {{ user }}</h1>
+                        <p class="text-gray-400 mt-2">Here's what's happening with your API</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="refreshData()" class="bg-gradient-to-r from-blue-500 to-blue-700 px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-800 transition-all duration-300 flex items-center shadow-lg hover:shadow-blue-500/20">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                        <button onclick="logout()" class="bg-gradient-to-r from-red-500 to-red-700 px-4 py-2 rounded-lg hover:from-red-600 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-red-500/20">
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </header>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-blue-500/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-blue-100">Total Requests</h3>
+                        <svg class="w-6 h-6 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div id="total-requests" class="text-4xl font-bold text-white mb-2">{{ stats.total_requests }}</div>
+                    <div class="text-sm text-blue-200">Last 24 hours</div>
+                </div>
+
+                <div class="stat-card bg-gradient-to-br from-green-500 to-green-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-green-500/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-green-100">Active Users</h3>
+                        <svg class="w-6 h-6 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                    <div id="active-users" class="text-4xl font-bold text-white mb-2">{{ stats.active_users }}</div>
+                    <div class="text-sm text-green-200">Last hour</div>
+                </div>
+
+                <div class="stat-card bg-gradient-to-br from-amber-500 to-amber-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-amber-500/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-amber-100">Error Rate</h3>
+                        <svg class="w-6 h-6 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div id="error-rate" class="text-4xl font-bold text-white mb-2">{{ stats.error_rate }}%</div>
+                    <div class="text-sm text-amber-200">Last hour</div>
+                </div>
+
+                <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-700 p-6 rounded-xl shadow-xl backdrop-blur-sm hover:shadow-purple-500/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-purple-100">Response Time</h3>
+                        <svg class="w-6 h-6 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div id="avg-response-time" class="text-4xl font-bold text-white mb-2">{{ stats.avg_response_time }}ms</div>
+                    <div class="text-sm text-purple-200">Last hour</div>
+                </div>
+            </div>
 
             <!-- Hidden stats data for auto-refresh -->
             <script id="stats-data" type="application/json">
                 {{ stats_json|safe }}
             </script>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="stat-card bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.1s">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-gray-100">Total Requests</h3>
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qp1q7msk.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
-                    </div>
-                    <div id="total-requests" class="text-3xl font-bold mt-2">{{ stats.total_requests }}</div>
-                    <div class="text-sm text-gray-200 mt-2">Last 24 hours</div>
-                </div>
-                <div class="stat-card bg-gradient-to-br from-green-600 to-green-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.2s">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-gray-100">Active Users</h3>
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_ukjcyxsc.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
-                    </div>
-                    <div id="active-users" class="text-3xl font-bold mt-2">{{ stats.active_users }}</div>
-                    <div class="text-sm text-gray-200 mt-2">Last hour</div>
-                </div>
-                <div class="stat-card bg-gradient-to-br from-yellow-600 to-yellow-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.3s">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-gray-100">Error Rate</h3>
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_yqyt1ikq.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
-                    </div>
-                    <div id="error-rate" class="text-3xl font-bold mt-2">{{ stats.error_rate }}%</div>
-                    <div class="text-sm text-gray-200 mt-2">Last hour</div>
-                </div>
-                <div class="stat-card bg-gradient-to-br from-purple-600 to-purple-800 p-6 rounded-lg shadow-lg slide-in" style="animation-delay: 0.4s">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-gray-100">Response Time</h3>
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_qqtavvc0.json" background="transparent" speed="1" style="width: 30px; height: 30px;" autoplay loop></lottie-player>
-                    </div>
-                    <div id="avg-response-time" class="text-3xl font-bold mt-2">{{ stats.avg_response_time }}ms</div>
-                    <div class="text-sm text-gray-200 mt-2">Last hour</div>
-                </div>
-            </div>
 
             <!-- Main Sections -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -302,7 +519,8 @@
                         enabled: true,
                         speed: 350
                     }
-                }
+                },
+                background: 'transparent'
             },
             colors: ['#6366f1'],
             series: [{
@@ -312,10 +530,23 @@
             fill: {
                 type: 'gradient',
                 gradient: {
+                    type: 'vertical',
                     shadeIntensity: 1,
                     opacityFrom: 0.7,
-                    opacityTo: 0.3,
-                    stops: [0, 90, 100]
+                    opacityTo: 0.1,
+                    stops: [0, 90, 100],
+                    colorStops: [
+                        {
+                            offset: 0,
+                            color: '#6366f1',
+                            opacity: 0.7
+                        },
+                        {
+                            offset: 100,
+                            color: '#6366f1',
+                            opacity: 0.1
+                        }
+                    ]
                 }
             },
             stroke: {
@@ -334,12 +565,28 @@
                 labels: { style: { colors: '#ccc' } },
                 tickAmount: 5
             },
-            grid: { borderColor: '#404040' },
+            grid: { 
+                borderColor: '#404040',
+                strokeDashArray: 5,
+                xaxis: {
+                    lines: {
+                        show: true
+                    }
+                },
+                yaxis: {
+                    lines: {
+                        show: true
+                    }
+                }
+            },
             theme: { mode: 'dark' },
             tooltip: {
                 theme: 'dark',
-                x: {
-                    show: true
+                x: { show: true },
+                y: {
+                    formatter: function(value) {
+                        return value + ' requests'
+                    }
                 }
             }
         };
@@ -347,90 +594,175 @@
         const apiUsageChart = new ApexCharts(document.querySelector("#apiUsageChart"), apiUsageOptions);
         apiUsageChart.render();
 
-        // Show loading animation
+        // Show loading animation with fade
         function showLoading() {
-            document.getElementById('loading').style.display = 'flex';
+            const loading = document.getElementById('loading');
+            loading.style.display = 'flex';
+            loading.style.opacity = '0';
+            setTimeout(() => loading.style.opacity = '1', 10);
         }
 
-        // Hide loading animation
+        // Hide loading animation with fade
         function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
+            const loading = document.getElementById('loading');
+            loading.style.opacity = '0';
+            setTimeout(() => loading.style.display = 'none', 300);
         }
 
-        // Refresh data
+        // Refresh data with improved error handling and animations
         async function refreshData() {
             showLoading();
             try {
                 const response = await fetch(window.location.href);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const html = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // Update stats
-                document.getElementById('total-requests').textContent = doc.getElementById('total-requests').textContent;
-                document.getElementById('active-users').textContent = doc.getElementById('active-users').textContent;
-                document.getElementById('error-rate').textContent = doc.getElementById('error-rate').textContent;
-                document.getElementById('avg-response-time').textContent = doc.getElementById('avg-response-time').textContent;
-                
-                // Update lists
-                document.getElementById('users-list').innerHTML = doc.getElementById('users-list').innerHTML;
-                document.getElementById('api-keys-list').innerHTML = doc.getElementById('api-keys-list').innerHTML;
-                document.getElementById('subscriptions-list').innerHTML = doc.getElementById('subscriptions-list').innerHTML;
-                
-                // Update chart
-                const statsData = JSON.parse(doc.getElementById('stats-data').textContent);
-                apiUsageChart.updateSeries([{
-                    data: statsData.hourly_usage
-                }]);
-                apiUsageChart.updateOptions({
-                    xaxis: {
-                        categories: statsData.hours
-                    }
+                // Update stats with animations
+                const stats = ['total-requests', 'active-users', 'error-rate', 'avg-response-time'];
+                stats.forEach(id => {
+                    const element = document.getElementById(id);
+                    const newValue = doc.getElementById(id).textContent;
+                    animateNumber(element, newValue);
                 });
                 
-                // Animate new elements
-                gsap.from('.scale-in', {
-                    scale: 0.95,
-                    opacity: 0,
-                    duration: 0.3,
-                    stagger: 0.1,
-                    ease: 'power2.out'
+                // Update lists with fade animations
+                ['users-list', 'api-keys-list', 'subscriptions-list'].forEach(id => {
+                    const element = document.getElementById(id);
+                    const newContent = doc.getElementById(id).innerHTML;
+                    fadeContent(element, newContent);
                 });
+                
+                // Update chart with animation
+                try {
+                    const statsData = JSON.parse(doc.getElementById('stats-data').textContent);
+                    apiUsageChart.updateSeries([{
+                        data: statsData.hourly_usage
+                    }], true);
+                    apiUsageChart.updateOptions({
+                        xaxis: {
+                            categories: statsData.hours
+                        }
+                    });
+                } catch (chartError) {
+                    console.error('Error updating chart:', chartError);
+                }
+                
             } catch (error) {
                 console.error('Error refreshing data:', error);
+                showNotification('Error refreshing data. Please try again.', 'error');
             } finally {
                 hideLoading();
             }
         }
 
-        // API Key Management
-        async function createApiKey() {
-            showLoading();
-            const name = prompt('Enter a name for the new API key:');
-            if (!name) {
-                hideLoading();
-                return;
+        // Animate number changes
+        function animateNumber(element, newValue) {
+            const start = parseFloat(element.textContent.replace(/[^0-9.-]/g, ''));
+            const end = parseFloat(newValue.replace(/[^0-9.-]/g, ''));
+            const duration = 1000;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const current = start + (end - start) * easeOutQuart(progress);
+                element.textContent = newValue.replace(/[0-9.]+/, Math.round(current));
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
             }
+            
+            requestAnimationFrame(update);
+        }
 
+        // Easing function for smooth animations
+        function easeOutQuart(x) {
+            return 1 - Math.pow(1 - x, 4);
+        }
+
+        // Fade content replacement
+        function fadeContent(element, newContent) {
+            gsap.to(element, {
+                opacity: 0,
+                duration: 0.2,
+                onComplete: () => {
+                    element.innerHTML = newContent;
+                    gsap.to(element, {
+                        opacity: 1,
+                        duration: 0.2,
+                        onComplete: () => {
+                            gsap.from(element.children, {
+                                y: 20,
+                                opacity: 0,
+                                duration: 0.3,
+                                stagger: 0.05
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white transform transition-all duration-300 ${
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            gsap.fromTo(notification,
+                { opacity: 0, y: -20 },
+                { opacity: 1, y: 0, duration: 0.3 }
+            );
+            
+            setTimeout(() => {
+                gsap.to(notification, {
+                    opacity: 0,
+                    y: -20,
+                    duration: 0.3,
+                    onComplete: () => notification.remove()
+                });
+            }, 3000);
+        }
+
+        // API Key Management with improved feedback
+        async function createApiKey() {
+            const name = prompt('Enter a name for the new API key:');
+            if (!name) return;
+
+            showLoading();
             try {
                 const response = await fetch('/api/keys/create', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    alert(`New API Key created!\n\nKey: ${data.key}\n\nPlease save this key as it won't be shown again.`);
-                    refreshData();
+                if (!response.ok) throw new Error('Failed to create API key');
+                
+                const data = await response.json();
+                showNotification('API Key created successfully!');
+                
+                // Show key in a modal or copy to clipboard
+                const keyText = `API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`;
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(data.key);
+                    alert(keyText + '\n\nThe key has been copied to your clipboard.');
                 } else {
-                    alert('Failed to create API key');
+                    alert(keyText);
                 }
+                
+                await refreshData();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to create API key');
+                showNotification('Failed to create API key', 'error');
             } finally {
                 hideLoading();
             }
@@ -444,17 +776,16 @@
             showLoading();
             try {
                 const response = await fetch(`/api/keys/${keyId}/revoke`, {
-                    method: 'POST',
+                    method: 'POST'
                 });
 
-                if (response.ok) {
-                    refreshData();
-                } else {
-                    alert('Failed to revoke API key');
-                }
+                if (!response.ok) throw new Error('Failed to revoke API key');
+                
+                showNotification('API Key revoked successfully');
+                await refreshData();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to revoke API key');
+                showNotification('Failed to revoke API key', 'error');
             } finally {
                 hideLoading();
             }
@@ -468,25 +799,33 @@
             showLoading();
             try {
                 const response = await fetch(`/api/keys/${keyId}/regenerate`, {
-                    method: 'POST',
+                    method: 'POST'
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    alert(`New API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`);
-                    refreshData();
+                if (!response.ok) throw new Error('Failed to regenerate API key');
+                
+                const data = await response.json();
+                showNotification('API Key regenerated successfully');
+                
+                // Show new key in a modal or copy to clipboard
+                const keyText = `New API Key: ${data.key}\n\nPlease save this key as it won't be shown again.`;
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(data.key);
+                    alert(keyText + '\n\nThe key has been copied to your clipboard.');
                 } else {
-                    alert('Failed to regenerate API key');
+                    alert(keyText);
                 }
+                
+                await refreshData();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to regenerate API key');
+                showNotification('Failed to regenerate API key', 'error');
             } finally {
                 hideLoading();
             }
         }
 
-        // Subscription Management
+        // Subscription Management with improved feedback
         async function cancelSubscription(subId) {
             if (!confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) {
                 return;
@@ -495,17 +834,16 @@
             showLoading();
             try {
                 const response = await fetch(`/api/subscriptions/${subId}/cancel`, {
-                    method: 'POST',
+                    method: 'POST'
                 });
 
-                if (response.ok) {
-                    refreshData();
-                } else {
-                    alert('Failed to cancel subscription');
-                }
+                if (!response.ok) throw new Error('Failed to cancel subscription');
+                
+                showNotification('Subscription cancelled successfully');
+                await refreshData();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to cancel subscription');
+                showNotification('Failed to cancel subscription', 'error');
             } finally {
                 hideLoading();
             }
@@ -514,12 +852,12 @@
         // Auto-refresh data every minute
         setInterval(refreshData, 60000);
 
-        // Hide loading screen on initial load
+        // Initialize page
         window.addEventListener('load', () => {
             hideLoading();
             
             // Initial animations
-            gsap.from('.slide-in', {
+            gsap.from('.stat-card', {
                 y: 20,
                 opacity: 0,
                 duration: 0.5,
@@ -532,14 +870,24 @@
                 opacity: 0,
                 duration: 0.3,
                 stagger: 0.1,
-                ease: 'power2.out'
+                ease: 'power2.out',
+                delay: 0.5
             });
         });
 
-        // Logout
+        // Smooth logout
         function logout() {
+            showLoading();
             document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            window.location.href = '/';
+            
+            gsap.to('main', {
+                opacity: 0,
+                y: 20,
+                duration: 0.3,
+                onComplete: () => {
+                    window.location.href = '/';
+                }
+            });
         }
     </script>
 </body>
