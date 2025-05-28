@@ -487,7 +487,7 @@
                     <!-- API Usage Chart -->
                     <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                         <h3 class="text-xl font-semibold mb-4">API Usage Trends</h3>
-                        <div id="apiUsageChart" class="h-80"></div>
+                        <div id="api-usage-chart" class="w-full h-64"></div>
                     </div>
 
                     <!-- Recent Users -->
@@ -854,9 +854,106 @@
         // Auto-refresh data every minute
         setInterval(refreshData, 60000);
 
+        // Initialize API Usage Chart
+        let apiUsageChart;
+        
+        function initializeChart() {
+            const options = {
+                series: [{
+                    name: 'API Calls',
+                    data: {{ stats_data.hourly_usage | tojson }}
+                }],
+                chart: {
+                    type: 'area',
+                    height: 256,
+                    toolbar: {
+                        show: false
+                    },
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 800,
+                        animateGradually: {
+                            enabled: true,
+                            delay: 150
+                        },
+                        dynamicAnimation: {
+                            enabled: true,
+                            speed: 350
+                        }
+                    }
+                },
+                colors: ['#0066cc'],
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.2,
+                        stops: [0, 90, 100]
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                grid: {
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    strokeDashArray: 4,
+                    xaxis: {
+                        lines: {
+                            show: true
+                        }
+                    },
+                    yaxis: {
+                        lines: {
+                            show: true
+                        }
+                    }
+                },
+                xaxis: {
+                    categories: {{ stats_data.hours | tojson }},
+                    labels: {
+                        style: {
+                            colors: '#86868b'
+                        }
+                    },
+                    axisBorder: {
+                        show: false
+                    },
+                    axisTicks: {
+                        show: false
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: '#86868b'
+                        },
+                        formatter: function (value) {
+                            return Math.round(value).toLocaleString();
+                        }
+                    }
+                },
+                tooltip: {
+                    theme: 'dark',
+                    x: {
+                        format: 'HH:mm'
+                    }
+                }
+            };
+
+            apiUsageChart = new ApexCharts(document.querySelector("#api-usage-chart"), options);
+            apiUsageChart.render();
+        }
+
         // Initialize page
         window.addEventListener('load', () => {
             hideLoading();
+            initializeChart();
             
             // Initial animations
             gsap.from('.stat-card', {
