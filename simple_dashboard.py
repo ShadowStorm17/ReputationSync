@@ -520,27 +520,41 @@ async def login_page(request: Request):
         {"request": request}
     )
 
+def get_current_user(request: Request):
+    token = request.cookies.get("access_token")
+    if not token or not token.startswith("Bearer "):
+        return None
+    try:
+        token = token.split("Bearer ")[1]
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            return None
+        return username
+    except JWTError:
+        return None
+
 @app.post("/token")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         print(f"Login attempt with username: {form_data.username}")
         
-        if not verify_admin_credentials(form_data.username, form_data.password):
+        if form_data.username == ADMIN_USERNAME and form_data.password == ADMIN_PASSWORD:
+            # Create access token
+            access_token = create_access_token(data={"sub": form_data.username})
+            response = RedirectResponse(url='/dashboard', status_code=303)
+            response.set_cookie(
+                key="access_token",
+                value=f"Bearer {access_token}",
+                httponly=True,
+                samesite='lax',
+                secure=os.getenv("ENVIRONMENT") == "production"
+            )
+            print("Login successful, redirecting to dashboard")
+            return response
+        else:
             print("Authentication failed, redirecting to login page")
             return RedirectResponse(url='/?error=1', status_code=303)
-        
-        # Create access token
-        access_token = create_access_token(data={"sub": form_data.username})
-        response = RedirectResponse(url='/dashboard', status_code=303)
-        response.set_cookie(
-            key="access_token",
-            value=f"Bearer {access_token}",
-            httponly=True,
-            samesite='lax',
-            secure=os.getenv("ENVIRONMENT") == "production"
-        )
-        print("Login successful, redirecting to dashboard")
-        return response
     except Exception as e:
         print(f"Login error: {str(e)}")
         import traceback
@@ -550,6 +564,11 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 @app.get("/dashboard")
 async def dashboard(request: Request):
     try:
+        # Check if user is authenticated
+        username = get_current_user(request)
+        if not username:
+            return RedirectResponse(url='/?error=2', status_code=303)
+        
         # Get real data from database
         stats = get_real_stats()
         users = get_real_users()
@@ -557,14 +576,13 @@ async def dashboard(request: Request):
         subscriptions = get_real_subscriptions()
         
         # Generate CSRF token
-        csrf_token = generate_csrf_token()
-        request.session["csrf_token"] = csrf_token
+        csrf_token = secrets.token_urlsafe(32)
         
         return templates.TemplateResponse(
             "dashboard.html",
             {
                 "request": request,
-                "user": "Admin",
+                "user": username,
                 "stats": stats,
                 "users": users,
                 "api_keys": api_keys,
@@ -575,6 +593,8 @@ async def dashboard(request: Request):
         )
     except Exception as e:
         print(f"Error in dashboard route: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 # API Key Management
