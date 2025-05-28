@@ -78,30 +78,64 @@ def get_current_user(request: Request):
 
 @app.get("/", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    try:
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": None}
+        )
+    except Exception as e:
+        logger.error(f"Error rendering login page: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/login")
 async def login(request: Request):
     try:
-        form = await request.form()
-        username = form.get("username")
-        password = form.get("password")
+        # Get form data
+        form_data = await request.form()
+        username = form_data.get("username")
+        password = form_data.get("password")
         
+        logger.info(f"Login attempt for username: {username}")
+        
+        if not username or not password:
+            logger.warning("Missing username or password")
+            raise HTTPException(status_code=400, detail="Username and password are required")
+
         # For demo purposes - in production, validate against database
         if username == "admin" and password == "admin123":
-            access_token = jwt.encode(
-                {"sub": username, "exp": datetime.utcnow() + timedelta(days=1)},
-                SECRET_KEY,
-                algorithm=ALGORITHM
-            )
-            response = JSONResponse({"status": "success"})
-            response.set_cookie(key="access_token", value=access_token, httponly=True)
-            return response
+            # Create token with expiration
+            token_data = {
+                "sub": username,
+                "exp": datetime.utcnow() + timedelta(days=1)
+            }
+            
+            try:
+                access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+                logger.info(f"Login successful for user: {username}")
+                
+                # Create response with cookie
+                response = JSONResponse({"status": "success", "message": "Login successful"})
+                response.set_cookie(
+                    key="access_token",
+                    value=access_token,
+                    httponly=True,
+                    max_age=86400,  # 1 day in seconds
+                    path="/"
+                )
+                return response
+                
+            except Exception as e:
+                logger.error(f"Token generation error: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error generating authentication token")
         else:
+            logger.warning(f"Invalid credentials for username: {username}")
             raise HTTPException(status_code=401, detail="Invalid credentials")
+            
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Login error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected login error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, current_user: dict = Depends(get_current_user)):

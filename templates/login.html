@@ -3,12 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ReputationSync Login</title>
+    <title>ReputationSync Admin Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
     <script src="https://unpkg.com/gsap@3.12.0/dist/gsap.min.js"></script>
     <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .error-message {
+            display: none;
+            background-color: #ef4444;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
         /* Modern Apple-inspired Design System */
         :root {
             --primary-bg: #000000;
@@ -151,109 +167,68 @@
         }
     </style>
 </head>
-<body>
-    <div id="vanta-background" class="login-container flex items-center justify-center p-4">
-        <div class="glass-panel floating max-w-md w-full">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-white mb-2 text-glow">Welcome Mr.Dronn</h1>
-                <p class="text-blue-200">Access your ReputationSync dashboard</p>
-            </div>
-            
-            <form action="{{ url_for('login') }}" method="POST" class="space-y-6">
-                <div class="input-group">
-                    <input type="text" id="username" name="username" placeholder=" " required>
-                    <label for="username">Username</label>
-                </div>
-                
-                <div class="input-group">
-                    <input type="password" id="password" name="password" placeholder=" " required>
-                    <label for="password">Password</label>
-                </div>
-
-                {% if error %}
-                <div class="text-red-400 text-sm mb-4">{{ error }}</div>
-                {% endif %}
-                
-                <button type="submit" class="login-button">
-                    Sign In
-                </button>
-            </form>
+<body class="min-h-screen flex items-center justify-center bg-gray-900">
+    <div class="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-semibold text-white mb-2">ReputationSync</h1>
+            <p class="text-gray-400">Admin Dashboard Login</p>
         </div>
+
+        <div id="error-message" class="error-message"></div>
+
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-400 mb-2">Username</label>
+                <input type="text" id="username" name="username" required
+                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-400 mb-2">Password</label>
+                <input type="password" id="password" name="password" required
+                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <button type="submit"
+                class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800">
+                Sign In
+            </button>
+        </form>
     </div>
 
     <script>
-        // Initialize VANTA.NET background
-        VANTA.NET({
-            el: "#vanta-background",
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00,
-            color: 0x3b82f6,
-            backgroundColor: 0x0f172a,
-            points: 10.00,
-            maxDistance: 25.00,
-            spacing: 17.00
-        });
-
-        // Animate elements on page load
-        gsap.from('.glass-panel', {
-            duration: 1,
-            y: 30,
-            opacity: 0,
-            ease: 'power3.out'
-        });
-
-        // Add 3D tilt effect to the login panel
-        const panel = document.querySelector('.glass-panel');
-        panel.addEventListener('mousemove', (e) => {
-            const rect = panel.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
             
-            const rotateX = (y - centerY) / 20;
-            const rotateY = (centerX - x) / 20;
-            
-            panel.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
-        });
-
-        panel.addEventListener('mouseleave', () => {
-            panel.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
-        });
-
-        // Add ripple effect to login button
-        const button = document.querySelector('.login-button');
-        button.addEventListener('click', function(e) {
-            const rect = button.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const circle = document.createElement('div');
-            circle.style.position = 'absolute';
-            circle.style.left = x + 'px';
-            circle.style.top = y + 'px';
-            circle.style.width = '1px';
-            circle.style.height = '1px';
-            circle.style.background = 'rgba(255, 255, 255, 0.4)';
-            circle.style.borderRadius = '50%';
-            circle.style.transition = 'all 0.5s ease-out';
-            
-            button.appendChild(circle);
-            
-            requestAnimationFrame(() => {
-                circle.style.transform = 'scale(100)';
-                circle.style.opacity = '0';
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
                 
-                setTimeout(() => {
-                    circle.remove();
-                }, 500);
-            });
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Redirect to dashboard on success
+                    window.location.href = '/dashboard';
+                } else {
+                    // Show error message
+                    errorMessage.textContent = data.detail || 'Login failed. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = 'An error occurred. Please try again.';
+                errorMessage.style.display = 'block';
+            }
         });
     </script>
 </body>
