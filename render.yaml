@@ -3,7 +3,7 @@ services:
     name: reputationsync-dashboard
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT app:app --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.12
@@ -13,5 +13,7 @@ services:
         value: admin123
       - key: PORT
         value: 8000
+      - key: PYTHONUNBUFFERED
+        value: "true"
     healthCheckPath: /health
     autoDeploy: true 
