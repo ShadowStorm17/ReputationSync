@@ -77,8 +77,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Templates
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="src/app/templates")
+app.mount("/static", StaticFiles(directory="src/app/static"), name="static")
 
 def get_db():
     try:
