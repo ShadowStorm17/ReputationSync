@@ -2,7 +2,11 @@ services:
   - type: web
     name: reputationsync-dashboard
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      mkdir -p src/app/templates src/app/static
+      cp -r templates/* src/app/templates/ || true
+      cp -r static/* src/app/static/ || true
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
