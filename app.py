@@ -45,7 +45,7 @@ ADMIN_PASSWORD_HASH = bcrypt.hashpw(ADMIN_PASSWORD.encode(), bcrypt.gensalt())
 # Health check endpoint - MUST BE FIRST ROUTE
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "port": os.environ.get("PORT", "Not set")}
 
 @app.get("/test")
 async def test_endpoint():
