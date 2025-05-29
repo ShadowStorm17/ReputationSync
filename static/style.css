@@ -9,13 +9,21 @@ body {
     min-height: 100vh;
 }
 
-.login-container {
+.login-container, .dashboard-container {
     background-color: white;
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
+}
+
+.dashboard-container {
+    max-width: 800px;
+}
+
+.dashboard-content {
+    margin-top: 2rem;
 }
 
 h1 {
@@ -68,4 +76,9 @@ button:hover {
     margin-top: 1rem;
     text-align: center;
     display: none;
+}
+
+.dashboard-content button {
+    max-width: 200px;
+    margin-top: 1rem;
 } 

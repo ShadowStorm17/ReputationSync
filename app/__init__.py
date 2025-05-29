@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, HTTPException, Response
+from fastapi import FastAPI, Request, Form, HTTPException, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -96,14 +96,42 @@ async def root(request: Request):
         )
 
 @app.post("/login")
-async def login(username: str = Form(...), password: str = Form(...)):
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     """Handle login form submission"""
     try:
         # Check credentials
         if username == ADMIN_USERNAME and bcrypt.checkpw(password.encode(), ADMIN_PASSWORD_HASH):
-            response = JSONResponse({"status": "success", "message": "Login successful"})
+            response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
             return response
         else:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "error": "Invalid credentials"},
+                status_code=401
+            )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": str(e)},
+            status_code=500
+        )
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    """Display the dashboard page"""
+    try:
+        return templates.TemplateResponse(
+            "dashboard.html",
+            {"request": request}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+@app.post("/logout")
+async def logout():
+    """Handle logout"""
+    response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    return response
