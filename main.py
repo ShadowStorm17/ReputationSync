@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+from app import app
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -23,4 +24,4 @@ async def login(username: str = Form(...), password: str = Form(...)):
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True) 
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
