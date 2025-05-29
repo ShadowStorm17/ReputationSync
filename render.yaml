@@ -2,23 +2,18 @@ services:
   - type: web
     name: reputationsync-dashboard
     env: python
-    buildCommand: |
-      pip install --upgrade pip
-      pip install wheel
-      pip install -r requirements.txt
-    startCommand: gunicorn app:app -c gunicorn_conf.py
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: PORT
         value: 10000
-      - key: SECRET_KEY
-        generateValue: true
-      - key: ADMIN_USERNAME
-        sync: false
-      - key: ADMIN_PASSWORD
-        sync: false
-      - key: DATABASE_URL
-        value: dashboard.db
+      - key: HOST
+        value: 0.0.0.0
+      - key: PYTHONPATH
+        value: .
+      - key: DEBUG
+        value: true
     healthCheckPath: /health
     autoDeploy: true 

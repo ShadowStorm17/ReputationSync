@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import os
 from pathlib import Path
 
@@ -13,12 +12,7 @@ app = FastAPI()
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://*.onrender.com",
-        "http://localhost:5000",
-        "http://127.0.0.1:5000",
-        "*"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,6 +30,11 @@ STATIC_DIR.parent.mkdir(parents=True, exist_ok=True)
 # Templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+@app.get("/test")
+async def test_endpoint():
+    """Test endpoint to verify the application is working"""
+    return {"status": "ok", "message": "Application is running"}
 
 @app.get("/health")
 async def health_check():
