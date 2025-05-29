@@ -5,21 +5,42 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import os
+from pathlib import Path
 
+# Create FastAPI app instance
 app = FastAPI()
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://*.onrender.com",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Get the absolute path to the templates and static directories
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "src" / "app" / "templates"
+STATIC_DIR = BASE_DIR / "src" / "app" / "static"
+
+# Ensure the directories exist
+TEMPLATES_DIR.parent.mkdir(parents=True, exist_ok=True)
+STATIC_DIR.parent.mkdir(parents=True, exist_ok=True)
+
 # Templates
-templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "src", "app", "templates"))
-app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "src", "app", "static")), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Render"""
+    return {"status": "healthy"}
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -29,4 +50,6 @@ async def root(request: Request):
     )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=5000) 
+    port = int(os.getenv("PORT", 5000))
+    host = os.getenv("HOST", "127.0.0.1")
+    uvicorn.run(app, host=host, port=port) 
