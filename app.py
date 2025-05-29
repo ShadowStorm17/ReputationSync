@@ -114,6 +114,26 @@ async def logout():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    print(f"Starting server on port {port}")
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info") 
+    import logging
+
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    # Get port from environment variable
+    port = int(os.getenv("PORT", "8000"))
+    logger.info(f"Starting server on port {port}")
+    logger.info(f"Environment variables: {dict(os.environ)}")
+
+    # Run the application
+    try:
+        uvicorn.run(
+            app,
+            host="0.0.0.0",
+            port=port,
+            log_level="info",
+            access_log=True
+        )
+    except Exception as e:
+        logger.error(f"Failed to start server: {e}")
+        raise 
