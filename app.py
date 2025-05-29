@@ -124,20 +124,18 @@ if __name__ == "__main__":
 
     # Get port from environment variable
     try:
-        port = int(os.getenv("PORT", "10000"))  # Using 10000 as default
+        # Explicitly check for Render's PORT environment variable
+        port = int(os.environ.get("PORT", "8000"))
         logger.info(f"Starting server on port {port}")
-        logger.info(f"Environment variables: {dict(os.environ)}")
+        logger.info(f"Current environment variables: {dict(os.environ)}")
         
-        config = uvicorn.Config(
-            app=app,
+        # Run the server
+        uvicorn.run(
+            app,
             host="0.0.0.0",
             port=port,
-            log_level="info",
-            access_log=True,
-            workers=1
+            log_level="info"
         )
-        server = uvicorn.Server(config)
-        server.run()
     except Exception as e:
         logger.error(f"Failed to start server: {e}")
         sys.exit(1) 
