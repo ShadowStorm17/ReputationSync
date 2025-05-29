@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
     # Get port from environment variable
     try:
-        port = int(os.getenv("PORT", "8000"))
+        port = int(os.getenv("PORT", "10000"))  # Using 10000 as default
         logger.info(f"Starting server on port {port}")
         logger.info(f"Environment variables: {dict(os.environ)}")
         
