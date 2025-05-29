@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: reputationsync-api
+    name: reputationsync-dashboard
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -c gunicorn_conf.py app:app
+    startCommand: gunicorn app:app -c gunicorn_conf.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -15,5 +15,7 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+      - key: DATABASE_URL
+        value: dashboard.db
     healthCheckPath: /health
     autoDeploy: true 

@@ -56,6 +56,7 @@ app.add_middleware(
         "http://localhost:8080",
         "http://127.0.0.1:8000",
         "http://127.0.0.1:8080",
+        "*",  # Allow all origins in development
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -192,7 +193,10 @@ async def login(username: str = Form(...), password: str = Form(...)):
         conn.close()
 
         if not user or not verify_password(password, user["password"]):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid credentials"}
+            )
 
         access_token = create_access_token({"sub": username})
         response = RedirectResponse(url="/dashboard", status_code=303)
@@ -208,7 +212,10 @@ async def login(username: str = Form(...), password: str = Form(...)):
         return response
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"}
+        )
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, current_user: dict = Depends(get_current_user)):

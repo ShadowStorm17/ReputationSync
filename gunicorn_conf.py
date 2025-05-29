@@ -14,8 +14,8 @@ timeout = 30
 keepalive = 2
 
 # Process naming
-proc_name = "instagram_api"
-pythonpath = "/opt/instagram_stats_api"
+proc_name = "reputationsync"
+pythonpath = None  # Let Python handle this
 
 # Logging
 accesslog = "-"
@@ -29,10 +29,10 @@ certfile = os.getenv("SSL_CERTFILE")
 
 # Process management
 daemon = False
-pidfile = "/run/instagram_api.pid"
-umask = 0o027
-user = "instagram_api"
-group = "instagram_api"
+pidfile = None  # Let the OS handle this
+umask = 0
+user = None  # Let Render handle this
+group = None  # Let Render handle this
 
 # Server mechanics
 preload_app = True
