@@ -20,12 +20,17 @@ from pathlib import Path
 from typing import List, Optional
 import json
 from dotenv import load_dotenv
+import sys
 
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging with more detail
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
 logger = logging.getLogger(__name__)
 
 class APIKeyCreate(BaseModel):
@@ -76,9 +81,9 @@ app.add_middleware(
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Templates
-templates = Jinja2Templates(directory="src/app/templates")
-app.mount("/static", StaticFiles(directory="src/app/static"), name="static")
+# Templates - Update paths
+templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "src", "app", "templates"))
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "src", "app", "static")), name="static")
 
 def get_db():
     try:
@@ -182,10 +187,15 @@ async def health_check():
 
 @app.get("/", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request}
-    )
+    try:
+        logger.info("Accessing login page")
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request}
+        )
+    except Exception as e:
+        logger.error(f"Error in login_page: {str(e)}", exc_info=True)
+        raise
 
 @app.post("/login")
 async def login(username: str = Form(...), password: str = Form(...)):
@@ -228,6 +238,7 @@ async def login(username: str = Form(...), password: str = Form(...)):
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, current_user: dict = Depends(get_current_user)):
     try:
+        logger.info(f"User {current_user.get('username')} accessing dashboard")
         conn = get_db()
         cursor = conn.cursor()
         
@@ -259,8 +270,8 @@ async def dashboard(request: Request, current_user: dict = Depends(get_current_u
                     "error_rate": 100 - (stats_row["success_rate"] or 0),
                     "avg_response_time": stats_row["avg_response_time"] or 0,
                 })
-        except sqlite3.OperationalError:
-            logger.warning("usage_stats table not found or query failed")
+        except sqlite3.OperationalError as e:
+            logger.warning(f"usage_stats query failed: {str(e)}")
         
         # Try to get active users if the table exists
         try:
@@ -315,8 +326,8 @@ async def dashboard(request: Request, current_user: dict = Depends(get_current_u
             }
         )
     except Exception as e:
-        logger.error(f"Dashboard error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Error in dashboard: {str(e)}", exc_info=True)
+        raise
 
 @app.post("/create_api_key")
 async def create_api_key(
@@ -355,6 +366,14 @@ async def logout():
     response = RedirectResponse(url="/")
     response.delete_cookie("access_token")
     return response
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global error handler caught: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "message": str(exc)}
+    )
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
