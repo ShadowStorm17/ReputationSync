@@ -28,6 +28,14 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Get the current directory
+current_dir = Path(__file__).parent
+data_dir = current_dir / "data"
+db_path = data_dir / "dashboard.db"
+
+# Create data directory if it doesn't exist
+data_dir.mkdir(parents=True, exist_ok=True)
+
 class APIKeyCreate(BaseModel):
     name: str
 
@@ -76,14 +84,14 @@ app.add_middleware(
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Templates
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Templates and static files
+templates = Jinja2Templates(directory=str(current_dir / "templates"))
+app.mount("/static", StaticFiles(directory=str(current_dir / "static")), name="static")
 
 def get_db():
     try:
         # Use DATABASE_URL from environment if available (for Render)
-        db_url = os.getenv("DATABASE_URL", "dashboard.db")
+        db_url = os.getenv("DATABASE_URL", str(db_path))
         conn = sqlite3.connect(db_url)
         conn.row_factory = sqlite3.Row
         return conn
@@ -354,7 +362,4 @@ async def create_api_key(
 async def logout():
     response = RedirectResponse(url="/")
     response.delete_cookie("access_token")
-    return response
-
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True) 
+    return response 
