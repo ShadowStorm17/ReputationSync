@@ -42,15 +42,15 @@ ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 ADMIN_PASSWORD_HASH = bcrypt.hashpw(ADMIN_PASSWORD.encode(), bcrypt.gensalt())
 
+# Health check endpoint - MUST BE FIRST ROUTE
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 @app.get("/test")
 async def test_endpoint():
     """Test endpoint to verify the application is working"""
     return {"status": "ok", "message": "Application is running"}
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint for Render"""
-    return {"status": "healthy"}
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -114,22 +114,5 @@ async def logout():
 
 if __name__ == "__main__":
     import uvicorn
-    import os
-    import logging
-
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    
-    # Get port from environment variable
     port = int(os.getenv("PORT", 8000))
-    logger.info(f"Starting server on port {port}")
-    
-    # Run the application
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=port,
-        log_level="info",
-        reload=False
-    ) 
+    uvicorn.run("app:app", host="0.0.0.0", port=port, log_level="info") 
