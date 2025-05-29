@@ -7,7 +7,7 @@
 <body>
     <div class="login-container">
         <h1>ReputationSync Dashboard</h1>
-        <form id="loginForm" method="post" action="/login">
+        <form id="loginForm" method="post" action="/login" onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -20,5 +20,36 @@
         </form>
         <div id="error-message" class="error-message"></div>
     </div>
+
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault();
+            const form = event.target;
+            const errorDiv = document.getElementById('error-message');
+            
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Login successful
+                    errorDiv.style.display = 'none';
+                    window.location.href = '/dashboard';  // Redirect to dashboard
+                } else {
+                    // Show error message
+                    errorDiv.textContent = data.detail || 'Login failed. Please check your credentials.';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+    </script>
 </body>
 </html> 

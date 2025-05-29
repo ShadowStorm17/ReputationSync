@@ -1,13 +1,19 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, Form, HTTPException, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import os
 from pathlib import Path
+import secrets
+import bcrypt
 
 # Create FastAPI app instance
 app = FastAPI()
+
+# Security
+security = HTTPBasic()
 
 # CORS middleware
 app.add_middleware(
@@ -20,8 +26,8 @@ app.add_middleware(
 
 # Get the absolute path to the templates and static directories
 BASE_DIR = Path(__file__).resolve().parent.parent
-TEMPLATES_DIR = BASE_DIR / "src" / "app" / "templates"
-STATIC_DIR = BASE_DIR / "src" / "app" / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
 
 # Print directory paths for debugging
 print(f"Base directory: {BASE_DIR}")
@@ -42,6 +48,11 @@ except Exception as e:
 # Templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+# Simulated user database (replace with actual database in production)
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+ADMIN_PASSWORD_HASH = bcrypt.hashpw(ADMIN_PASSWORD.encode(), bcrypt.gensalt())
 
 @app.get("/debug")
 async def debug_info():
@@ -83,3 +94,16 @@ async def root(request: Request):
                 "contents": os.listdir(str(TEMPLATES_DIR)) if os.path.exists(str(TEMPLATES_DIR)) else []
             }
         )
+
+@app.post("/login")
+async def login(username: str = Form(...), password: str = Form(...)):
+    """Handle login form submission"""
+    try:
+        # Check credentials
+        if username == ADMIN_USERNAME and bcrypt.checkpw(password.encode(), ADMIN_PASSWORD_HASH):
+            response = JSONResponse({"status": "success", "message": "Login successful"})
+            return response
+        else:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
