@@ -158,16 +158,14 @@
                 const formData = new FormData(form);
                 const response = await fetch('/login', {
                     method: 'POST',
-                    body: formData,
-                    redirect: 'follow'
+                    body: formData
                 });
 
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else if (response.ok) {
-                    window.location.href = '/dashboard';
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    window.location.href = data.redirect_url;
                 } else {
-                    const data = await response.json();
                     throw new Error(data.detail || 'Login failed');
                 }
             } catch (error) {

@@ -192,29 +192,33 @@ async def login(username: str = Form(...), password: str = Form(...)):
         user = cursor.fetchone()
         conn.close()
 
-        if not user or not verify_password(password, user["password"]):
+        if not user:
             return JSONResponse(
                 status_code=401,
-                content={"detail": "Invalid credentials"}
+                content={"detail": "Invalid username"}
+            )
+
+        if not verify_password(password, user["password"]):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid password"}
             )
 
         access_token = create_access_token({"sub": username})
-        response = RedirectResponse(url="/dashboard", status_code=303)
-        response.set_cookie(
-            key="access_token",
-            value=access_token,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=3600,
-            path="/"
+        
+        # Instead of redirecting, return a success response with the redirect URL
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "redirect_url": "/dashboard"
+            }
         )
-        return response
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={"detail": "Internal server error"}
+            content={"detail": str(e)}
         )
 
 @app.get("/dashboard", response_class=HTMLResponse)
