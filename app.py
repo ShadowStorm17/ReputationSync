@@ -216,44 +216,76 @@ async def dashboard(request: Request, current_user: dict = Depends(get_current_u
         conn = get_db()
         cursor = conn.cursor()
         
-        # Get real statistics
-        cursor.execute("""
-            SELECT COUNT(*) as total_requests,
-                   AVG(CASE WHEN success = 1 THEN 1 ELSE 0 END) * 100 as success_rate,
-                   AVG(response_time) as avg_response_time
-            FROM usage_stats
-            WHERE timestamp >= datetime('now', '-24 hours')
-        """)
-        stats_row = cursor.fetchone()
-        
-        # Get active API keys
-        cursor.execute("""
-            SELECT COUNT(DISTINCT api_key) as active_users
-            FROM usage_stats
-            WHERE timestamp >= datetime('now', '-24 hours')
-        """)
-        active_users = cursor.fetchone()["active_users"]
-        
+        # Initialize default stats
         stats = {
-            "total_requests": stats_row["total_requests"],
-            "active_users": active_users,
-            "error_rate": 100 - stats_row["success_rate"] if stats_row["success_rate"] else 0,
-            "avg_response_time": stats_row["avg_response_time"] or 0,
+            "total_requests": 0,
+            "active_users": 0,
+            "error_rate": 0,
+            "avg_response_time": 0,
         }
         
-        # Get hourly usage data
-        cursor.execute("""
-            SELECT strftime('%H:00', timestamp) as hour,
-                   COUNT(*) as requests
-            FROM usage_stats
-            WHERE timestamp >= datetime('now', '-24 hours')
-            GROUP BY strftime('%H', timestamp)
-            ORDER BY hour DESC
-        """)
-        usage_data = cursor.fetchall()
+        hours = []
+        hourly_usage = []
         
-        hours = [row["hour"] for row in usage_data]
-        hourly_usage = [row["requests"] for row in usage_data]
+        # Try to get statistics if the table exists
+        try:
+            cursor.execute("""
+                SELECT COUNT(*) as total_requests,
+                       AVG(CASE WHEN success = 1 THEN 1 ELSE 0 END) * 100 as success_rate,
+                       AVG(response_time) as avg_response_time
+                FROM usage_stats
+                WHERE timestamp >= datetime('now', '-24 hours')
+            """)
+            stats_row = cursor.fetchone()
+            
+            if stats_row:
+                stats.update({
+                    "total_requests": stats_row["total_requests"] or 0,
+                    "error_rate": 100 - (stats_row["success_rate"] or 0),
+                    "avg_response_time": stats_row["avg_response_time"] or 0,
+                })
+        except sqlite3.OperationalError:
+            logger.warning("usage_stats table not found or query failed")
+        
+        # Try to get active users if the table exists
+        try:
+            cursor.execute("""
+                SELECT COUNT(DISTINCT api_key) as active_users
+                FROM usage_stats
+                WHERE timestamp >= datetime('now', '-24 hours')
+            """)
+            active_users_row = cursor.fetchone()
+            if active_users_row:
+                stats["active_users"] = active_users_row["active_users"] or 0
+        except sqlite3.OperationalError:
+            logger.warning("Could not fetch active users")
+        
+        # Try to get hourly usage data if the table exists
+        try:
+            cursor.execute("""
+                SELECT strftime('%H:00', timestamp) as hour,
+                       COUNT(*) as requests
+                FROM usage_stats
+                WHERE timestamp >= datetime('now', '-24 hours')
+                GROUP BY strftime('%H', timestamp)
+                ORDER BY hour DESC
+            """)
+            usage_data = cursor.fetchall()
+            
+            if usage_data:
+                hours = [row["hour"] for row in usage_data]
+                hourly_usage = [row["requests"] for row in usage_data]
+            else:
+                # Generate empty hourly data for the last 24 hours
+                current_hour = datetime.now().hour
+                hours = [f"{h:02d}:00" for h in range(current_hour, current_hour - 24, -1)]
+                hourly_usage = [0] * 24
+        except sqlite3.OperationalError:
+            logger.warning("Could not fetch hourly usage data")
+            # Generate empty hourly data
+            current_hour = datetime.now().hour
+            hours = [f"{h:02d}:00" for h in range(current_hour, current_hour - 24, -1)]
+            hourly_usage = [0] * 24
         
         conn.close()
         
