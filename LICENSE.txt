@@ -1,0 +1,36 @@
+Proprietary Software License
+
+Copyright © 2025 Reputation Sync. All rights reserved.
+
+This software, known as Reputation Sync API (“Software”), is the sole property of the copyright holder.
+
+1. Grant of License
+
+You are granted a limited, non-exclusive, non-transferable license to use this Software for evaluation and demonstration purposes only. You may not modify, distribute, sublicense, or use this Software for any commercial purpose without the prior written consent of the copyright holder.
+
+2. Restrictions
+
+You may not:
+
+Copy, reproduce, or distribute the Software in whole or in part.
+
+Sell, rent, lease, or license the Software to any third party.
+
+Modify, reverse engineer, decompile, or disassemble the Software.
+
+
+3. Ownership
+
+This Software is licensed, not sold. All rights, title, and interest in and to the Software remain with the copyright holder until an official Full Ownership Transfer Agreement is executed.
+
+4. Disclaimer of Warranty
+
+This Software is provided “AS IS,” without warranty of any kind, express or implied. The entire risk as to the quality and performance of the Software is borne by the user.
+
+5. Limitation of Liability
+
+In no event shall the copyright holder be liable for any damages arising from the use or inability to use the Software.
+
+6. Termination
+
+Any violation of this License will result in immediate termination of your rights to use the Software.

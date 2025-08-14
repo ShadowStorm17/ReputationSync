@@ -1,0 +1,8 @@
+python-3.11.3-amd64.exe
+.env
+dashboard.db
+*.db
+__pycache__/
+venv311/
+node_modules/
+*.exe
