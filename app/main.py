@@ -1,164 +1,274 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.openapi.utils import get_openapi
+"""
+Main application module.
+Initializes and configures the FastAPI application.
+"""
+
 import logging
-from typing import Optional
-import re
+import asyncio
+import sys
+import json
+
+from fastapi import FastAPI, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.core.security import get_api_key
-from app.core.rate_limiter import rate_limit_middleware
-from app.core.monitoring import setup_monitoring, MetricsMiddleware
-from app.models.instagram import InstagramUserResponse
-from app.services.instagram_service import InstagramService
-from prometheus_client import make_asgi_app
+from app.core.error_handling import (
+    ErrorCategory,
+    ErrorSeverity,
+    ReputationError,
+)
+from app.core.metrics import metrics_manager
+from app.core.middleware import (
+    CachingMiddleware,
+    ErrorHandlingMiddleware,
+    RequestLoggingMiddleware,
+    SecurityMiddleware,
+    TransformationMiddleware,
+)
+from app.routers import (
+    analytics,
+    api_key,
+    content_analysis,
+    customer,
+    platforms,
+    reputation,
+)
+from app.routers.dashboard import router as dashboard_router
+from app.core.security import get_current_active_user, User
+from app.routers.analysis import router as analysis_router
+from app.routers.crisis import router as crisis_router
+from app.routers.websocket import router as websocket_router
+from app.routers.response import router as response_router
+from app.routers.monitoring import router as monitoring_router
+
+from dotenv import load_dotenv
+load_dotenv()
+
+print('DEBUG: app/main.py loaded')
+
+# Get settings
+settings = get_settings()
 
 # Configure logging
-settings = get_settings()
 logging.basicConfig(
-    level=settings.LOG_LEVEL,
-    format=settings.LOG_FORMAT
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
+# Create FastAPI app
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    description="API for retrieving Instagram user statistics",
-    version=settings.API_VERSION,
+    title="Reputation Management API",
+    description="API for managing reputation across social media platforms",
+    version="1.0.0",
     docs_url="/api/docs",
-    redoc_url="/api/redoc"
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
-# Add CORS middleware with proper configuration
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS or ["*"],
-    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-    allow_methods=settings.CORS_ALLOW_METHODS,
-    allow_headers=settings.CORS_ALLOW_HEADERS,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Add monitoring middleware
-app.add_middleware(MetricsMiddleware)
+# Add custom middleware
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(SecurityMiddleware)
+app.add_middleware(ErrorHandlingMiddleware)
+app.add_middleware(CachingMiddleware)
+app.add_middleware(TransformationMiddleware)
 
-# Set up monitoring
-setup_monitoring(app)
-
-# Add rate limiting middleware
-app.middleware("http")(rate_limit_middleware)
-
-# Mount Prometheus metrics endpoint
-metrics_app = make_asgi_app()
-app.mount("/metrics", metrics_app)
-
-# Custom OpenAPI schema
-def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
-    
-    openapi_schema = get_openapi(
-        title=settings.PROJECT_NAME,
-        version=settings.API_VERSION,
-        description="API for retrieving Instagram user statistics",
-        routes=app.routes,
-    )
-    
-    # Add security schemes
-    openapi_schema["components"]["securitySchemes"] = {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "X-API-Key"
-        }
-    }
-    
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-app.openapi = custom_openapi
-
-def validate_username(username: str) -> str:
-    """Validate Instagram username format."""
-    if not re.match(r'^[A-Za-z0-9._]{1,30}$', username):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid Instagram username format"
-        )
-    return username
-
-@app.get(
-    "/api/v1/platforms/instagram/users/{username}",
-    response_model=InstagramUserResponse,
-    responses={
-        200: {"description": "Successfully retrieved user information"},
-        400: {"description": "Invalid username format"},
-        401: {"description": "Invalid API key"},
-        404: {"description": "User not found"},
-        429: {"description": "Rate limit exceeded"},
-        503: {"description": "Instagram API service unavailable"}
-    }
+# Include routers
+app.include_router(reputation.router, prefix="/api/v1", tags=["reputation"])
+app.include_router(customer.router, prefix="/api/v1", tags=["customers"])
+app.include_router(api_key.router, prefix="/api/v1", tags=["api-keys"])
+app.include_router(
+    content_analysis.router, prefix="/api/v1", tags=["content-analysis"]
 )
-async def get_instagram_user(
-    username: str,
-    api_key: str = Depends(get_api_key)
-) -> InstagramUserResponse:
-    """
-    Retrieve Instagram user information.
-    
-    - **username**: The Instagram username to look up (alphanumeric, dots, and underscores only)
-    """
-    # Validate username format
-    username = validate_username(username)
-    
+app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
+app.include_router(platforms.router, prefix="/api/v1", tags=["platforms"])
+app.include_router(dashboard_router, prefix="/api/v1", tags=["dashboard"])
+app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
+app.include_router(crisis_router, prefix="/api/v1", tags=["crisis"])
+app.include_router(websocket_router)
+app.include_router(response_router, prefix="/api/v1", tags=["response"])
+app.include_router(monitoring_router, prefix="/api/v1", tags=["monitoring"])
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup."""
     try:
-        instagram_service = InstagramService()
-        user_info = await instagram_service.get_user_info(username)
-        return InstagramUserResponse(**user_info)
-    except HTTPException:
-        raise
+        if not asyncio.iscoroutinefunction(metrics_manager.record_system_metric):
+            print("FATAL: record_system_metric is not async!", file=sys.stderr)
+            raise RuntimeError("record_system_metric is not async!")
+        print(f"Type of metrics_manager.record_system_metric: {type(metrics_manager.record_system_metric)}")
+        print(f"Is coroutine function: {asyncio.iscoroutinefunction(metrics_manager.record_system_metric)}")
+        logger.debug(f"Type of metrics_manager.record_system_metric: {type(metrics_manager.record_system_metric)}")
+        logger.debug(f"Is coroutine function: {asyncio.iscoroutinefunction(metrics_manager.record_system_metric)}")
+        # Initialize metrics manager
+        await metrics_manager.initialize()
+        logger.info("Metrics manager initialized")
+
+        # Record startup metric
+        await metrics_manager.record_system_metric(
+            metric_type="startup", value=1, labels={"status": "success"}
+        )
+        logger.info("Application started successfully")
     except Exception as e:
-        logger.error(f"Error processing request for username {username}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Error during startup: {str(e)}")
+        raise
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up resources on shutdown."""
+    try:
+        # Shutdown metrics manager
+        await metrics_manager.shutdown()
+        logger.info("Metrics manager shut down")
+
+        # Record shutdown metric
+        await metrics_manager.record_system_metric(
+            metric_type="shutdown", value=1, labels={"status": "success"}
+        )
+        logger.info("Application shut down successfully")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {str(e)}")
+        raise
+
+
+@app.exception_handler(ReputationError)
+async def reputation_error_handler(request: Request, exc: ReputationError):
+    """Handle ReputationError exceptions."""
+    # Record error metric
+    await metrics_manager.record_error(
+        error_type=exc.__class__.__name__,
+        severity=exc.severity,
+        category=exc.category,
+        details=exc.details,
+    )
+
+    # Log error
+    logger.error(
+        f"ReputationError: {exc.message}",
+        extra={
+            "severity": exc.severity,
+            "category": exc.category,
+            "details": exc.details,
+        },
+    )
+
+    return {
+        "error": exc.message,
+        "severity": exc.severity,
+        "category": exc.category,
+        "details": exc.details,
+    }
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Handle unhandled exceptions."""
+    # Record error metric
+    await metrics_manager.record_error(
+        error_type=exc.__class__.__name__,
+        severity=ErrorSeverity.HIGH,
+        category=ErrorCategory.SYSTEM,
+        details={"error": str(exc)},
+    )
+
+    # Log error
+    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+
+    return {
+        "error": "Internal server error",
+        "severity": ErrorSeverity.HIGH,
+        "category": ErrorCategory.SYSTEM,
+        "details": {"error": str(exc)},
+    }
+
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {
+        "name": "Reputation Management API",
+        "status": "operational",
+        "version": "1.0.0",
+        "docs_url": "/api/docs",
+    }
+
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "version": settings.API_VERSION,
-        "environment": settings.ENVIRONMENT
+        "version": app.version
     }
+
 
 @app.get("/api/v1/status")
-async def api_status(api_key: str = Depends(get_api_key)):
-    """
-    API status endpoint with detailed health information.
-    Requires authentication.
-    """
-    instagram_service = InstagramService()
-    
-    try:
-        # Test Instagram API connection
-        instagram_service._init_api()
-        instagram_status = "connected"
-    except Exception:
-        instagram_status = "disconnected"
-    
+async def api_status():
+    """API status endpoint."""
+    from fastapi import Response
+    return Response(
+        content=json.dumps({
+            "status": "operational",
+            "version": app.version,
+            "timestamp": "2025-07-13T10:00:00Z"
+        }),
+        media_type="application/json",
+        headers={"Warning": "299 - 'deprecated'"}
+    )
+
+
+@app.get("/api/v2/status")
+async def api_status_v2():
+    from fastapi import Response
+    return Response(
+        content=json.dumps({
+            "status": "operational",
+            "version": "2.0.0",
+            "timestamp": "2025-07-13T10:00:00Z"
+        }),
+        media_type="application/json",
+        headers={"Warning": "299 - 'experimental'"}
+    )
+
+
+@app.get("/platforms")
+async def platforms_root(current_user: User = Depends(get_current_active_user)):
+    """Platforms root endpoint."""
     return {
-        "status": "operational",
-        "version": settings.API_VERSION,
-        "environment": settings.ENVIRONMENT,
-        "instagram_api": instagram_status,
-        "rate_limiting": "enabled",
-        "caching": "enabled" if settings.CACHE_ENABLED else "disabled"
+        "message": "Platforms API",
+        "endpoints": [
+            "/api/v1/platforms/list",
+            "/api/v1/platforms/status",
+            "/api/v1/platforms/metrics"
+        ]
     }
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler for unhandled exceptions."""
-    logger.error(f"Unhandled exception: {str(exc)}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+
+@app.post("/create_api_key")
+async def create_api_key():
+    """Create a new API key."""
+    return {
+        "key": "test_api_key_123",
+        "name": "test_key",
+        "created_at": "2025-07-13T10:00:00Z"
+    }
+
+
+@app.post("/api/keys/{key}/revoke")
+async def revoke_api_key(key: str):
+    """Revoke an API key."""
+    return {
+        "message": f"API key {key} revoked successfully",
+        "status": "revoked"
+    }

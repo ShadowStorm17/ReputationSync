@@ -1,313 +1,237 @@
-# Production Deployment Guide
+# Instagram Stats API Deployment Guide
+
+This guide provides step-by-step instructions for deploying the Instagram Stats API in a production environment.
 
 ## Prerequisites
 
-- Linux server (Ubuntu 20.04 LTS recommended)
-- Python 3.8+
-- Redis 6+
+- Ubuntu 20.04 LTS or newer
+- Python 3.9+
+- Redis 6.0+
 - Nginx
-- SSL certificate
-- Domain name
-- Meta/Facebook Developer account
+- Certbot (for SSL)
+- Prometheus
+- Grafana
 
-## 1. Initial Server Setup
+## System Setup
 
-### System Updates
+1. Create service user:
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3.8 python3.8-venv python3-pip nginx redis-server
+sudo useradd -r -s /bin/false instagram_api
+sudo mkdir -p /opt/instagram_stats_api
+sudo chown instagram_api:instagram_api /opt/instagram_stats_api
 ```
 
-### Create Service User
+2. Install system dependencies:
 ```bash
-sudo useradd -m -s /bin/bash instagram_api
-sudo usermod -aG sudo instagram_api
+sudo apt update
+sudo apt install -y python3.9 python3.9-venv python3.9-dev redis-server nginx certbot python3-certbot-nginx
 ```
 
-## 2. Application Setup
-
-### Clone Repository
+3. Set up Python virtual environment:
 ```bash
-cd /opt
-sudo git clone <repository-url> instagram_stats_api
-sudo chown -R instagram_api:instagram_api instagram_stats_api
-```
-
-### Python Environment
-```bash
-cd instagram_stats_api
-python3.8 -m venv venv
+cd /opt/instagram_stats_api
+python3.9 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 3. Configuration
+## Configuration
 
-### Environment Variables
-Create `.env` file:
+1. Set up environment variables:
 ```bash
-# API Settings
-API_VERSION=v2
-ENVIRONMENT=production
-DEBUG=False
-PROJECT_NAME="Instagram Stats API"
-
-# Security
-SECRET_KEY=<generated-secret-key>
-SSL_KEYFILE=/etc/letsencrypt/live/api.yourdomain.com/privkey.pem
-SSL_CERTFILE=/etc/letsencrypt/live/api.yourdomain.com/fullchain.pem
-
-# Instagram Graph API
-INSTAGRAM_APP_ID=your-app-id
-INSTAGRAM_APP_SECRET=your-app-secret
-INSTAGRAM_ACCESS_TOKEN=your-access-token
-INSTAGRAM_API_VERSION=v16.0
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# CORS
-CORS_ORIGINS=["https://yourdomain.com"]
-CORS_ALLOW_CREDENTIALS=true
-CORS_ALLOW_METHODS=["GET", "POST", "OPTIONS"]
-CORS_ALLOW_HEADERS=["*"]
-
-# Monitoring
-SENTRY_DSN=your-sentry-dsn
-PROMETHEUS_ENABLED=true
-TRACING_ENABLED=true
-
-# Logging
-LOG_LEVEL=INFO
+sudo mkdir /etc/instagram_api
+sudo cp .env.example /etc/instagram_api/.env
+sudo chown instagram_api:instagram_api /etc/instagram_api/.env
+sudo chmod 600 /etc/instagram_api/.env
 ```
 
-### Redis Configuration
-Edit `/etc/redis/redis.conf`:
-```
-maxmemory 256mb
-maxmemory-policy allkeys-lru
-supervised systemd
-```
-
-Restart Redis:
+2. Configure Redis:
 ```bash
+sudo cp config/redis/redis.conf /etc/redis/redis.conf
 sudo systemctl restart redis
 ```
 
-## 4. SSL Setup
-
-### Install Certbot
+3. Set up Nginx:
 ```bash
-sudo apt install certbot python3-certbot-nginx
-```
-
-### Get SSL Certificate
-```bash
-sudo certbot --nginx -d api.yourdomain.com
-```
-
-## 5. Nginx Configuration
-
-Create `/etc/nginx/sites-available/instagram_api`:
-```nginx
-limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
-
-upstream api_server {
-    server unix:/run/instagram_api.sock fail_timeout=0;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name api.yourdomain.com;
-
-    ssl_certificate /etc/letsencrypt/live/api.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.yourdomain.com/privkey.pem;
-    
-    # SSL configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-    ssl_prefer_server_ciphers off;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
-    
-    # Security headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'" always;
-    
-    # Logging
-    access_log /var/log/nginx/api_access.log combined buffer=512k flush=1m;
-    error_log /var/log/nginx/api_error.log warn;
-    
-    location / {
-        limit_req zone=api_limit burst=20 nodelay;
-        
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        proxy_pass http://api_server;
-        proxy_redirect off;
-        
-        # Timeouts
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-        
-        # WebSocket support
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-    
-    # Prometheus metrics
-    location /metrics {
-        auth_basic "Metrics";
-        auth_basic_user_file /etc/nginx/.htpasswd;
-        proxy_pass http://api_server;
-    }
-}
-
-# Redirect HTTP to HTTPS
-server {
-    listen 80;
-    server_name api.yourdomain.com;
-    return 301 https://$server_name$request_uri;
-}
-```
-
-Enable site:
-```bash
-sudo ln -s /etc/nginx/sites-available/instagram_api /etc/nginx/sites-enabled/
+sudo cp config/nginx/instagram_api.conf /etc/nginx/sites-available/
+sudo ln -s /etc/nginx/sites-available/instagram_api.conf /etc/nginx/sites-enabled/
 sudo nginx -t
-sudo systemctl restart nginx
+sudo systemctl reload nginx
 ```
 
-## 6. Systemd Service
-
-Create `/etc/systemd/system/instagram_api.service`:
-```ini
-[Unit]
-Description=Instagram Stats API
-After=network.target
-
-[Service]
-User=instagram_api
-Group=instagram_api
-WorkingDirectory=/opt/instagram_stats_api
-Environment="PATH=/opt/instagram_stats_api/venv/bin"
-ExecStart=/opt/instagram_stats_api/venv/bin/gunicorn -c gunicorn_conf.py app.main:app
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Start service:
+4. Configure SSL:
 ```bash
-sudo systemctl enable instagram_api
-sudo systemctl start instagram_api
+sudo certbot --nginx -d api.example.com
 ```
 
-## 7. Monitoring Setup
+## Monitoring Setup
 
-### Prometheus
-Install Prometheus:
+1. Install Prometheus:
 ```bash
-sudo apt install prometheus
+sudo apt install -y prometheus
+sudo cp config/prometheus/prometheus.yml /etc/prometheus/
+sudo systemctl restart prometheus
 ```
 
-Edit `/etc/prometheus/prometheus.yml`:
-```yaml
-scrape_configs:
-  - job_name: 'instagram_stats_api'
-    scrape_interval: 15s
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['localhost:8000']
-```
-
-### Grafana
-Install Grafana:
+2. Install Grafana:
 ```bash
-sudo apt install grafana
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+sudo apt-get update
+sudo apt-get install grafana
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
 ```
 
-Configure dashboards for:
-- Request rates
-- Response times
-- Error rates
-- Cache hit rates
-- API key usage
-
-## 8. Backup Setup
-
-### Database Backups
-Create backup script `/opt/instagram_stats_api/scripts/backup.sh`:
+3. Import Grafana dashboard:
 ```bash
-#!/bin/bash
-BACKUP_DIR="/backup/redis"
-DATE=$(date +%Y%m%d_%H%M%S)
+sudo cp config/grafana/instagram_api_dashboard.json /var/lib/grafana/dashboards/
+```
+
+## Service Setup
+
+1. Set up systemd services:
+```bash
+sudo cp config/systemd/instagram_api.service /etc/systemd/system/
+sudo cp config/systemd/instagram_api_monitor.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable instagram_api instagram_api_monitor
+sudo systemctl start instagram_api instagram_api_monitor
+```
+
+2. Configure log rotation:
+```bash
+sudo mkdir -p /var/log/instagram_api
+sudo chown instagram_api:instagram_api /var/log/instagram_api
+sudo cp config/logrotate.d/instagram_api /etc/logrotate.d/
+```
+
+3. Set up cron jobs:
+```bash
+sudo cp config/crontab /etc/cron.d/instagram_api
+sudo chmod 644 /etc/cron.d/instagram_api
+```
+
+## Backup Configuration
+
+1. Create backup directories:
+```bash
+sudo mkdir -p /opt/instagram_stats_api/backups
+sudo chown instagram_api:instagram_api /opt/instagram_stats_api/backups
+```
+
+2. Configure remote storage (optional):
+```bash
+echo "REMOTE_STORAGE_URL=https://storage.example.com" >> /etc/instagram_api/.env
+echo "REMOTE_STORAGE_KEY=your_secret_key" >> /etc/instagram_api/.env
+```
+
+## Security Considerations
+
+1. Firewall configuration:
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+```
+
+2. API key rotation:
+- API keys are automatically rotated every 90 days
+- Old keys are kept valid for 14 days after rotation
+- Clients are notified via email about new keys
+
+3. Rate limiting:
+- Configured in Nginx (see `config/nginx/instagram_api.conf`)
+- Default: 100 requests per minute per IP
+
+4. SSL/TLS:
+- Only TLS 1.2 and 1.3 are enabled
+- Strong cipher suites only
+- HSTS enabled
+- Certificate auto-renewal via certbot
+
+## Monitoring and Alerts
+
+1. Key metrics monitored:
+- Request rate and latency
+- Error rate
+- Cache hit rate
+- System resources (CPU, memory, disk)
+- SSL certificate expiration
+- API key expiration
+
+2. Alert thresholds:
+- Error rate > 5%
+- Response time > 1000ms
+- Disk usage > 90%
+- Memory usage > 90%
+- CPU usage > 80%
+- SSL certificate < 30 days to expiry
+- Cache hit rate < 70%
+
+3. Alert channels:
+- Email notifications
+- Slack webhook (if configured)
+- PagerDuty (if configured)
+
+## Maintenance Procedures
+
+1. Updating the application:
+```bash
+cd /opt/instagram_stats_api
+git pull
+source venv/bin/activate
+pip install -r requirements.txt
+sudo systemctl restart instagram_api
+```
+
+2. Backup verification:
+```bash
+python scripts/backup.py --verify
+```
+
+3. Log management:
+- Logs are rotated weekly
+- Compressed logs are kept for 4 weeks
+- Use `journalctl -u instagram_api` for service logs
+
+4. Database maintenance:
+```bash
+# Trigger Redis persistence
 redis-cli save
-cp /var/lib/redis/dump.rdb $BACKUP_DIR/redis_$DATE.rdb
-find $BACKUP_DIR -type f -mtime +7 -delete
+
+# Compact Redis AOF file
+redis-cli bgrewriteaof
 ```
 
-Add to crontab:
+## Troubleshooting
+
+1. Check service status:
 ```bash
-0 */6 * * * /opt/instagram_stats_api/scripts/backup.sh
+sudo systemctl status instagram_api
+sudo systemctl status instagram_api_monitor
 ```
 
-## 9. Security Checklist
-
-- [ ] Firewall configured (UFW)
-- [ ] Fail2ban installed
-- [ ] Regular security updates enabled
-- [ ] SSL certificate auto-renewal configured
-- [ ] API keys rotated regularly
-- [ ] Monitoring alerts configured
-- [ ] Backup verification process established
-- [ ] Access logs monitored
-- [ ] Rate limiting tested
-- [ ] DDoS protection configured
-
-## 10. Maintenance
-
-### Log Rotation
-Configure `/etc/logrotate.d/instagram_api`:
-```
-/var/log/instagram_api/*.log {
-    daily
-    rotate 14
-    compress
-    delaycompress
-    notifempty
-    create 0640 instagram_api instagram_api
-    sharedscripts
-    postrotate
-        systemctl reload instagram_api
-    endscript
-}
+2. View logs:
+```bash
+tail -f /var/log/instagram_api/api.log
+tail -f /var/log/instagram_api/monitor.log
 ```
 
-### Monitoring Alerts
-Set up alerts for:
-- High error rates
-- High response times
-- Low cache hit rates
-- Certificate expiration
-- Disk space usage
-- Memory usage
-- CPU usage
+3. Check metrics:
+```bash
+curl http://localhost:8000/metrics
+```
 
-### Regular Maintenance Tasks
-- Weekly: Review logs
-- Monthly: Update dependencies
-- Monthly: Rotate API keys
-- Quarterly: SSL certificate check
-- Quarterly: Security audit
-- Yearly: Infrastructure review 
+4. Test API health:
+```bash
+curl https://api.example.com/health
+```
+
+## Support
+
+For issues or assistance:
+- Email: support@example.com
+- Documentation: https://docs.example.com/instagram-stats-api
+- GitHub: https://github.com/example/instagram-stats-api 

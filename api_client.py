@@ -5,13 +5,15 @@ from typing import Optional
 import os
 
 class APIClient:
-    def __init__(self, api_key: str, base_url: str = "https://admin-dashboard-lo71.onrender.com"):
+    """Client for interacting with the ReputationSync API."""
+
+    def __init__(self, api_key: str, base_url: str = "https://api.reputationsync.com"):
         """
         Initialize the API client.
         
         Args:
-            api_key (str): Your API key for authentication
-            base_url (str): The base URL of the admin dashboard API
+            api_key (str): The API key for authentication
+            base_url (str): The base URL of the API
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip('/')

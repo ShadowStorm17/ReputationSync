@@ -1,60 +1,30 @@
-import sqlite3
+"""
+Database initialization script.
+Creates initial database schema and default data.
+"""
+
 import os
-from passlib.context import CryptContext
-from dotenv import load_dotenv
+import sys
+import asyncio
+from app.db.init_db import init_db
+from app.core.config import get_settings
 
-# Load environment variables
-load_dotenv()
+# Get settings
+settings = get_settings()
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def initialize_database():
+    """Initialize database."""
+    try:
+        # Create data directory if it doesn't exist
+        os.makedirs("data", exist_ok=True)
 
-def init_db():
-    # Use DATABASE_URL from environment if available
-    db_url = os.getenv("DATABASE_URL", "dashboard.db")
-    
-    conn = sqlite3.connect(db_url)
-    c = conn.cursor()
-    
-    # Create tables
-    tables = [
-        '''CREATE TABLE IF NOT EXISTS stats
-           (id INTEGER PRIMARY KEY, endpoint TEXT, requests INTEGER, 
-            success_rate REAL, avg_response_time REAL)''',
-        
-        '''CREATE TABLE IF NOT EXISTS users
-           (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT,
-            email TEXT, name TEXT, avatar TEXT, last_active TEXT,
-            is_admin BOOLEAN DEFAULT FALSE)''',
-        
-        '''CREATE TABLE IF NOT EXISTS api_keys
-           (id TEXT PRIMARY KEY, name TEXT, key TEXT, user_id INTEGER,
-            created_at TEXT, revoked INTEGER DEFAULT 0,
-            FOREIGN KEY(user_id) REFERENCES users(id))''',
-        
-        '''CREATE TABLE IF NOT EXISTS usage_stats
-           (id INTEGER PRIMARY KEY, timestamp TEXT, endpoint TEXT,
-            response_time INTEGER, success INTEGER, api_key TEXT,
-            FOREIGN KEY(api_key) REFERENCES api_keys(id))'''
-    ]
-    
-    for table_sql in tables:
-        c.execute(table_sql)
-    
-    # Create default admin user if not exists
-    default_admin = os.getenv("ADMIN_USERNAME", "admin")
-    default_password = os.getenv("ADMIN_PASSWORD", "admin123")
-    
-    c.execute("SELECT * FROM users WHERE username = ?", (default_admin,))
-    if not c.fetchone():
-        hashed_password = pwd_context.hash(default_password)
-        c.execute(
-            "INSERT INTO users (username, password, email, name, is_admin) VALUES (?, ?, ?, ?, ?)",
-            (default_admin, hashed_password, "admin@example.com", "Administrator", True)
-        )
-    
-    conn.commit()
-    conn.close()
+        # Initialize database
+        asyncio.run(init_db())
+        print("Database initialization completed successfully.")
+
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    init_db() 
+    initialize_database() 

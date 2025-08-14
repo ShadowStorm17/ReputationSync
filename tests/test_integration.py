@@ -1,5 +1,5 @@
 import pytest
-import aioredis
+import redis.asyncio as redis
 import time
 import hashlib
 import secrets
@@ -9,13 +9,14 @@ from app.main import app
 from app.core.config import get_settings
 from app.core.cache import RedisCache
 from app.core.security import APIKeyManager, RequestValidator
+from app.services.api_key_manager import APIKeyManager
 
 settings = get_settings()
 
 @pytest.fixture
 async def redis_client():
     """Create a Redis client for testing."""
-    redis = await aioredis.from_url(
+    redis = await redis.from_url(
         "redis://localhost:6379",
         encoding="utf-8",
         decode_responses=True

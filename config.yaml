@@ -1,0 +1,117 @@
+# Environment settings
+ENVIRONMENT: "development"
+DEBUG: true
+TESTING: false
+
+# Security settings
+security:
+  SECRET_KEY: "your-secret-key-f8e1a3c5d4b2a9e7"
+  ENCRYPTION_KEY: "vg0YHxn5LWLe9SbcqsDqcS6GoFdwY185xsafy5_Pu-A="
+  JWT_ALGORITHM: "HS256"
+  JWT_EXPIRATION: 3600
+  ALLOWED_HOSTS: ["*"]
+  CORS_ORIGINS: ["*"]
+  RATE_LIMIT_ENABLED: true
+  SSL_ENABLED: true
+  AUTH_REQUIRED: true
+
+# Database settings
+database:
+  URL: "sqlite:///./data/app.db"
+  POOL_SIZE: 5
+  MAX_OVERFLOW: 10
+  POOL_TIMEOUT: 30
+  ECHO: false
+  SSL_ENABLED: true
+  MIGRATION_ENABLED: true
+
+# API settings
+api:
+  TITLE: "Reputation Management API"
+  VERSION: "1.0.0"
+  DESCRIPTION: "Advanced reputation management system"
+  DOCS_URL: "/docs"
+  REDOC_URL: "/redoc"
+  OPENAPI_URL: "/openapi.json"
+  ROOT_PATH: ""
+  DEBUG: false
+
+# Monitoring settings
+monitoring:
+  ENABLED: true
+  COLLECTION_INTERVAL: 60
+  ANALYSIS_INTERVAL: 300
+  ALERT_INTERVAL: 60
+  HEALTH_UPDATE_INTERVAL: 60
+  METRICS_RETENTION_DAYS: 7
+  ALERT_RETENTION_DAYS: 30
+
+# Cache settings
+cache:
+  ENABLED: true
+  DEFAULT_TTL: 300
+  MAX_SIZE_MB: 1024
+  COMPRESSION_ENABLED: true
+  COMPRESSION_MIN_SIZE: 1024
+  ENCRYPTION_ENABLED: true
+  CLEANUP_INTERVAL: 300
+
+# Rate limiting settings
+rate_limit:
+  ENABLED: true
+  DEFAULT_LIMIT: 100
+  DEFAULT_WINDOW: 60
+  BURST_MULTIPLIER: 2.0
+  MIN_LIMIT: 10
+  MAX_LIMIT: 1000
+  ERROR_THRESHOLD: 0.05
+
+# Logging settings
+logging:
+  LEVEL: "INFO"
+  FORMAT: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  FILE_ENABLED: true
+  FILE_PATH: "logs/app.log"
+  MAX_SIZE_MB: 100
+  BACKUP_COUNT: 5
+  SYSLOG_ENABLED: false
+
+# Platform settings
+platforms:
+  INSTAGRAM_API_URL: "https://api.instagram.com/v1"
+  INSTAGRAM_ACCESS_TOKEN: "your-instagram-token"
+  TWITTER_API_URL: "https://api.twitter.com/2"
+  TWITTER_BEARER_TOKEN: "your-twitter-token"
+  YOUTUBE_API_KEY: "your-youtube-key"
+  YOUTUBE_API_URL: "https://www.googleapis.com/youtube/v3"
+  RATE_LIMIT: 100
+  TIMEOUT: 30
+
+# Server settings
+HOST: "0.0.0.0"
+PORT: 8000
+RELOAD: true
+WORKERS: 4
+
+# Application settings
+APP_NAME: "Reputation Management API"
+APP_VERSION: "1.0.0"
+DOCS_URL: "/docs"
+OPENAPI_URL: "/openapi.json"
+METRICS_PORT: 9090
+
+# Error handling settings
+MAX_ERRORS_BEFORE_RECOVERY: 3
+MAX_RECOVERY_ATTEMPTS: 3
+HEALTH_CHECK_INTERVAL: 60
+
+# Redis Configuration
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  password: ""  # Set this in production
+  max_connections: 10
+  socket_timeout: 5
+  socket_connect_timeout: 5
+  retry_on_timeout: true 

@@ -1,0 +1,138 @@
+# Environment settings
+ENVIRONMENT: "development"  # development, production
+DEBUG: true
+TESTING: false
+
+# Security settings
+security:
+  SECRET_KEY: "your-secret-key-here"  # Change this in production
+  ENCRYPTION_KEY: "your-encryption-key-here"  # Change this in production
+  JWT_ALGORITHM: "HS256"
+  JWT_EXPIRATION: 3600  # 1 hour
+  ALLOWED_HOSTS: ["*"]  # Restrict in production
+  CORS_ORIGINS: ["*"]  # Restrict in production
+  RATE_LIMIT_ENABLED: true
+  SSL_ENABLED: false
+  AUTH_REQUIRED: true
+
+# Database settings
+database:
+  URL: "sqlite:///./data/app.db"  # SQLite by default
+  POOL_SIZE: 5
+  MAX_OVERFLOW: 10
+  POOL_TIMEOUT: 30
+  ECHO: false
+  SSL_ENABLED: false
+  MIGRATION_ENABLED: true
+
+# API settings
+api:
+  TITLE: "Reputation Management API"
+  VERSION: "1.0.0"
+  DESCRIPTION: "Advanced reputation management system"
+  DOCS_URL: "/docs"
+  REDOC_URL: "/redoc"
+  OPENAPI_URL: "/openapi.json"
+  ROOT_PATH: ""
+  DEBUG: false
+
+# Cache settings
+cache:
+  ENABLED: true
+  URL: "redis://localhost:6379/0"  # Redis URL
+  PREFIX: "reputation:"
+  DEFAULT_TTL: 3600  # 1 hour
+  SSL_ENABLED: false
+
+# Rate limiting settings
+rate_limit:
+  ENABLED: true
+  DEFAULT_LIMIT: 100  # requests per window
+  DEFAULT_WINDOW: 3600  # 1 hour
+  STORAGE_URL: "redis://localhost:6379/1"  # Redis URL
+  SSL_ENABLED: false
+
+# Monitoring settings
+monitoring:
+  ENABLED: true
+  INTERVAL: 300  # 5 minutes
+  METRICS_ENABLED: true
+  ALERTS_ENABLED: true
+  PROMETHEUS_ENABLED: true
+  SENTRY_ENABLED: false
+  SENTRY_DSN: ""  # Add your Sentry DSN here
+
+# Sentiment analysis settings
+sentiment:
+  MODEL_NAME: "distilbert-base-uncased-finetuned-sst-2-english"
+  BATCH_SIZE: 32
+  MAX_LENGTH: 512
+  CACHE_ENABLED: true
+  CACHE_TTL: 3600  # 1 hour
+
+# Response generation settings
+response:
+  MODEL_NAME: "gpt2"
+  MAX_LENGTH: 100
+  TEMPERATURE: 0.7
+  TOP_P: 0.9
+  CACHE_ENABLED: true
+  CACHE_TTL: 3600  # 1 hour
+
+# Platform settings
+platforms:
+  twitter:
+    ENABLED: true
+    API_KEY: ""  # Add your Twitter API key here
+    API_SECRET: ""  # Add your Twitter API secret here
+    ACCESS_TOKEN: ""  # Add your Twitter access token here
+    ACCESS_SECRET: ""  # Add your Twitter access secret here
+  instagram:
+    ENABLED: true
+    CLIENT_ID: ""  # Add your Instagram client ID here
+    CLIENT_SECRET: ""  # Add your Instagram client secret here
+  facebook:
+    ENABLED: true
+    APP_ID: ""  # Add your Facebook app ID here
+    APP_SECRET: ""  # Add your Facebook app secret here
+  linkedin:
+    ENABLED: true
+    CLIENT_ID: ""  # Add your LinkedIn client ID here
+    CLIENT_SECRET: ""  # Add your LinkedIn client secret here
+
+# Logging settings
+logging:
+  LEVEL: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  FORMAT: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  FILE_ENABLED: true
+  FILE_PATH: "logs/app.log"
+  ROTATION: "1 day"
+  RETENTION: "30 days"
+  COMPRESSION: "gz"
+
+# Email settings
+email:
+  ENABLED: false
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: 587
+  SMTP_USER: ""  # Add your SMTP username here
+  SMTP_PASSWORD: ""  # Add your SMTP password here
+  FROM_EMAIL: ""  # Add your from email here
+  SSL_ENABLED: true
+
+# Webhook settings
+webhooks:
+  ENABLED: false
+  ENDPOINTS: []  # Add your webhook endpoints here
+  RETRY_COUNT: 3
+  RETRY_DELAY: 60  # seconds
+  TIMEOUT: 30  # seconds
+
+# Storage settings
+storage:
+  TYPE: "local"  # local, s3, gcs
+  PATH: "data/storage"  # Local storage path
+  S3_BUCKET: ""  # Add your S3 bucket name here
+  S3_REGION: ""  # Add your S3 region here
+  GCS_BUCKET: ""  # Add your GCS bucket name here
+  GCS_PROJECT: ""  # Add your GCS project ID here 

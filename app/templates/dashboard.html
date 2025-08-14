@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Reputation System{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Total Reputation Score -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chart-line text-indigo-600 text-3xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Reputation Score</dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">{{ total_score }}</div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span class="ml-1">{{ score_change }}%</span>
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Users -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users text-green-600 text-3xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Active Users</dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">{{ active_users }}</div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span class="ml-1">{{ user_change }}%</span>
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sentiment Score -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-smile text-yellow-600 text-3xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Average Sentiment</dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">{{ sentiment_score }}</div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span class="ml-1">{{ sentiment_change }}%</span>
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Engagement Rate -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-heart text-red-600 text-3xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Engagement Rate</dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">{{ engagement_rate }}%</div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span class="ml-1">{{ engagement_change }}%</span>
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <!-- Reputation Trend -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Reputation Trend</h3>
+                <div class="mt-2">
+                    <canvas id="reputationChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sentiment Distribution -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Sentiment Distribution</h3>
+                <div class="mt-2">
+                    <canvas id="sentimentChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
+        </div>
+        <div class="border-t border-gray-200">
+            <ul role="list" class="divide-y divide-gray-200">
+                {% for activity in recent_activities %}
+                <li class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <img class="h-8 w-8 rounded-full" src="{{ activity.user_avatar }}" alt="">
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ activity.user_name }}</div>
+                                <div class="text-sm text-gray-500">{{ activity.description }}</div>
+                            </div>
+                        </div>
+                        <div class="ml-2 flex-shrink-0 flex">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ activity.status_class }}">
+                                {{ activity.status }}
+                            </span>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Reputation Trend Chart
+    const reputationCtx = document.getElementById('reputationChart').getContext('2d');
+    new Chart(reputationCtx, {
+        type: 'line',
+        data: {
+            labels: {{ dates|tojson }},
+            datasets: [{
+                label: 'Reputation Score',
+                data: {{ scores|tojson }},
+                borderColor: 'rgb(79, 70, 229)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Sentiment Distribution Chart
+    const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+    new Chart(sentimentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Positive', 'Neutral', 'Negative'],
+            datasets: [{
+                data: {{ sentiment_distribution|tojson }},
+                backgroundColor: [
+                    'rgb(34, 197, 94)',
+                    'rgb(234, 179, 8)',
+                    'rgb(239, 68, 68)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %} 

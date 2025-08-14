@@ -1,143 +1,138 @@
-# Admin Dashboard
+# Reputation Sync API
 
-A beautiful and modern admin dashboard for monitoring API usage, managing users, subscriptions, and API keys.
+A modern, secure, and scalable API for managing reputation systems with comprehensive monitoring and observability.
 
 ## Features
 
-- 🚀 Real-time API usage monitoring
-- 👥 User management
-- 🔑 API key management
-- 💳 Subscription management
-- 📊 Beautiful statistics and charts
-- 🎨 Modern UI with animations
-- 🔄 Auto-refreshing data
-- 🔒 Secure authentication
+- 🔒 Secure authentication and authorization
+- 📊 Real-time monitoring and metrics
+- 🔄 Rate limiting and IP blocking
+- 🚀 High performance with async support
+- 📈 Prometheus metrics integration
+- 📊 Grafana dashboards
+- 🔔 AlertManager integration
+- 🔍 Request validation and security
+- 💾 Redis caching
+- 🗄️ PostgreSQL database
+- 📝 Comprehensive logging
+- 🧪 Test coverage
 
-## Getting Started
+## Prerequisites
 
-### Installation
+- Python 3.11+
+- Docker and Docker Compose
+- PostgreSQL 15+
+- Redis 7+
+- Prometheus
+- Grafana
+- AlertManager
+
+## Quick Start
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/admin-dashboard.git
-cd admin-dashboard
+git clone https://github.com/yourusername/reputation_sync.git
+cd reputation_sync
+```
+
+2. Create and configure environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+3. Start the services using Docker Compose:
+```bash
+docker-compose up -d
+```
+
+4. Access the services:
+- API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- Grafana: http://localhost:3000 (admin/admin)
+- Prometheus: http://localhost:9090
+- AlertManager: http://localhost:9093
+
+## Development Setup
+
+1. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
 ```
 
 2. Install dependencies:
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
-3. Set up environment variables:
+3. Run tests:
 ```bash
-cp .env.example .env
+pytest
 ```
 
-Edit `.env` with your settings:
-```
-SECRET_KEY=your-secret-key
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your-secure-password
-ENVIRONMENT=development
-```
-
-4. Initialize the database:
+4. Run linting:
 ```bash
-python simple_dashboard.py
+flake8
+black .
+isort .
+mypy .
 ```
 
-### Running the Dashboard
+## API Documentation
 
-```bash
-uvicorn simple_dashboard:app --reload
-```
+The API documentation is available at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-The dashboard will be available at `http://localhost:8000`
+## Monitoring
 
-## Using the API Client
+### Grafana Dashboards
 
-The `APIClient` class in `api_client.py` provides an easy way to record API usage statistics.
+1. Access Grafana at http://localhost:3000
+2. Login with default credentials (admin/admin)
+3. Navigate to Dashboards
+4. Import the following dashboards:
+   - Reputation System Overview
+   - API Performance
+   - Security Metrics
 
-### Basic Usage
+### Prometheus Metrics
 
-```python
-from api_client import APIClient
+Prometheus metrics are available at:
+- Metrics endpoint: http://localhost:8000/metrics
+- Prometheus UI: http://localhost:9090
 
-# Initialize client
-client = APIClient('your-api-key')
+### AlertManager
 
-# Record API usage
-client.record_usage(
-    endpoint='/api/data',
-    user_id=123,
-    response_time=150,
-    success=True
-)
-```
-
-### Using Context Manager
-
-The client can automatically track response times using a context manager:
-
-```python
-with APIClient('your-api-key') as client:
-    # Your API call here
-    time.sleep(1)  # Simulate API call
-    client.record_usage(
-        endpoint='/api/users',
-        user_id=456,
-        response_time=client.last_response_time,
-        success=True
-    )
-```
-
-## Dashboard Features
-
-### API Keys
-
-- Create new API keys
-- Revoke existing keys
-- Regenerate keys
-- View key creation dates
-
-### User Management
-
-- View active users
-- Monitor user activity
-- Track last active times
-- User avatars and profiles
-
-### Subscription Management
-
-- View active subscriptions
-- Cancel subscriptions
-- Track expiration dates
-- Monitor subscription status
-
-### Statistics
-
-- Total API requests
-- Active users count
-- Error rate monitoring
-- Average response time
-- Hourly usage trends
-- Real-time updates
+AlertManager is configured to send notifications for:
+- High error rates
+- Slow response times
+- Security events
+- System resource usage
 
 ## Security
 
-- JWT-based authentication
-- Secure password hashing
-- Protected API endpoints
-- Cookie-based session management
+The API implements several security measures:
+- JWT authentication
+- Rate limiting
+- IP blocking
+- Request validation
+- Security headers
+- CORS protection
+- CSRF protection
+- API key authentication
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details. 
