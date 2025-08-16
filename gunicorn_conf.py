@@ -30,7 +30,7 @@ certfile = os.getenv("SSL_CERTFILE")
 # Process management
 daemon = False
 pidfile = None  # Let the OS handle this
-umask = 0
+umask = 0o027
 user = None  # Let Render handle this
 group = None  # Let Render handle this
 

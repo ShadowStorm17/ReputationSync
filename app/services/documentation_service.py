@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 
@@ -26,10 +26,10 @@ class APIEndpoint(BaseModel):
     method: str
     summary: str
     description: Optional[str] = None
-    parameters: List[Dict[str, Any]] = []
+    parameters: List[Dict[str, Any]] = Field(default_factory=list)
     request_body: Optional[Dict[str, Any]] = None
-    responses: Dict[str, Dict[str, Any]] = {}
-    tags: List[str] = []
+    responses: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list)
     deprecated: bool = False
     security: Optional[List[Dict[str, List[str]]]] = None
 
@@ -40,10 +40,10 @@ class APIVersion(BaseModel):
     version: str
     title: str
     description: str
-    endpoints: List[APIEndpoint] = []
-    servers: List[Dict[str, str]] = []
-    security_schemes: Dict[str, Dict[str, Any]] = {}
-    created_at: datetime = datetime.now(timezone.utc)
+    endpoints: List[APIEndpoint] = Field(default_factory=list)
+    servers: List[Dict[str, str]] = Field(default_factory=list)
+    security_schemes: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class DocumentationService:
@@ -155,20 +155,20 @@ class DocumentationService:
             logger.error("Generate OpenAPI spec error: %s", e)
             return {}
 
-    def save_documentation(self, version: str, format: str = "json") -> bool:
+    def save_documentation(self, version: str, fmt: str = "json") -> bool:
         """Save API documentation to file."""
         try:
             spec = self.generate_openapi_spec(version)
             if not spec:
                 return False
 
-            file_path = self.docs_path / f"openapi_{version}.{format}"
+            file_path = self.docs_path / f"openapi_{version}.{fmt}"
 
-            with open(file_path, "w") as f:
-                if format == "json":
+            with open(file_path, "w", encoding="utf-8") as f:
+                if fmt == "json":
                     json.dump(spec, f, indent=2)
-                elif format == "yaml":
-                    yaml.dump(spec, f, sort_keys=False)
+                elif fmt == "yaml":
+                    yaml.safe_dump(spec, f, sort_keys=False)
                 else:
                     return False
 
@@ -179,19 +179,19 @@ class DocumentationService:
             return False
 
     def load_documentation(
-        self, version: str, format: str = "json"
+        self, version: str, fmt: str = "json"
     ) -> Dict[str, Any]:
         """Load API documentation from file."""
         try:
-            file_path = self.docs_path / f"openapi_{version}.{format}"
+            file_path = self.docs_path / f"openapi_{version}.{fmt}"
 
             if not file_path.exists():
                 return {}
 
-            with open(file_path, "r") as f:
-                if format == "json":
+            with open(file_path, "r", encoding="utf-8") as f:
+                if fmt == "json":
                     return json.load(f)
-                elif format == "yaml":
+                elif fmt == "yaml":
                     return yaml.safe_load(f)
                 else:
                     return {}
@@ -207,17 +207,25 @@ class DocumentationService:
                 return False
 
             for route in routes:
+                methods = list(getattr(route, "methods", []))
+                method = sorted(methods)[0] if methods else "GET"
+
+                handler = getattr(route, "handler", None)
+                summary = handler.__doc__ if handler and handler.__doc__ else ""
+                description = inspect.getdoc(handler) if handler else None
+
                 endpoint = APIEndpoint(
-                    path=route.path,
-                    method=route.methods[0],
-                    summary=route.handler.__doc__ or "",
-                    description=inspect.getdoc(route.handler),
+                    path=getattr(route, "path", "/unknown"),
+                    method=method,
+                    summary=summary,
+                    description=description,
                     parameters=[],
                     responses={"200": {"description": "Successful response"}},
                 )
 
                 # Extract parameters from path
-                for param in route.param_convertors.keys():
+                param_convertors = getattr(route, "param_convertors", {}) or {}
+                for param in param_convertors.keys():
                     endpoint.parameters.append(
                         {
                             "name": param,

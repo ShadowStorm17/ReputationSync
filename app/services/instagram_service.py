@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
+from dataclasses import dataclass
 from app.core.constants import CONTENT_TYPE_JSON
 
 import httpx
@@ -15,12 +16,27 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class InstagramPost:
-    pass
+    id: str
+    caption: Optional[str]
+    media_type: str
+    media_url: Optional[str]
+    permalink: str
+    timestamp: datetime
+    like_count: Optional[int] = None
+    comments_count: Optional[int] = None
 
 
+@dataclass
 class InstagramComment:
-    pass
+    id: str
+    text: str
+    username: str
+    timestamp: datetime
+    like_count: Optional[int] = None
+    is_reply: bool = False
+    parent_comment_id: Optional[str] = None
 
 
 class InstagramAPI:

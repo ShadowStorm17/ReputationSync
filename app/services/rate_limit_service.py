@@ -40,6 +40,9 @@ class FixedWindowStrategy(RateLimitStrategy):
     ) -> Dict[str, Any]:
         """Check rate limit using fixed window."""
         try:
+            if not key or limit <= 0 or window <= 0:
+                logger.warning("Invalid rate limit params in FixedWindowStrategy: key=%s limit=%s window=%s", key, limit, window)
+                return {"allowed": False, "remaining": 0, "reset_after": 0}
             # Get current window
             window_key = f"{key}:{int(datetime.now(timezone.utc).timestamp() / window)}"
 
@@ -82,6 +85,9 @@ class SlidingWindowStrategy(RateLimitStrategy):
     ) -> Dict[str, Any]:
         """Check rate limit using sliding window."""
         try:
+            if not key or limit <= 0 or window <= 0:
+                logger.warning("Invalid rate limit params in SlidingWindowStrategy: key=%s limit=%s window=%s", key, limit, window)
+                return {"allowed": False, "remaining": 0, "reset_after": 0}
             now = datetime.now(timezone.utc).timestamp()
             window_start = now - window
 
@@ -135,6 +141,9 @@ class TokenBucketStrategy(RateLimitStrategy):
     ) -> Dict[str, Any]:
         """Check rate limit using token bucket."""
         try:
+            if not key or limit <= 0 or window <= 0:
+                logger.warning("Invalid rate limit params in TokenBucketStrategy: key=%s limit=%s window=%s", key, limit, window)
+                return {"allowed": False, "remaining": 0, "reset_after": 0}
             now = datetime.now(timezone.utc).timestamp()
 
             # Get bucket data
@@ -214,6 +223,12 @@ class RateLimitService:
     ) -> Dict[str, Any]:
         """Check rate limit."""
         try:
+            if not key:
+                return {"status": "error", "message": "Rate limit key is required"}
+            if limit <= 0:
+                return {"status": "error", "message": "Limit must be > 0"}
+            if window <= 0:
+                return {"status": "error", "message": "Window must be > 0"}
             # Get strategy
             strategy_name = strategy or self.default_strategy
             limiter = self.strategies.get(strategy_name)
@@ -254,12 +269,12 @@ class RateLimitService:
                 }
 
             # Get Redis client
-            redis = limiter.redis
+            redis_client = limiter.redis
 
             if strategy_name == "fixed":
                 window_key = f"{key}:{int(datetime.now(timezone.utc).timestamp())}"
-                count = await redis.get(window_key)
-                ttl = await redis.ttl(window_key)
+                count = await redis_client.get(window_key)
+                ttl = await redis_client.ttl(window_key)
 
                 return {
                     "status": "success",
@@ -269,8 +284,8 @@ class RateLimitService:
 
             elif strategy_name == "sliding":
                 now = datetime.now(timezone.utc).timestamp()
-                count = await redis.zcard(key)
-                oldest = await redis.zrange(key, 0, 0, withscores=True)
+                count = await redis_client.zcard(key)
+                oldest = await redis_client.zrange(key, 0, 0, withscores=True)
 
                 return {
                     "status": "success",
@@ -280,7 +295,7 @@ class RateLimitService:
 
             elif strategy_name == "token":
                 bucket_key = f"bucket:{key}"
-                bucket_data = await redis.get(bucket_key)
+                bucket_data = await redis_client.get(bucket_key)
 
                 if bucket_data:
                     bucket = json.loads(bucket_data)
@@ -312,20 +327,32 @@ class RateLimitService:
                 }
 
             # Get Redis client
-            redis = limiter.redis
+            redis_client = limiter.redis
 
             if strategy_name == "fixed":
                 pattern = f"{key}:*"
-                keys = await redis.keys(pattern)
-                if keys:
-                    await redis.delete(*keys)
+                cursor = 0
+                keys_to_delete = []
+                while True:
+                    cursor, batch = await redis_client.scan(cursor=cursor, match=pattern, count=100)
+                    if batch:
+                        keys_to_delete.extend(batch)
+                        # Delete in chunks to limit payload size
+                        if len(keys_to_delete) >= 500:
+                            await redis_client.delete(*keys_to_delete)
+                            keys_to_delete.clear()
+                    if cursor == 0:
+                        break
+                if keys_to_delete:
+                    await redis_client.delete(*keys_to_delete)
+                return {"status": "success"}
 
             elif strategy_name == "sliding":
-                await redis.delete(key)
+                await redis_client.delete(key)
 
             elif strategy_name == "token":
                 bucket_key = f"bucket:{key}"
-                await redis.delete(bucket_key)
+                await redis_client.delete(bucket_key)
 
             return {"status": "success", "message": "Rate limits reset"}
 

@@ -98,8 +98,7 @@ class ErrorTracker:
             await self.redis.hincrby('error_stats', error_type, 1)
 
             # Update error timeline
-            timeline_key = f"error_timeline:{
-                datetime.now(timezone.utc).strftime('%Y%m%d')}"
+            timeline_key = f"error_timeline:{datetime.now(timezone.utc).strftime('%Y%m%d')}"
             await self.redis.hincrby(timeline_key, error_type, 1)
             await self.redis.expire(timeline_key, self.retention_period)
 

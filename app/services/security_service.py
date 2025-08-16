@@ -28,7 +28,13 @@ class AuthManager:
             settings.REDIS_URL, encoding="utf-8", decode_responses=True
         )
         self.token_ttl = 3600  # 1 hour
-        self.secret_key = settings.SECRET_KEY
+        # Extract actual secret value if SECRET_KEY is a SecretStr
+        self.secret_key = (
+            settings.SECRET_KEY.get_secret_value()
+            if hasattr(settings.SECRET_KEY, "get_secret_value")
+            else str(settings.SECRET_KEY)
+        )
+        self.algorithm = getattr(settings, "JWT_ALGORITHM", "HS256")
 
     async def authenticate(
         self, username: str, password: str
@@ -70,7 +76,11 @@ class AuthManager:
         """Verify JWT token."""
         try:
             # Decode token
-            payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
+            payload = jwt.decode(
+                token,
+                self.secret_key,
+                algorithms=[self.algorithm],
+            )
 
             # Verify token type
             if payload.get("type") != token_type:
@@ -124,7 +134,11 @@ class AuthManager:
             "exp": now + timedelta(seconds=ttl),
         }
 
-        return jwt.encode(payload, self.secret_key, algorithm="HS256")
+        return jwt.encode(
+            payload,
+            self.secret_key,
+            algorithm=self.algorithm,
+        )
 
     async def _store_refresh_token(self, user_id: str, token: str):
         """Store refresh token in Redis."""
@@ -137,11 +151,12 @@ class AuthManager:
 
     async def _get_user(self, username: str) -> Optional[Dict[str, Any]]:
         """Get user from database."""
-        # Implement user retrieval logic
+        # For now, return a mock user with a valid bcrypt hash for the password "password"
+        password_hash = bcrypt.hash("password")
         return {
             "id": "123",
             "username": username,
-            "password_hash": "hash",
+            "password_hash": password_hash,
             "roles": ["user"],
         }
 
@@ -203,6 +218,10 @@ class SecurityService:
         """Initialize security service."""
         self.auth_manager = AuthManager()
         self.rate_limiter = RateLimiter()
+        # Redis client for API key storage/verification
+        self.redis = redis.Redis.from_url(
+            settings.REDIS_URL, encoding="utf-8", decode_responses=True
+        )
 
     async def secure_request(
         self, token: str, required_roles: List[str], rate_limit_key: str

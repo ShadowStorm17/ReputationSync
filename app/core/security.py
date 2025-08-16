@@ -4,6 +4,7 @@ Provides comprehensive security features for the API.
 """
 
 import hashlib
+import hmac
 import ipaddress
 import re
 import secrets
@@ -71,7 +72,7 @@ class SecurityManager:
     def create_access_token(
         self,
         subject: Union[str, Any],
-        scopes: list[str] = [],
+        scopes: Optional[list[str]] = None,
         expires_delta: Optional[timedelta] = None,
     ) -> str:
         """Create JWT access token."""
@@ -85,7 +86,7 @@ class SecurityManager:
         to_encode = {
             "exp": expire,
             "sub": str(subject),
-            "scopes": scopes,
+            "scopes": scopes or [],
             "jti": secrets.token_hex(16),  # Unique token ID
             "iat": datetime.now(timezone.utc).timestamp(),
         }
@@ -327,8 +328,10 @@ async def get_current_user_by_api_key(
         nonce = request.headers.get("X-Nonce")
         signature = request.headers.get("X-Signature")
         
-        # For testing: accept any values if API key is a test key
-        if api_key and (api_key.startswith("test") or api_key == "test-api-key"):
+        # Test-only shortcut allowed only in DEBUG/TESTING modes
+        if (settings.DEBUG or settings.TESTING) and api_key and (
+            api_key.startswith("test") or api_key == "test-api-key"
+        ):
             mock_user = User(
                 id=1,
                 username="test_user",
@@ -357,12 +360,18 @@ async def get_current_user_by_api_key(
                 headers={"WWW-Authenticate": "ApiKey"},
             )
 
-        # Validate signature
-        import hashlib
-        message = f"{timestamp}{nonce}{api_key}{api_key}"  # Using API key as secret for testing
-        expected_signature = hashlib.sha256(message.encode()).hexdigest()
-        
-        if signature != expected_signature:
+        # Validate signature using HMAC-SHA256 with server secret
+        server_secret = (
+            settings.SECRET_KEY.get_secret_value()
+            if hasattr(settings.SECRET_KEY, "get_secret_value")
+            else str(settings.SECRET_KEY)
+        )
+        message = f"{timestamp}{nonce}{api_key}"
+        expected_signature = hmac.new(
+            server_secret.encode(), message.encode(), hashlib.sha256
+        ).hexdigest()
+         
+        if not hmac.compare_digest(str(signature), str(expected_signature)):
             raise HTTPException(
                 status_code=401,
                 detail="Invalid signature",
@@ -429,10 +438,10 @@ def verify_token(token: str) -> Optional[dict]:
         return None
 
 
-def get_cors_middleware() -> CORSMiddleware:
-    """Get CORS middleware configuration."""
+def get_cors_middleware(app_instance) -> CORSMiddleware:
+    """Get CORS middleware configuration for the given app instance."""
     return CORSMiddleware(
-        app=app,
+        app=app_instance,
         allow_origins=settings.CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],

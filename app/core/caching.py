@@ -85,58 +85,62 @@ class Cache:
                 await task
             except asyncio.CancelledError:
                 logger.info("Task %s was cancelled during shutdown", task)
-                # Do not re-raise to allow graceful shutdown
+                raise
         self._background_tasks.clear()
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def get(self, key: str, default: Any = None) -> Any:
         """Get a value from cache."""
-        try:
-            # Generate cache key
-            cache_key = self._generate_key(key)
 
-            with self._lock:
-                item = self._data.get(cache_key)
-                if not item:
-                    # Cache miss
-                    self._stats["misses"][key] += 1
-                    CACHE_MISSES.labels(cache_type="memory").inc()
-                    return default
+        def _op():
+            try:
+                # Generate cache key
+                cache_key = self._generate_key(key)
 
-                # Check expiration
-                if item.expires_at and datetime.now(timezone.utc) > item.expires_at:
-                    # Expired item
-                    del self._data[cache_key]
-                    self._size_bytes -= item.size_bytes
-                    self._stats["misses"][key] += 1
-                    CACHE_MISSES.labels(cache_type="memory").inc()
-                    return default
+                with self._lock:
+                    item = self._data.get(cache_key)
+                    if not item:
+                        # Cache miss
+                        self._stats["misses"][key] += 1
+                        CACHE_MISSES.labels(cache_type="memory").inc()
+                        return default
 
-                # Update access stats
-                item.access_count += 1
-                item.last_accessed = datetime.now(timezone.utc)
+                    # Check expiration
+                    if item.expires_at and datetime.now(timezone.utc) > item.expires_at:
+                        # Expired item
+                        del self._data[cache_key]
+                        self._size_bytes -= item.size_bytes
+                        self._stats["misses"][key] += 1
+                        CACHE_MISSES.labels(cache_type="memory").inc()
+                        return default
 
-                # Move to end (most recently used)
-                self._data.move_to_end(cache_key)
+                    # Update access stats
+                    item.access_count += 1
+                    item.last_accessed = datetime.now(timezone.utc)
 
-                # Cache hit
-                self._stats["hits"][key] += 1
-                CACHE_HITS.labels(cache_type="memory").inc()
+                    # Move to end (most recently used)
+                    self._data.move_to_end(cache_key)
 
-                # Decrypt if needed
-                value = item.value
-                if item.encrypted:
-                    value = self._decrypt_value(value)
+                    # Cache hit
+                    self._stats["hits"][key] += 1
+                    CACHE_HITS.labels(cache_type="memory").inc()
 
-                # Decompress if needed
-                if item.compressed:
-                    value = self._decompress_value(value)
+                    # Decrypt if needed
+                    value = item.value
+                    if item.encrypted:
+                        value = self._decrypt_value(value)
 
-                return value
+                    # Decompress if needed
+                    if item.compressed:
+                        value = self._decompress_value(value)
 
-        except Exception as e:
-            logger.error("Cache get error: %s", e)
-            return default
+                    return value
+
+            except Exception as e:
+                logger.error("Cache get error: %s", e)
+                return default
+
+        return await asyncio.to_thread(_op)
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def set(
@@ -148,105 +152,139 @@ class Cache:
         encrypt: bool = True,
     ) -> bool:
         """Set a value in cache."""
-        try:
-            # Generate cache key
-            cache_key = self._generate_key(key)
 
-            # Prepare value
-            prepared_value = value
+        def _op() -> bool:
+            try:
+                # Generate cache key
+                cache_key = self._generate_key(key)
 
-            # Compress if needed
-            compressed = False
-            if compress and self._should_compress(value):
-                prepared_value = self._compress_value(prepared_value)
-                compressed = True
+                # Prepare value
+                prepared_value = value
 
-            # Encrypt if needed
-            encrypted = False
-            if encrypt:
-                prepared_value = self._encrypt_value(prepared_value)
-                encrypted = True
+                # Compress if needed
+                compressed = False
+                if compress and self._should_compress(value):
+                    prepared_value = self._compress_value(prepared_value)
+                    compressed = True
 
-            # Calculate size
-            size_bytes = self._calculate_size(prepared_value)
+                # Encrypt if needed
+                encrypted = False
+                if encrypt:
+                    prepared_value = self._encrypt_value(prepared_value)
+                    encrypted = True
 
-            # Check if we need to evict items
-            if size_bytes > settings.cache.MAX_SIZE_MB * 1024 * 1024:
-                logger.warning("Item too large to cache: %d bytes", size_bytes)
-                return False
-
-            # Create cache item
-            item = CacheItem(
-                key=cache_key,
-                value=prepared_value,
-                size_bytes=size_bytes,
-                compressed=compressed,
-                encrypted=encrypted,
-            )
-
-            # Set expiration if TTL provided
-            if ttl is not None:
-                item.expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl)
-
-            with self._lock:
-                # Remove old item if exists
-                if cache_key in self._data:
-                    old_item = self._data[cache_key]
-                    self._size_bytes -= old_item.size_bytes
+                # Calculate size
+                size_bytes = self._calculate_size(prepared_value)
 
                 # Check if we need to evict items
-                while (
-                    self._size_bytes + size_bytes
-                    > settings.cache.MAX_SIZE_MB * 1024 * 1024
-                ):
-                    if not self._evict_item():
-                        logger.error("Failed to evict cache item")
-                        return False
+                if size_bytes > settings.cache.MAX_SIZE_MB * 1024 * 1024:
+                    logger.warning("Item too large to cache: %d bytes", size_bytes)
+                    return False
 
-                # Store new item
-                self._data[cache_key] = item
-                self._size_bytes += size_bytes
+                # Create cache item
+                item = CacheItem(
+                    key=cache_key,
+                    value=prepared_value,
+                    size_bytes=size_bytes,
+                    compressed=compressed,
+                    encrypted=encrypted,
+                )
 
-                CACHE_OPERATIONS.labels(operation="set").inc()
-                return True
+                # Set expiration if TTL provided
+                if ttl is not None:
+                    item.expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl)
 
-        except Exception as e:
-            logger.error("Cache set error: %s", e)
-            return False
+                with self._lock:
+                    # Remove old item if exists
+                    if cache_key in self._data:
+                        old_item = self._data[cache_key]
+                        self._size_bytes -= old_item.size_bytes
+
+                    # Check if we need to evict items
+                    while (
+                        self._size_bytes + size_bytes
+                        > settings.cache.MAX_SIZE_MB * 1024 * 1024
+                    ):
+                        if not self._evict_item():
+                            logger.error("Failed to evict cache item")
+                            return False
+
+                    # Store new item
+                    self._data[cache_key] = item
+                    self._size_bytes += size_bytes
+
+                    CACHE_OPERATIONS.labels(operation="set").inc()
+                    return True
+
+            except Exception as e:
+                logger.error("Cache set error: %s", e)
+                return False
+
+        return await asyncio.to_thread(_op)
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def delete(self, key: str) -> bool:
         """Delete a value from cache."""
-        try:
-            # Generate cache key
-            cache_key = self._generate_key(key)
 
-            with self._lock:
-                if cache_key in self._data:
-                    item = self._data[cache_key]
-                    self._size_bytes -= item.size_bytes
-                    del self._data[cache_key]
-                    CACHE_OPERATIONS.labels(operation="delete").inc()
-                    return True
+        def _op() -> bool:
+            try:
+                # Generate cache key
+                cache_key = self._generate_key(key)
+
+                with self._lock:
+                    if cache_key in self._data:
+                        item = self._data[cache_key]
+                        self._size_bytes -= item.size_bytes
+                        del self._data[cache_key]
+                        CACHE_OPERATIONS.labels(operation="delete").inc()
+                        return True
+                    return False
+
+            except Exception as e:
+                logger.error("Cache delete error: %s", e)
                 return False
 
-        except Exception as e:
-            logger.error("Cache delete error: %s", e)
-            return False
+        return await asyncio.to_thread(_op)
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def clear(self) -> bool:
         """Clear all items from cache."""
-        try:
-            with self._lock:
-                self._data.clear()
-                self._size_bytes = 0
-                CACHE_OPERATIONS.labels(operation="clear").inc()
-                return True
 
-        except Exception as e:
-            logger.error("Cache clear error: %s", e)
-            return False
+        def _op() -> bool:
+            try:
+                with self._lock:
+                    self._data.clear()
+                    self._size_bytes = 0
+                    CACHE_OPERATIONS.labels(operation="clear").inc()
+                    return True
+
+            except Exception as e:
+                logger.error("Cache clear error: %s", e)
+                return False
+
+        return await asyncio.to_thread(_op)
+
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+
+        def _op() -> Dict[str, Any]:
+            try:
+                with self._lock:
+                    return {
+                        "size_bytes": self._size_bytes,
+                        "item_count": len(self._data),
+                        "hits": dict(self._stats["hits"]),
+                        "misses": dict(self._stats["misses"]),
+                        "evictions": dict(self._stats["evictions"]),
+                        "memory_usage": self._size_bytes
+                        / (settings.cache.MAX_SIZE_MB * 1024 * 1024),
+                    }
+
+            except Exception as e:
+                logger.error("Get cache stats error: %s", e)
+                return {}
+
+        return await asyncio.to_thread(_op)
 
     def _generate_key(self, key: str) -> str:
         """Generate a cache key."""
@@ -447,21 +485,25 @@ class Cache:
 
     async def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
-        try:
-            with self._lock:
-                return {
-                    "size_bytes": self._size_bytes,
-                    "item_count": len(self._data),
-                    "hits": dict(self._stats["hits"]),
-                    "misses": dict(self._stats["misses"]),
-                    "evictions": dict(self._stats["evictions"]),
-                    "memory_usage": self._size_bytes
-                    / (settings.cache.MAX_SIZE_MB * 1024 * 1024),
-                }
 
-        except Exception as e:
-            logger.error("Get cache stats error: %s", e)
-            return {}
+        def _op() -> Dict[str, Any]:
+            try:
+                with self._lock:
+                    return {
+                        "size_bytes": self._size_bytes,
+                        "item_count": len(self._data),
+                        "hits": dict(self._stats["hits"]),
+                        "misses": dict(self._stats["misses"]),
+                        "evictions": dict(self._stats["evictions"]),
+                        "memory_usage": self._size_bytes
+                        / (settings.cache.MAX_SIZE_MB * 1024 * 1024),
+                    }
+
+            except Exception as e:
+                logger.error("Get cache stats error: %s", e)
+                return {}
+
+        return await asyncio.to_thread(_op)
 
 
 # Global cache instance

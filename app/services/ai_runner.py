@@ -38,8 +38,12 @@ class AIRunner:
         if self.running:
             logger.info("Stopping AI runner...")
             self.running = False
-            for task in self.tasks.values():
+            for task in list(self.tasks.values()):
                 task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    logger.info("AI runner task %s cancelled", task.get_name() if hasattr(task, 'get_name') else 'process')
             self.tasks.clear()
 
     async def _process_continuously(self):
@@ -51,7 +55,8 @@ class AIRunner:
                 await asyncio.sleep(self.config["interval"])
 
             except asyncio.CancelledError:
-                break
+                logger.info("Continuous processing cancelled")
+                raise
             except Exception as e:
                 logger.error("Error in continuous processing: %s", str(e))
                 await asyncio.sleep(10)  # Wait before retrying

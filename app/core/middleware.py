@@ -4,6 +4,7 @@ Handles request/response processing and common middleware functionality.
 """
 
 import asyncio
+import base64
 import hashlib
 import json
 import logging
@@ -658,9 +659,8 @@ class CachingMiddleware(BaseHTTPMiddleware):
         self._last_cleanup = time.time()
         self._cache_compression = True
         self._cache_encryption = True
-        self._cache_compression_level = 6
         self._cache_encryption_key = os.urandom(32)
-        self._cache_encryption_nonce = os.urandom(12)
+        self._cache_compression_level = 6
 
     async def initialize(self) -> None:
         """Initialize the cache."""
@@ -691,13 +691,23 @@ class CachingMiddleware(BaseHTTPMiddleware):
                     async with aiofiles.open(self._cache_file, "r") as f:
                         content = await f.read()
                         data = json.loads(content)
-                        self._cache = {
-                            k: {
-                                "data": self._decrypt_value(v["data"]) if self._cache_encryption else v["data"],
-                                "expires": datetime.fromisoformat(v["expires"]),
-                            }
-                            for k, v in data.items()
-                        }
+                        self._cache = {}
+                        for k, v in data.items():
+                            try:
+                                enc_or_b64 = v.get("data")
+                                if enc_or_b64 is None:
+                                    continue
+                                if self._cache_encryption:
+                                    plain = self._decrypt_value(enc_or_b64)
+                                else:
+                                    # decode base64-encoded plaintext bytes
+                                    plain = base64.b64decode(enc_or_b64)
+                                self._cache[k] = {
+                                    "data": plain,
+                                    "expires": datetime.fromisoformat(v["expires"]),
+                                }
+                            except Exception as e:
+                                logger.error("Cache load entry error for key %s: %s", k, str(e))
         except (OSError, json.JSONDecodeError, ValueError) as e:
             logger.error("Cache load error: %s", str(e))
             self._cache = {}
@@ -707,13 +717,20 @@ class CachingMiddleware(BaseHTTPMiddleware):
         try:
             async with self._cache_lock:
                 import aiofiles
-                data = {
-                    k: {
-                        "data": self._encrypt_value(v["data"]) if self._cache_encryption else v["data"],
+                data = {}
+                for k, v in self._cache.items():
+                    raw = v.get("data")
+                    if raw is None:
+                        continue
+                    if self._cache_encryption:
+                        stored = self._encrypt_value(raw)
+                    else:
+                        # store plaintext bytes as base64 string
+                        stored = base64.b64encode(raw).decode("ascii")
+                    data[k] = {
+                        "data": stored,
                         "expires": v["expires"].isoformat(),
                     }
-                    for k, v in self._cache.items()
-                }
                 async with aiofiles.open(self._cache_file, "w") as f:
                     await f.write(json.dumps(data))
         except (OSError, TypeError, ValueError) as e:
@@ -925,31 +942,42 @@ class CachingMiddleware(BaseHTTPMiddleware):
             logger.error("Cache clear error: %s", str(e))
             raise
 
-    def _encrypt_value(self, value: bytes) -> bytes:
+    def _encrypt_value(self, value: bytes) -> str:
         """Encrypt cache value."""
         try:
             if not self._cache_encryption:
-                return value
-
+                # Store plaintext as base64 string
+                return base64.b64encode(value).decode("ascii")
+ 
             from cryptography.hazmat.primitives.ciphers.aead import AESGCM
             aesgcm = AESGCM(self._cache_encryption_key)
-            return aesgcm.encrypt(self._cache_encryption_nonce, value, None)
+            # Generate a fresh nonce per encryption
+            nonce = os.urandom(12)
+            ciphertext = aesgcm.encrypt(nonce, value, None)
+            # Store nonce + ciphertext as base64 string
+            return base64.b64encode(nonce + ciphertext).decode("ascii")
         except Exception as e:
             logger.error("Cache encryption error: %s", str(e))
-            return value
+            return base64.b64encode(value).decode("ascii")
 
-    def _decrypt_value(self, value: bytes) -> bytes:
+    def _decrypt_value(self, value: str) -> bytes:
         """Decrypt cache value."""
         try:
             if not self._cache_encryption:
-                return value
-
+                # Expect base64 string of plaintext bytes
+                return base64.b64decode(value)
+ 
             from cryptography.hazmat.primitives.ciphers.aead import AESGCM
             aesgcm = AESGCM(self._cache_encryption_key)
-            return aesgcm.decrypt(self._cache_encryption_nonce, value, None)
+            combined = base64.b64decode(value)
+            if len(combined) < 13:
+                raise ValueError("Encrypted payload too short")
+            nonce, ciphertext = combined[:12], combined[12:]
+            return aesgcm.decrypt(nonce, ciphertext, None)
         except Exception as e:
             logger.error("Cache decryption error: %s", str(e))
-            return value
+            # On failure, return empty bytes to avoid propagating corrupted data
+            return b""
 
     def _compress_value(self, value: bytes) -> bytes:
         """Compress cache value."""

@@ -674,55 +674,56 @@ class MetricsManager:
 
     async def get_metrics_summary(self) -> Dict[str, Any]:
         """Get a summary of current metrics."""
-        try:
-            with self._lock:
-                summary = {
-                    "system": {
-                        "cpu_usage": psutil.cpu_percent(),
-                        "memory_usage": dict(
-                            psutil.virtual_memory()._asdict()
-                        ),
-                        "disk_usage": dict(psutil.disk_usage("/")._asdict()),
-                    },
-                    "requests": {
-                        name: {
-                            self._format_duration(duration): {
-                                "count": len(window.values),
-                                "mean": np.mean(window.values)
-                                if window.values
-                                else 0,
-                                "max": np.max(window.values)
-                                if window.values
-                                else 0,
+        def _op() -> Dict[str, Any]:
+            try:
+                with self._lock:
+                    summary = {
+                        "system": {
+                            "cpu_usage": psutil.cpu_percent(),
+                            "memory_usage": dict(
+                                psutil.virtual_memory()._asdict()
+                            ),
+                            "disk_usage": dict(psutil.disk_usage("/")._asdict()),
+                        },
+                        "requests": {
+                            name: {
+                                self._format_duration(duration): {
+                                    "count": len(window.values),
+                                    "mean": np.mean(window.values)
+                                    if window.values
+                                    else 0,
+                                    "max": np.max(window.values)
+                                    if window.values
+                                    else 0,
+                                }
+                                for duration, window in windows.items()
                             }
-                            for duration, window in windows.items()
-                        }
-                        for name, windows in self._windows.items()
-                        if name.startswith("request_")
-                    },
-                    "reputation": {
-                        name: {
-                            self._format_duration(duration): {
-                                "count": len(window.values),
-                                "mean": np.mean(window.values)
-                                if window.values
-                                else 0,
-                                "std": np.std(window.values)
-                                if window.values
-                                else 0,
+                            for name, windows in self._windows.items()
+                            if name.startswith("request_")
+                        },
+                        "reputation": {
+                            name: {
+                                self._format_duration(duration): {
+                                    "count": len(window.values),
+                                    "mean": np.mean(window.values)
+                                    if window.values
+                                    else 0,
+                                    "std": np.std(window.values)
+                                    if window.values
+                                    else 0,
+                                }
+                                for duration, window in windows.items()
                             }
-                            for duration, window in windows.items()
-                        }
-                        for name, windows in self._windows.items()
-                        if name.startswith("reputation_")
-                    },
-                }
-                
-                return summary
-                
-        except Exception as e:
-            logger.error("Error getting metrics summary: %s", e)
-            return {}
+                            for name, windows in self._windows.items()
+                            if name.startswith("reputation_")
+                        },
+                    }
+                    return summary
+            except Exception as e:
+                logger.error("Error getting metrics summary: %s", e)
+                return {}
+        
+        return await asyncio.to_thread(_op)
 
     def register_metric(
         self, name: str, description: str, metric_type: str = "gauge"
@@ -780,7 +781,7 @@ class MetricsManager:
                     metric["values"] = metric["values"][-self._max_history :]
 
                 # Cleanup old metrics periodically
-                self._cleanup_old_metrics()
+                # self._cleanup_old_metrics()  # Removed direct call
 
         except Exception as e:
             logger.error("Error recording metric %s: %s", name, e)
@@ -949,7 +950,6 @@ def track_latency(name: str):
             except Exception as e:
                 logger.error("Error tracking latency for %s: %s", name, e)
                 raise
-        return wrapper
     return decorator
 
 def track_performance(func):
