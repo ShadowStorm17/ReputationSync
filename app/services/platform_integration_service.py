@@ -14,7 +14,7 @@ from app.core.error_handling import (
     ReputationError,
 )
 from app.core.metrics import track_performance
-
+from app.core.constants import CONTENT_TYPE_JSON
 
 class PlatformIntegrationService:
     """Service for platform integration and webhook support."""
@@ -76,7 +76,7 @@ class PlatformIntegrationService:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 headers = {
                     "Authorization": f"Bearer {platform_config['api_key']}",
-                    "Content-Type": "application/json",
+                    "Content-Type": CONTENT_TYPE_JSON,
                 }
 
                 params = {
@@ -162,7 +162,7 @@ class PlatformIntegrationService:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
-            headers = {"Content-Type": "application/json"}
+            headers = {"Content-Type": CONTENT_TYPE_JSON}
 
             if client["secret"]:
                 # Add signature if secret is provided

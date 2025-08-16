@@ -139,7 +139,7 @@ class PredictiveService:
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error predicting reputation trend: {str(e)}")
+            logger.error("Error predicting reputation trend: %s", e)
             raise
 
     async def _ensemble_forecast(
@@ -176,7 +176,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error in ensemble forecast: {str(e)}")
+            logger.error("Error in ensemble forecast: %s", e)
             return {}
 
     def _rf_forecast(
@@ -209,7 +209,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error in RF forecast: {str(e)}")
+            logger.error("Error in RF forecast: %s", e)
             return {}
 
     async def _lstm_forecast(
@@ -245,7 +245,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error in LSTM forecast: {str(e)}")
+            logger.error("Error in LSTM forecast: %s", e)
             return {}
 
     async def _prophet_forecast(self, metrics: pd.DataFrame) -> Dict:
@@ -286,7 +286,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error in Prophet forecast: {str(e)}")
+            logger.error("Error in Prophet forecast: %s", e)
             return {}
 
     def _combine_predictions(
@@ -318,7 +318,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error combining predictions: {str(e)}")
+            logger.error("Error combining predictions: %s", e)
             return {}
 
     def _calculate_model_weights(self) -> Dict[str, float]:
@@ -408,7 +408,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error calculating risk scores: {str(e)}")
+            logger.error("Error calculating risk scores: %s", e)
             return {}
 
     def _calculate_trend_risk(self, predictions: List[float]) -> float:
@@ -477,7 +477,7 @@ class PredictiveService:
             return insights
 
         except Exception as e:
-            logger.error(f"Error generating insights: {str(e)}")
+            logger.error("Error generating insights: %s", e)
             return []
 
     def _analyze_trend(self, predictions: List[float]) -> Optional[Dict]:
@@ -620,7 +620,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error detecting emerging issues: {str(e)}")
+            logger.error("Error detecting emerging issues: %s", e)
             raise
 
     async def analyze_competitor_benchmarks(
@@ -659,7 +659,7 @@ class PredictiveService:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing competitor benchmarks: {str(e)}")
+            logger.error("Error analyzing competitor benchmarks: %s", e)
             raise
 
     async def _get_platform_metrics(

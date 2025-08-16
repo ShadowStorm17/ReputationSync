@@ -86,7 +86,7 @@ app.add_event_handler("shutdown", on_shutdown)
 async def handle_reputation_error(request: Request, exc: ReputationError):
     # Internal logging and metrics
     await metrics_manager.record_error(exc)
-    logger.warning(f"{exc.category} - {exc.message}")
+    logger.warning("%s - %s", exc.category, exc.message)
     return ErrorResponseModel(
         code=exc.code,
         message=exc.message,

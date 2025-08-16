@@ -84,7 +84,7 @@ class DocumentationService:
             return True
 
         except Exception as e:
-            logger.error(f"Add endpoint error: {str(e)}")
+            logger.error("Add endpoint error: %s", e)
             return False
 
     def add_security_scheme(
@@ -99,7 +99,7 @@ class DocumentationService:
             return True
 
         except Exception as e:
-            logger.error(f"Add security scheme error: {str(e)}")
+            logger.error("Add security scheme error: %s", e)
             return False
 
     def generate_openapi_spec(self, version: str) -> Dict[str, Any]:
@@ -152,7 +152,7 @@ class DocumentationService:
             return spec
 
         except Exception as e:
-            logger.error(f"Generate OpenAPI spec error: {str(e)}")
+            logger.error("Generate OpenAPI spec error: %s", e)
             return {}
 
     def save_documentation(self, version: str, format: str = "json") -> bool:
@@ -175,7 +175,7 @@ class DocumentationService:
             return True
 
         except Exception as e:
-            logger.error(f"Save documentation error: {str(e)}")
+            logger.error("Save documentation error: %s", e)
             return False
 
     def load_documentation(
@@ -197,7 +197,7 @@ class DocumentationService:
                     return {}
 
         except Exception as e:
-            logger.error(f"Load documentation error: {str(e)}")
+            logger.error("Load documentation error: %s", e)
             return {}
 
     def generate_from_routes(self, version: str, routes: List[Any]) -> bool:
@@ -232,7 +232,7 @@ class DocumentationService:
             return True
 
         except Exception as e:
-            logger.error(f"Generate from routes error: {str(e)}")
+            logger.error("Generate from routes error: %s", e)
             return False
 
     def get_version_info(self, version: str) -> Dict[str, Any]:
@@ -252,7 +252,7 @@ class DocumentationService:
             }
 
         except Exception as e:
-            logger.error(f"Get version info error: {str(e)}")
+            logger.error("Get version info error: %s", e)
             return {}
 
     def list_versions(self) -> List[Dict[str, Any]]:
@@ -264,5 +264,5 @@ class DocumentationService:
             ]
 
         except Exception as e:
-            logger.error(f"List versions error: {str(e)}")
+            logger.error("List versions error: %s", e)
             return []

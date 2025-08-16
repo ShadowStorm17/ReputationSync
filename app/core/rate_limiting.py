@@ -145,7 +145,7 @@ class RateLimiter:
                 return True, None
 
         except Exception as e:
-            logger.error(f"Rate limit check error: {str(e)}")
+            logger.error("Rate limit check error: %s", e)
             # Fail open to prevent blocking legitimate traffic
             return True, None
 
@@ -192,7 +192,7 @@ class RateLimiter:
                 await asyncio.sleep(60)  # Clean up every minute
 
             except Exception as e:
-                logger.error(f"Cleanup error: {str(e)}")
+                logger.error("Cleanup error: %s", e)
                 await asyncio.sleep(60)
 
     async def _refill_burst_tokens(self):
@@ -224,7 +224,7 @@ class RateLimiter:
                 await asyncio.sleep(60)  # Refill every minute
 
             except Exception as e:
-                logger.error(f"Burst token refill error: {str(e)}")
+                logger.error("Burst token refill error: %s", e)
                 await asyncio.sleep(60)
 
     async def _adjust_adaptive_limits(self):
@@ -271,7 +271,7 @@ class RateLimiter:
                 await asyncio.sleep(300)  # Adjust every 5 minutes
 
             except Exception as e:
-                logger.error(f"Adaptive limit adjustment error: {str(e)}")
+                logger.error("Adaptive limit adjustment error: %s", e)
                 await asyncio.sleep(60)
 
     @handle_errors(ErrorSeverity.MEDIUM, ErrorCategory.SYSTEM)
@@ -282,7 +282,7 @@ class RateLimiter:
             with self._lock:
                 state.error_count += 1
         except Exception as e:
-            logger.error(f"Error recording rate limit error: {str(e)}")
+            logger.error("Error recording rate limit error: %s", e)
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def get_limit_status(
@@ -309,7 +309,7 @@ class RateLimiter:
                     ),
                 }
         except Exception as e:
-            logger.error(f"Error getting rate limit status: {str(e)}")
+            logger.error("Error getting rate limit status: %s", e)
             return {}
 
 

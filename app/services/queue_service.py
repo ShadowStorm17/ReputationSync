@@ -139,7 +139,7 @@ class Queue:
             return {"status": "success", "job_id": job.job_id}
 
         except Exception as e:
-            logger.error(f"Enqueue error: {str(e)}")
+            logger.error("Enqueue error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def dequeue(self) -> Optional[Job]:
@@ -160,7 +160,7 @@ class Queue:
             return Job.from_dict(json.loads(job_data))
 
         except Exception as e:
-            logger.error(f"Dequeue error: {str(e)}")
+            logger.error("Dequeue error: %s", e)
             return None
 
     async def process_job(self, job: Job) -> bool:
@@ -221,7 +221,7 @@ class Queue:
                 ex=self.retention_period,
             )
 
-            logger.error(f"Job processing error: {str(e)}")
+            logger.error("Job processing error: %s", e)
             return False
 
     async def get_job(self, job_id: str) -> Optional[Job]:
@@ -234,7 +234,7 @@ class Queue:
             return Job.from_dict(json.loads(job_data))
 
         except Exception as e:
-            logger.error(f"Get job error: {str(e)}")
+            logger.error("Get job error: %s", e)
             return None
 
     async def cancel_job(self, job_id: str) -> bool:
@@ -259,7 +259,7 @@ class Queue:
             return True
 
         except Exception as e:
-            logger.error(f"Cancel job error: {str(e)}")
+            logger.error("Cancel job error: %s", e)
             return False
 
 
@@ -287,7 +287,7 @@ class Worker:
                 await self.queue.process_job(job)
 
             except Exception as e:
-                logger.error(f"Worker error: {str(e)}")
+                logger.error("Worker error: %s", e)
                 await asyncio.sleep(1)
 
     def stop(self):

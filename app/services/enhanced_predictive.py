@@ -128,7 +128,7 @@ class EnhancedPredictive:
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error generating predictions: {str(e)}")
+            logger.error("Error generating predictions: %s", e)
             raise
 
     async def _preprocess_data(
@@ -155,7 +155,7 @@ class EnhancedPredictive:
             return scaled_features, df
 
         except Exception as e:
-            logger.error(f"Error preprocessing data: {str(e)}")
+            logger.error("Error preprocessing data: %s", e)
             raise
 
     async def _random_forest_predict(
@@ -182,7 +182,7 @@ class EnhancedPredictive:
             return np.array(predictions)
 
         except Exception as e:
-            logger.error(f"Error in Random Forest prediction: {str(e)}")
+            logger.error("Error in Random Forest prediction: %s", e)
             raise
 
     async def _lstm_predict(
@@ -212,7 +212,7 @@ class EnhancedPredictive:
             return np.array(predictions)
 
         except Exception as e:
-            logger.error(f"Error in LSTM prediction: {str(e)}")
+            logger.error("Error in LSTM prediction: %s", e)
             raise
 
     async def _prophet_predict(
@@ -240,7 +240,7 @@ class EnhancedPredictive:
             return forecast.tail(horizon)["yhat"].values
 
         except Exception as e:
-            logger.error(f"Error in Prophet prediction: {str(e)}")
+            logger.error("Error in Prophet prediction: %s", e)
             raise
 
     def _ensemble_predictions(
@@ -259,7 +259,7 @@ class EnhancedPredictive:
             return weighted_preds
 
         except Exception as e:
-            logger.error(f"Error in ensemble prediction: {str(e)}")
+            logger.error("Error in ensemble prediction: %s", e)
             raise
 
     async def _detect_anomalies(
@@ -289,7 +289,7 @@ class EnhancedPredictive:
             return anomalies
 
         except Exception as e:
-            logger.error(f"Error detecting anomalies: {str(e)}")
+            logger.error("Error detecting anomalies: %s", e)
             return []
 
     def _prepare_sequences(

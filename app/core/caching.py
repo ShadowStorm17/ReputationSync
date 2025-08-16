@@ -84,8 +84,8 @@ class Cache:
             try:
                 await task
             except asyncio.CancelledError:
-                logger.info(f"Task {task} was cancelled during shutdown")
-                raise
+                logger.info("Task %s was cancelled during shutdown", task)
+                # Do not re-raise to allow graceful shutdown
         self._background_tasks.clear()
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
@@ -135,7 +135,7 @@ class Cache:
                 return value
 
         except Exception as e:
-            logger.error(f"Cache get error: {str(e)}")
+            logger.error("Cache get error: %s", e)
             return default
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
@@ -172,7 +172,7 @@ class Cache:
 
             # Check if we need to evict items
             if size_bytes > settings.cache.MAX_SIZE_MB * 1024 * 1024:
-                logger.warning(f"Item too large to cache: {size_bytes} bytes")
+                logger.warning("Item too large to cache: %d bytes", size_bytes)
                 return False
 
             # Create cache item
@@ -211,7 +211,7 @@ class Cache:
                 return True
 
         except Exception as e:
-            logger.error(f"Cache set error: {str(e)}")
+            logger.error("Cache set error: %s", e)
             return False
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
@@ -231,7 +231,7 @@ class Cache:
                 return False
 
         except Exception as e:
-            logger.error(f"Cache delete error: {str(e)}")
+            logger.error("Cache delete error: %s", e)
             return False
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
@@ -245,7 +245,7 @@ class Cache:
                 return True
 
         except Exception as e:
-            logger.error(f"Cache clear error: {str(e)}")
+            logger.error("Cache clear error: %s", e)
             return False
 
     def _generate_key(self, key: str) -> str:
@@ -276,7 +276,7 @@ class Cache:
                 value = value.encode()
             return zlib.compress(value)
         except Exception as e:
-            logger.error(f"Compression error: {str(e)}")
+            logger.error("Compression error: %s", e)
             return value
 
     def _decompress_value(self, value: bytes) -> Any:
@@ -284,7 +284,7 @@ class Cache:
         try:
             return zlib.decompress(value)
         except Exception as e:
-            logger.error(f"Decompression error: {str(e)}")
+            logger.error("Decompression error: %s", e)
             return value
 
     def _encrypt_value(self, value: Any) -> bytes:
@@ -294,7 +294,7 @@ class Cache:
                 value = pickle.dumps(value)
             return self._fernet.encrypt(value)
         except Exception as e:
-            logger.error(f"Encryption error: {str(e)}")
+            logger.error("Encryption error: %s", e)
             return value
 
     def _decrypt_value(self, value: bytes) -> Any:
@@ -303,7 +303,7 @@ class Cache:
             decrypted = self._fernet.decrypt(value)
             return pickle.loads(decrypted)
         except Exception as e:
-            logger.error(f"Decryption error: {str(e)}")
+            logger.error("Decryption error: %s", e)
             return value
 
     def _evict_item(self) -> bool:
@@ -329,7 +329,7 @@ class Cache:
                 return True
 
         except Exception as e:
-            logger.error(f"Cache eviction error: {str(e)}")
+            logger.error("Cache eviction error: %s", e)
             return False
 
     def _get_item_to_evict(self) -> Tuple[Optional[str], Optional[CacheItem]]:
@@ -353,7 +353,7 @@ class Cache:
             return None, None
 
         except Exception as e:
-            logger.error(f"Get item to evict error: {str(e)}")
+            logger.error("Get item to evict error: %s", e)
             return None, None
 
     async def _cleanup_expired(self):
@@ -380,7 +380,7 @@ class Cache:
                 await asyncio.sleep(60)  # Run every minute
 
             except Exception as e:
-                logger.error(f"Cache cleanup error: {str(e)}")
+                logger.error("Cache cleanup error: %s", e)
                 await asyncio.sleep(60)
 
     async def _update_metrics(self):
@@ -399,50 +399,50 @@ class Cache:
                 await asyncio.sleep(15)  # Update every 15 seconds
 
             except Exception as e:
-                logger.error(f"Cache metrics update error: {str(e)}")
+                logger.error("Cache metrics update error: %s", e)
                 await asyncio.sleep(60)
 
     async def _optimize_cache(self):
         """Optimize cache based on usage patterns."""
         while True:
             try:
+                # Snapshot state and work outside the lock
                 with self._lock:
-                    if not self._data:
-                        continue
+                    is_empty = len(self._data) == 0
+                    items_copy = list(self._data.items()) if not is_empty else []
 
-                    # Calculate average access frequency
-                    total_accesses = sum(
-                        item.access_count for item in self._data.values()
-                    )
-                    avg_accesses = total_accesses / len(self._data)
+                if is_empty:
+                    # Nothing to optimize; sleep and continue
+                    await asyncio.sleep(300)
+                    continue
 
-                    # Find items with low access counts
-                    low_access_items = [
-                        key
-                        for key, item in self._data.items()
-                        if (
-                            item.access_count < avg_accesses * 0.2
-                            and (  # 20% of average
-                                datetime.now(timezone.utc)
-                                -
-                                # 1 hour
-                                item.last_accessed
-                            ).total_seconds()
-                            > 3600
-                        )
-                    ]
+                # Calculate average access frequency
+                total_accesses = sum(item.access_count for _, item in items_copy)
+                avg_accesses = total_accesses / len(items_copy)
 
-                    # Remove low access items
-                    for key in low_access_items:
-                        item = self._data[key]
-                        self._size_bytes -= item.size_bytes
-                        del self._data[key]
-                        EVICTION_COUNT.labels(reason="optimization").inc()
+                # Determine low access items (older than 1 hour and < 20% avg)
+                now = datetime.now(timezone.utc)
+                low_access_keys = [
+                    key
+                    for key, item in items_copy
+                    if item.access_count < avg_accesses * 0.2
+                    and (now - item.last_accessed).total_seconds() > 3600
+                ]
+
+                # Remove low access items under lock
+                if low_access_keys:
+                    with self._lock:
+                        for key in low_access_keys:
+                            if key in self._data:
+                                item = self._data[key]
+                                self._size_bytes -= item.size_bytes
+                                del self._data[key]
+                                EVICTION_COUNT.labels(reason="optimization").inc()
 
                 await asyncio.sleep(300)  # Run every 5 minutes
 
             except Exception as e:
-                logger.error(f"Cache optimization error: {str(e)}")
+                logger.error("Cache optimization error: %s", e)
                 await asyncio.sleep(60)
 
     async def get_stats(self) -> Dict[str, Any]:
@@ -460,7 +460,7 @@ class Cache:
                 }
 
         except Exception as e:
-            logger.error(f"Get cache stats error: {str(e)}")
+            logger.error("Get cache stats error: %s", e)
             return {}
 
 

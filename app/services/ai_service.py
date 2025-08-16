@@ -186,7 +186,7 @@ class AIService:
             )
 
         except Exception as e:
-            logger.error(f"Error loading default models: {str(e)}")
+            logger.error("Error loading default models: %s", e)
             raise
 
     @handle_errors(ErrorSeverity.HIGH, ErrorCategory.AI)
@@ -213,7 +213,7 @@ class AIService:
             return result
 
         except Exception as e:
-            logger.error(f"Error analyzing text: {str(e)}")
+            logger.error("Error analyzing text: %s", e)
             AI_ERRORS.labels(operation="analyze_text").inc()
             raise
 
@@ -231,7 +231,7 @@ class AIService:
             )
 
         except Exception as e:
-            logger.error(f"Error in sentiment analysis: {str(e)}")
+            logger.error("Error in sentiment analysis: %s", e)
             raise
 
     async def _run_prediction_analysis(self, text: str) -> AnalysisResult:
@@ -248,7 +248,7 @@ class AIService:
             )
 
         except Exception as e:
-            logger.error(f"Error in prediction analysis: {str(e)}")
+            logger.error("Error in prediction analysis: %s", e)
             raise
 
     async def _run_response_generation(self, text: str) -> AnalysisResult:
@@ -265,7 +265,7 @@ class AIService:
             )
 
         except Exception as e:
-            logger.error(f"Error in response generation: {str(e)}")
+            logger.error("Error in response generation: %s", e)
             raise
 
     async def _run_comprehensive_analysis(self, text: str) -> AnalysisResult:
@@ -295,7 +295,7 @@ class AIService:
             )
 
         except Exception as e:
-            logger.error(f"Error in comprehensive analysis: {str(e)}")
+            logger.error("Error in comprehensive analysis: %s", e)
             raise
 
     def _calculate_confidence(self, pipeline_result: Any) -> float:
@@ -310,7 +310,7 @@ class AIService:
             return np.mean(confidences) if confidences else 0.5
 
         except Exception as e:
-            logger.error(f"Error calculating confidence: {str(e)}")
+            logger.error("Error calculating confidence: %s", e)
             return 0.5
 
     async def _preprocess_text(self, text: str) -> str:

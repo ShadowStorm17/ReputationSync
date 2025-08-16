@@ -63,7 +63,7 @@ class ErrorTracker:
             }
 
         except Exception as e:
-            logger.error(f"Error tracking error: {str(e)}")
+            logger.error("Error tracking error: %s", e)
             return {'status': 'error', 'message': str(e)}
 
     async def get_error(
@@ -85,7 +85,7 @@ class ErrorTracker:
             }
 
         except Exception as e:
-            logger.error(f"Error getting error: {str(e)}")
+            logger.error("Error getting error: %s", e)
             return {'status': 'error', 'message': str(e)}
 
     async def _update_error_stats(
@@ -104,7 +104,7 @@ class ErrorTracker:
             await self.redis.expire(timeline_key, self.retention_period)
 
         except Exception as e:
-            logger.error(f"Error updating error stats: {str(e)}")
+            logger.error("Error updating error stats: %s", e)
 
 
 class ErrorRecovery:
@@ -149,7 +149,7 @@ class ErrorRecovery:
             }
 
         except Exception as e:
-            logger.error(f"Error attempting recovery: {str(e)}")
+            logger.error("Error attempting recovery: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)
@@ -273,5 +273,5 @@ class ErrorService:
             }
 
         except Exception as e:
-            logger.error(f"Error getting error stats: {str(e)}")
+            logger.error("Error getting error stats: %s", e)
             return {'status': 'error', 'message': str(e)}

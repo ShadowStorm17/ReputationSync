@@ -51,7 +51,7 @@ class MetricsCollector:
             return {"status": "success", "metrics": metrics}
 
         except Exception as e:
-            logger.error(f"Error collecting system metrics: {str(e)}")
+            logger.error("Error collecting system metrics: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def collect_application_metrics(
@@ -65,7 +65,7 @@ class MetricsCollector:
             return {"status": "success", "metrics": metrics}
 
         except Exception as e:
-            logger.error(f"Error collecting application metrics: {str(e)}")
+            logger.error("Error collecting application metrics: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def store_metrics(self, metric_type: str, metrics: Dict[str, Any]):
@@ -79,7 +79,7 @@ class MetricsCollector:
             )
 
         except Exception as e:
-            logger.error(f"Error storing metrics: {str(e)}")
+            logger.error("Error storing metrics: %s", e)
 
 
 class PerformanceMonitor:
@@ -119,7 +119,7 @@ class PerformanceMonitor:
             await self.redis.ltrim("request_log", 0, 999)  # Keep last 1000
 
         except Exception as e:
-            logger.error(f"Error tracking request: {str(e)}")
+            logger.error("Error tracking request: %s", e)
 
     async def track_error(self, error_type: str, service: str):
         """Track error occurrence."""
@@ -128,7 +128,7 @@ class PerformanceMonitor:
             ERROR_COUNT.labels(type=error_type, service=service).inc()
 
         except Exception as e:
-            logger.error(f"Error tracking error: {str(e)}")
+            logger.error("Error tracking error: %s", e)
 
     async def get_performance_stats(
         self,
@@ -194,7 +194,7 @@ class PerformanceMonitor:
             }
 
         except Exception as e:
-            logger.error(f"Error getting performance stats: {str(e)}")
+            logger.error("Error getting performance stats: %s", e)
             return {"status": "error", "message": str(e)}
 
 
@@ -256,7 +256,7 @@ class HealthChecker:
             }
 
         except Exception as e:
-            logger.error(f"Error checking health: {str(e)}")
+            logger.error("Error checking health: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def check_redis(self) -> bool:
@@ -264,7 +264,7 @@ class HealthChecker:
         try:
             await self.redis.ping()
             return True
-        except BaseException:
+        except redis.exceptions.RedisError:
             return False
 
 
@@ -369,7 +369,7 @@ class MonitoringService:
             }
 
         except Exception as e:
-            logger.error(f"Error collecting metrics: {str(e)}")
+            logger.error("Error collecting metrics: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def track_request(
@@ -406,5 +406,5 @@ class MonitoringService:
             }
 
         except Exception as e:
-            logger.error(f"Error getting system status: {str(e)}")
+            logger.error("Error getting system status: %s", e)
             return {"status": "error", "message": str(e)}

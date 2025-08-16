@@ -54,24 +54,22 @@ class SecurityManager:
             if os.path.exists(self._ip_lists_file):
                 with open(self._ip_lists_file, "r") as f:
                     data = json.load(f)
-                    self._ip_lists["whitelist"] = set(
-                        data.get("whitelist", []))
-                    self._ip_lists["blacklist"] = set(
-                        data.get("blacklist", []))
-        except Exception as e:
-            logger.error(f"Error loading IP lists: {str(e)}", exc_info=True)
+                    self._ip_lists["whitelist"] = set(data.get("whitelist", []))
+                    self._ip_lists["blacklist"] = set(data.get("blacklist", []))
+        except (OSError, json.JSONDecodeError, ValueError, TypeError) as e:
+            logger.error("Error loading IP lists: %s", str(e), exc_info=True)
 
     def _save_ip_lists(self) -> None:
         """Save IP lists to file."""
         try:
             data = {
                 "whitelist": list(self._ip_lists["whitelist"]),
-                "blacklist": list(self._ip_lists["blacklist"])
+                "blacklist": list(self._ip_lists["blacklist"]),
             }
             with open(self._ip_lists_file, "w") as f:
                 json.dump(data, f)
-        except Exception as e:
-            logger.error(f"Error saving IP lists: {str(e)}", exc_info=True)
+        except (OSError, TypeError, ValueError) as e:
+            logger.error("Error saving IP lists: %s", str(e), exc_info=True)
 
     async def initialize(self) -> None:
         """Initialize the security manager."""
@@ -81,7 +79,7 @@ class SecurityManager:
                     self._redis = await cache_manager.get_redis()
                     self._redis_retry_count = 0
                     logger.info("Security manager initialized")
-        except Exception as e:
+        except (ConnectionError, TimeoutError) as e:
             logger.error("Failed to initialize security manager: %s", str(e))
             self._redis_retry_count += 1
             if self._redis_retry_count < self._max_redis_retries:
@@ -90,7 +88,7 @@ class SecurityManager:
             else:
                 logger.critical(
                     "Failed to initialize Redis after maximum retries")
-                raise
+            raise
 
     async def shutdown(self) -> None:
         """Shutdown the security manager."""
@@ -100,7 +98,7 @@ class SecurityManager:
                     await self._redis.close()
                     self._redis = None
             logger.info("Security manager shut down")
-        except Exception as e:
+        except (ConnectionError, TimeoutError, OSError) as e:
             logger.error("Error shutting down security manager: %s", str(e))
             raise
 
@@ -111,7 +109,7 @@ class SecurityManager:
         """Verify a password against its hash."""
         try:
             return self.pwd_context.verify(plain_password, hashed_password)
-        except Exception as e:
+        except (ValueError) as e:
             logger.error("Password verification error: %s", str(e))
             return False
 
@@ -119,7 +117,7 @@ class SecurityManager:
         """Generate password hash."""
         try:
             return self.pwd_context.hash(password)
-        except Exception as e:
+        except (ValueError) as e:
             logger.error("Password hashing error: %s", str(e))
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -227,11 +225,10 @@ class SecurityManager:
             await pipe.execute()
 
             return True
-        except Exception as e:
+        except (ConnectionError, TimeoutError) as e:
             logger.error("Rate limit check error: %s", str(e))
-            if isinstance(e, (ConnectionError, TimeoutError)):
-                self._redis = None  # Reset Redis connection
-                await self.initialize()  # Try to reconnect
+            self._redis = None  # Reset Redis connection
+            await self.initialize()  # Try to reconnect
             return True  # Allow request if rate limiting fails
 
     async def is_ip_blocked(self, ip: str) -> bool:
@@ -261,7 +258,7 @@ class SecurityManager:
 
             return False
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, KeyError) as e:
             logger.error("IP block check error: %s", str(e))
             return False
 
@@ -291,7 +288,7 @@ class SecurityManager:
                 monitoring_manager.track_security_event(
                     "ip_blocked", {"ip": ip})
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, OSError) as e:
             logger.error("IP block error: %s", str(e))
             raise
 
@@ -318,7 +315,7 @@ class SecurityManager:
                         f"Cleaned up {
                             len(expired_ips)} expired IP blocks")
 
-        except Exception as e:
+        except (KeyError) as e:
             logger.error("IP block cleanup error: %s", str(e))
             raise
 
@@ -348,7 +345,7 @@ class SecurityManager:
 
             return any(ip_obj in network for network in allowed_ranges)
 
-        except Exception as e:
+        except ValueError as e:
             logger.error("IP range validation error: %s", str(e))
             return False
 

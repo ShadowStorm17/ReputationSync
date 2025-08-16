@@ -131,7 +131,7 @@ class AnalyticsEngine:
             return combined_metrics
 
         except Exception as e:
-            logger.error(f"Error analyzing reputation metrics: {str(e)}")
+            logger.error("Error analyzing reputation metrics: %s", str(e))
             raise
 
     def _prepare_metrics_data(self, data: Dict) -> pd.DataFrame:
@@ -162,7 +162,7 @@ class AnalyticsEngine:
             return df
 
         except Exception as e:
-            logger.error(f"Error preparing metrics data: {str(e)}")
+            logger.error("Error preparing metrics data: %s", str(e))
             return pd.DataFrame()
 
     def _analyze_sequences(self, df: pd.DataFrame) -> Dict:
@@ -193,7 +193,7 @@ class AnalyticsEngine:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing sequences: {str(e)}")
+            logger.error("Error analyzing sequences: %s", str(e))
             return {}
 
     def _detect_advanced_patterns(self, df: pd.DataFrame) -> Dict:
@@ -217,7 +217,7 @@ class AnalyticsEngine:
             return patterns
 
         except Exception as e:
-            logger.error(f"Error detecting patterns: {str(e)}")
+            logger.error("Error detecting patterns: %s", str(e))
             return {}
 
     def _analyze_seasonality(self, df: pd.DataFrame, period: int) -> Dict:
@@ -364,7 +364,7 @@ class AnalyticsEngine:
             return insights
 
         except Exception as e:
-            logger.error(f"Error generating insights: {str(e)}")
+            logger.error("Error generating insights: %s", str(e))
             return []
 
     def _generate_anomaly_recommendations(self, anomaly: Dict) -> List[Dict]:

@@ -12,6 +12,7 @@ from prometheus_client import Counter, Gauge, Histogram
 
 from app.core.cache import cache
 from app.core.config import get_settings
+from app.core.error_handling import SystemError
 
 settings = get_settings()
 
@@ -96,7 +97,7 @@ class CircuitBreaker:
             ):
                 self.state = "half-open"
             else:
-                raise Exception("Circuit breaker is open")
+                raise SystemError("Circuit breaker is open")
 
     async def on_success(self):
         """Handle successful call."""

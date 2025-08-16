@@ -64,7 +64,7 @@ class FixedWindowStrategy(RateLimitStrategy):
             }
 
         except Exception as e:
-            logger.error(f"Fixed window check error: {str(e)}")
+            logger.error("Fixed window check error: %s", e)
             return {"allowed": False, "remaining": 0, "reset_after": 0}
 
 
@@ -117,7 +117,7 @@ class SlidingWindowStrategy(RateLimitStrategy):
             }
 
         except Exception as e:
-            logger.error(f"Sliding window check error: {str(e)}")
+            logger.error("Sliding window check error: %s", e)
             return {"allowed": False, "remaining": 0, "reset_after": 0}
 
 
@@ -193,7 +193,7 @@ class TokenBucketStrategy(RateLimitStrategy):
             }
 
         except Exception as e:
-            logger.error(f"Token bucket check error: {str(e)}")
+            logger.error("Token bucket check error: %s", e)
             return {"allowed": False, "remaining": 0, "reset_after": 0}
 
 
@@ -235,7 +235,7 @@ class RateLimitService:
             }
 
         except Exception as e:
-            logger.error(f"Rate limit check error: {str(e)}")
+            logger.error("Rate limit check error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_limit_status(
@@ -293,7 +293,7 @@ class RateLimitService:
                 return {"status": "success", "tokens": 0, "last_refill": 0}
 
         except Exception as e:
-            logger.error(f"Status check error: {str(e)}")
+            logger.error("Status check error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def reset_limits(
@@ -330,5 +330,5 @@ class RateLimitService:
             return {"status": "success", "message": "Rate limits reset"}
 
         except Exception as e:
-            logger.error(f"Reset error: {str(e)}")
+            logger.error("Reset error: %s", e)
             return {"status": "error", "message": str(e)}

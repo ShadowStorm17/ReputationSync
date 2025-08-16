@@ -52,6 +52,27 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         self._last_rotation: float = time.time()
         self._log_lock = asyncio.Lock()
 
+    @staticmethod
+    def _sanitize_headers(headers: Dict[str, str]) -> Dict[str, str]:
+        """Redact sensitive headers like Authorization and cookies."""
+        redacted = {}
+        for k, v in headers.items():
+            kl = k.lower()
+            if kl in {"authorization", "cookie", "set-cookie", "x-api-key"}:
+                redacted[k] = "***redacted***"
+            else:
+                redacted[k] = v
+        return redacted
+
+    @staticmethod
+    def _truncate_body(body: Optional[str], limit: int = 1000) -> Optional[str]:
+        """Limit body size in logs to avoid large dumps and potential secrets."""
+        if body is None:
+            return None
+        if len(body) > limit:
+            return body[:limit] + "...[truncated]"
+        return body
+
     async def dispatch(
         self,
         request: Request,
@@ -83,7 +104,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            logger.error(f"Middleware error: {str(e)}", exc_info=True)
+            logger.error("Middleware error: %s", e, exc_info=True)
             raise ReputationError(
                 message=f"Middleware processing failed: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -108,7 +129,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     self._last_rotation = current_time
 
         except Exception as e:
-            logger.error(f"Log rotation error: {str(e)}", exc_info=True)
+            logger.error("Log rotation error: %s", e, exc_info=True)
 
     async def _log_request(self, request: Request) -> None:
         """Log request details."""
@@ -117,14 +138,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             body = await self._get_request_body(request)
 
             # Log request
+            safe_headers = self._sanitize_headers(dict(request.headers))
+            safe_body = self._truncate_body(body)
             logger.info(
-                f"Request: {request.method} {request.url.path} "
-                f"Headers: {dict(request.headers)} "
-                f"Body: {body}"
+                "Request: %s %s Headers: %s Body: %s",
+                request.method,
+                request.url.path,
+                safe_headers,
+                safe_body,
             )
 
         except Exception as e:
-            logger.error(f"Error logging request: {str(e)}", exc_info=True)
+            logger.error("Error logging request: %s", e, exc_info=True)
 
     async def _log_response(
         self,
@@ -138,15 +163,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             body = await self._get_response_body(response)
 
             # Log response
+            safe_body = self._truncate_body(body)
             logger.info(
-                f"Response: {request.method} {request.url.path} "
-                f"Status: {response.status_code} "
-                f"Duration: {duration:.2f}s "
-                f"Body: {body}"
+                "Response: %s %s Status: %s Duration: %.2fs Body: %s",
+                request.method,
+                request.url.path,
+                response.status_code,
+                duration,
+                safe_body,
             )
 
         except Exception as e:
-            logger.error(f"Error logging response: {str(e)}", exc_info=True)
+            logger.error("Error logging response: %s", e, exc_info=True)
 
     async def _record_metrics(
         self,
@@ -169,7 +197,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             await metrics_manager.record_request(request, response, req_size, resp_size)
             
         except Exception as e:
-            logger.error(f"Error recording metrics: {str(e)}", exc_info=True)
+            logger.error("Error recording metrics: %s", e, exc_info=True)
 
     async def _get_request_body(self, request: Request) -> Optional[str]:
         """Get request body as string."""
@@ -189,7 +217,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(
-                f"Error getting request body: {str(e)}", exc_info=True
+                "Error getting request body: %s", e, exc_info=True
             )
             return None
 
@@ -214,7 +242,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(
-                f"Error getting response body: {str(e)}", exc_info=True
+                "Error getting response body: %s", e, exc_info=True
             )
             return None
 
@@ -265,10 +293,11 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
                 # Log error with context
                 logger.error(
-                    f"ReputationError: {error.message} "
-                    f"Severity: {error.severity} "
-                    f"Category: {error.category} "
-                    f"Context: {error.context}",
+                    "ReputationError: %s Severity: %s Category: %s Context: %s",
+                    error.message,
+                    error.severity,
+                    error.category,
+                    error.context,
                     exc_info=True
                 )
 
@@ -298,7 +327,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                         "context": error.context
                     }),
                     status_code=status_code,
-                    media_type="application/json",
+                    media_type=CONTENT_TYPE_JSON,
                     headers={
                         "X-Correlation-ID": error.context.get("correlation_id", ""),
                         "X-Error-Type": "reputation_error"
@@ -312,7 +341,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             
         except Exception as e:
             logger.error(
-                f"Error handling ReputationError: {str(e)}", exc_info=True
+                "Error handling ReputationError: %s", e, exc_info=True
             )
             return await self._handle_unknown_error(e)
 
@@ -329,8 +358,9 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
                 # Log error with context
                 logger.error(
-                    f"Unknown error: {str(error)} "
-                    f"Context: {error_context}",
+                    "Unknown error: %s Context: %s",
+                    str(error),
+                    error_context,
                     exc_info=True
                 )
 
@@ -354,7 +384,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                         "context": error_context
                     }),
                     status_code=500,
-                    media_type="application/json",
+                    media_type=CONTENT_TYPE_JSON,
                     headers={
                         "X-Correlation-ID": error_context.get("correlation_id", ""),
                         "X-Error-Type": "unknown_error"
@@ -368,7 +398,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(
-                f"Error handling unknown error: {str(e)}", exc_info=True
+                "Error handling unknown error: %s", e, exc_info=True
             )
             # Return basic error response
             response = Response(
@@ -439,24 +469,22 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             if os.path.exists(self._ip_lists_file):
                 with open(self._ip_lists_file, "r") as f:
                     data = json.load(f)
-                    self._ip_lists["whitelist"] = set(
-                        data.get("whitelist", []))
-                    self._ip_lists["blacklist"] = set(
-                        data.get("blacklist", []))
-        except Exception as e:
-            logger.error(f"Error loading IP lists: {str(e)}", exc_info=True)
+                    self._ip_lists["whitelist"] = set(data.get("whitelist", []))
+                    self._ip_lists["blacklist"] = set(data.get("blacklist", []))
+        except (OSError, json.JSONDecodeError) as e:
+            logger.error("Error loading IP lists: %s", str(e), exc_info=True)
 
     def _save_ip_lists(self) -> None:
         """Save IP lists to file."""
         try:
             data = {
                 "whitelist": list(self._ip_lists["whitelist"]),
-                "blacklist": list(self._ip_lists["blacklist"])
+                "blacklist": list(self._ip_lists["blacklist"]),
             }
             with open(self._ip_lists_file, "w") as f:
                 json.dump(data, f)
-        except Exception as e:
-            logger.error(f"Error saving IP lists: {str(e)}", exc_info=True)
+        except (OSError, TypeError) as e:
+            logger.error("Error saving IP lists: %s", str(e), exc_info=True)
 
     async def dispatch(
         self,
@@ -555,14 +583,14 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 response.headers["X-RateLimit-Remaining"] = str(max(0, rate_limit["requests"] - rate_info.get("local_count", 0)))
                 response.headers["X-RateLimit-Reset"] = str(int(time.time() + rate_limit["period"]))
             except Exception as e:
-                logger.error(f"Error adding rate limit headers: {str(e)}")
+                logger.error("Error adding rate limit headers: %s", e)
             for header, value in self._security_headers.items():
                 response.headers[header] = value
             return response
         except ReputationError:
             raise
         except Exception as e:
-            logger.error(f"Security middleware error: {str(e)}", exc_info=True)
+            logger.error("Security middleware error: %s", e, exc_info=True)
             raise ReputationError(
                 message=f"Security check failed: {str(e)}",
                 severity=ErrorSeverity.HIGH,
@@ -587,7 +615,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             )
 
         except Exception as e:
-            logger.error(f"Rate limit check error: {str(e)}", exc_info=True)
+            logger.error("Rate limit check error: %s", e, exc_info=True)
             return True  # Allow request if rate limiting fails
 
     def _get_rate_limit(self, request: Request) -> Dict[str, int]:
@@ -666,11 +694,11 @@ class CachingMiddleware(BaseHTTPMiddleware):
                         self._cache = {
                             k: {
                                 "data": self._decrypt_value(v["data"]) if self._cache_encryption else v["data"],
-                                "expires": datetime.fromisoformat(v["expires"])
+                                "expires": datetime.fromisoformat(v["expires"]),
                             }
                             for k, v in data.items()
                         }
-        except Exception as e:
+        except (OSError, json.JSONDecodeError, ValueError) as e:
             logger.error("Cache load error: %s", str(e))
             self._cache = {}
 
@@ -682,13 +710,13 @@ class CachingMiddleware(BaseHTTPMiddleware):
                 data = {
                     k: {
                         "data": self._encrypt_value(v["data"]) if self._cache_encryption else v["data"],
-                        "expires": v["expires"].isoformat()
+                        "expires": v["expires"].isoformat(),
                     }
                     for k, v in self._cache.items()
                 }
                 async with aiofiles.open(self._cache_file, "w") as f:
                     await f.write(json.dumps(data))
-        except Exception as e:
+        except (OSError, TypeError, ValueError) as e:
             logger.error("Cache save error: %s", str(e))
 
     async def _load_stats(self) -> None:
@@ -699,7 +727,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                 async with aiofiles.open(self._stats_file, "r") as f:
                     content = await f.read()
                     self._cache_stats = json.loads(content)
-        except Exception as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.error("Stats load error: %s", str(e))
             self._cache_stats = {"hits": 0, "misses": 0, "evictions": 0}
 
@@ -709,7 +737,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             import aiofiles
             async with aiofiles.open(self._stats_file, "w") as f:
                 await f.write(json.dumps(self._cache_stats))
-        except Exception as e:
+        except (OSError, TypeError, ValueError) as e:
             logger.error("Stats save error: %s", str(e))
 
     async def dispatch(self, request: Request, call_next):
@@ -872,7 +900,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             # Check content type
             content_type = response.headers.get("content-type", "")
             if not any(ct in content_type for ct in {
-                "application/json",
+                CONTENT_TYPE_JSON,
                 "text/plain",
                 "text/html",
                 "application/xml"
@@ -968,7 +996,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
             "OPTIONS"
         }
         self._content_types: Set[str] = {
-            "application/json",
+            CONTENT_TYPE_JSON,
             "application/xml",
             "text/plain",
             "text/html"
@@ -1012,7 +1040,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(
-                f"Transformation middleware error: {str(e)}", exc_info=True
+                "Transformation middleware error: %s", e, exc_info=True
             )
             self._transformation_stats["failed_transformations"] += 1
             return await call_next(request)
@@ -1043,7 +1071,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
                 start_time = time.time()
                 memory_before = self._get_memory_usage()
 
-                if content_type == "application/json":
+                if content_type == CONTENT_TYPE_JSON:
                     try:
                         data = json.loads(body)
                         transformed_data = await self._transform_json_data(data)
@@ -1068,7 +1096,6 @@ class TransformationMiddleware(BaseHTTPMiddleware):
                             severity=ErrorSeverity.MEDIUM,
                             category=ErrorCategory.VALIDATION
                         )
-
                 else:
                     transformed_body = body
 
@@ -1099,7 +1126,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(
-                f"Request transformation error: {str(e)}", exc_info=True
+                "Request transformation error: %s", e, exc_info=True
             )
             raise
 
@@ -1137,7 +1164,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
                 start_time = time.time()
                 memory_before = self._get_memory_usage()
 
-                if content_type == "application/json":
+                if content_type == CONTENT_TYPE_JSON:
                     try:
                         data = json.loads(body)
                         transformed_data = await self._transform_json_data(data)
@@ -1152,7 +1179,8 @@ class TransformationMiddleware(BaseHTTPMiddleware):
                     try:
                         data = xmltodict.parse(body)
                         transformed_data = await self._transform_json_data(data)
-                        transformed_body = xmltodict.unparse(transformed_data).encode()
+                        transformed_body = xmltodict.unparse(
+                            transformed_data).encode()
                     except Exception:
                         raise ReputationError(
                             message="Invalid XML",
@@ -1193,7 +1221,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(
-                f"Response transformation error: {str(e)}", exc_info=True
+                "Response transformation error: %s", e, exc_info=True
             )
             raise
 
@@ -1253,7 +1281,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
                 return data
 
         except Exception as e:
-            logger.error(f"JSON transformation error: {str(e)}", exc_info=True)
+            logger.error("JSON transformation error: %s", e, exc_info=True)
             raise
 
     def _get_memory_usage(self) -> int:
@@ -1263,5 +1291,5 @@ class TransformationMiddleware(BaseHTTPMiddleware):
             process = psutil.Process()
             return process.memory_info().rss
         except Exception as e:
-            logger.error(f"Memory usage check error: {str(e)}", exc_info=True)
+            logger.error("Memory usage check error: %s", str(e), exc_info=True)
             return 0

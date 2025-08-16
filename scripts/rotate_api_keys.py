@@ -64,10 +64,10 @@ class KeyRotationManager:
         """Create a new API key for a client."""
         try:
             key_data = await api_key_manager.create_api_key(client_id)
-            logger.info(f"Created new API key for client: {client_id}")
+            logger.info("Created new API key for client: %s", client_id)
             return key_data
         except Exception as e:
-            logger.error(f"Failed to create new key for client {client_id}: {str(e)}")
+            logger.error("Failed to create new key for client %s: %s", client_id, str(e))
             raise
     
     async def notify_client(self, client_id: str, key_data: Dict) -> None:
@@ -104,9 +104,9 @@ class KeyRotationManager:
                 await smtp.login(self.smtp_user, self.smtp_password)
                 await smtp.send_message(message)
             
-            logger.info(f"Sent key rotation notification to client: {client_id}")
+            logger.info("Sent key rotation notification to client: %s", client_id)
         except Exception as e:
-            logger.error(f"Failed to notify client {client_id}: {str(e)}")
+            logger.error("Failed to notify client %s: %s", client_id, str(e))
             raise
     
     async def revoke_expired_keys(self) -> None:
@@ -116,9 +116,9 @@ class KeyRotationManager:
                 expires_at = datetime.fromisoformat(key_data["expires_at"])
                 if expires_at <= datetime.now(timezone.utc):
                     await api_key_manager.revoke_api_key(key_data["api_key"])
-                    logger.info(f"Revoked expired key for client: {key_data['client_id']}")
+                    logger.info("Revoked expired key for client: %s", key_data['client_id'])
         except Exception as e:
-            logger.error(f"Failed to revoke expired keys: {str(e)}")
+            logger.error("Failed to revoke expired keys: %s", str(e))
             raise
     
     async def _get_all_keys(self):
@@ -139,7 +139,7 @@ async def main():
     try:
         # Get expiring keys
         expiring_keys = await manager.get_expiring_keys()
-        logger.info(f"Found {len(expiring_keys)} expiring keys")
+        logger.info("Found %d expiring keys", len(expiring_keys))
         
         # Process each expiring key
         for key_data in expiring_keys:
@@ -151,7 +151,7 @@ async def main():
                 # Notify client
                 await manager.notify_client(client_id, new_key_data)
             except Exception as e:
-                logger.error(f"Failed to process key rotation for client {client_id}: {str(e)}")
+                logger.error("Failed to process key rotation for client %s: %s", client_id, str(e))
                 continue
         
         # Revoke expired keys
@@ -159,7 +159,7 @@ async def main():
         
         logger.info("Completed API key rotation process")
     except Exception as e:
-        logger.error(f"Key rotation process failed: {str(e)}")
+        logger.error("Key rotation process failed: %s", str(e))
         sys.exit(1)
 
 if __name__ == "__main__":

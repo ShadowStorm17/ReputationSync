@@ -42,7 +42,7 @@ class CacheManager:
             value = await self.redis.get(key)
             return json.loads(value) if value else None
         except Exception as e:
-            logger.error(f"Error getting from cache: {str(e)}")
+            logger.error("Error getting from cache: %s", e)
             return None
 
     async def set(
@@ -59,7 +59,7 @@ class CacheManager:
                 ex=ttl or self.default_ttl
             )
         except Exception as e:
-            logger.error(f"Error setting cache: {str(e)}")
+            logger.error("Error setting cache: %s", e)
 
     async def invalidate(
         self,
@@ -71,7 +71,7 @@ class CacheManager:
             if keys:
                 await self.redis.delete(*keys)
         except Exception as e:
-            logger.error(f"Error invalidating cache: {str(e)}")
+            logger.error("Error invalidating cache: %s", e)
 
 
 class ConnectionPool:
@@ -182,7 +182,7 @@ class BatchProcessor:
             self.last_flush[batch_type] = datetime.now(timezone.utc)
 
         except Exception as e:
-            logger.error(f"Error processing batch: {str(e)}")
+            logger.error("Error processing batch: %s", e)
 
     async def _process_metrics_batch(
         self,
@@ -270,7 +270,7 @@ class OptimizationService:
                 await self.connection_pool.release_connection(connection)
 
         except Exception as e:
-            logger.error(f"Error optimizing query: {str(e)}")
+            logger.error("Error optimizing query: %s", e)
             return {'error': str(e)}
 
     async def batch_process(
@@ -289,7 +289,7 @@ class OptimizationService:
             }
 
         except Exception as e:
-            logger.error(f"Error batch processing: {str(e)}")
+            logger.error("Error batch processing: %s", e)
             return {'error': str(e)}
 
     async def invalidate_cache(
@@ -307,5 +307,5 @@ class OptimizationService:
             }
 
         except Exception as e:
-            logger.error(f"Error invalidating cache: {str(e)}")
+            logger.error("Error invalidating cache: %s", e)
             return {'error': str(e)}

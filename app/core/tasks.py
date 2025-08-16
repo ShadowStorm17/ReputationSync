@@ -45,8 +45,15 @@ class TaskManager:
 
             return task_id
 
+        except asyncio.CancelledError:
+            logger.warning("Task %s was cancelled during execution", task_id)
+            self.results[task_id] = {
+                "status": "cancelled",
+                "started_at": datetime.now(timezone.utc).isoformat(),
+            }
+            raise
         except Exception as e:
-            logger.error(f"Error executing task {task_id}: {str(e)}")
+            logger.error("Error executing task %s: %s", task_id, e)
             self.results[task_id] = {
                 "status": "failed",
                 "error": str(e),
@@ -79,8 +86,10 @@ class TaskManager:
                         )
                     )
 
+        except asyncio.CancelledError:
+            self.results[task_id]["status"] = "cancelled"
         except Exception as e:
-            logger.error(f"Error handling task completion {task_id}: {str(e)}")
+            logger.error("Error handling task completion %s: %s", task_id, e)
             self.results[task_id].update({"status": "failed", "error": str(e)})
 
     async def get_task_status(self, task_id: str) -> Optional[Dict]:

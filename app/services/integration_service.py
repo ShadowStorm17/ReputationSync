@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 import aiohttp
-
+from app.core.constants import CONTENT_TYPE_JSON
 from app.core.config import get_settings
 from app.core.metrics import INTEGRATION_LATENCY
 from app.core.optimizations import CircuitBreaker, cache_warmer
@@ -71,7 +71,7 @@ class LinkedInAdapter(PlatformAdapter):
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "X-Restli-Protocol-Version": "2.0.0",
-            "Content-Type": "application/json",
+            "Content-Type": CONTENT_TYPE_JSON,
         }
 
         async with self.session.post(

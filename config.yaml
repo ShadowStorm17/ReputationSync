@@ -5,8 +5,9 @@ TESTING: false
 
 # Security settings
 security:
-  SECRET_KEY: "your-secret-key-f8e1a3c5d4b2a9e7"
-  ENCRYPTION_KEY: "vg0YHxn5LWLe9SbcqsDqcS6GoFdwY185xsafy5_Pu-A="
+  # Use environment variables in production. Defaults are dev-only placeholders.
+  SECRET_KEY: "${SECURITY_SECRET_KEY:-CHANGE_ME_IN_PRODUCTION}"
+  ENCRYPTION_KEY: "${SECURITY_ENCRYPTION_KEY:-CHANGE_ME_IN_PRODUCTION}"
   JWT_ALGORITHM: "HS256"
   JWT_EXPIRATION: 3600
   ALLOWED_HOSTS: ["*"]
@@ -79,10 +80,11 @@ logging:
 # Platform settings
 platforms:
   INSTAGRAM_API_URL: "https://api.instagram.com/v1"
-  INSTAGRAM_ACCESS_TOKEN: "your-instagram-token"
+  # Use env vars in production
+  INSTAGRAM_ACCESS_TOKEN: "${INSTAGRAM_ACCESS_TOKEN:-set-in-env}"
   TWITTER_API_URL: "https://api.twitter.com/2"
-  TWITTER_BEARER_TOKEN: "your-twitter-token"
-  YOUTUBE_API_KEY: "your-youtube-key"
+  TWITTER_BEARER_TOKEN: "${TWITTER_BEARER_TOKEN:-set-in-env}"
+  YOUTUBE_API_KEY: "${YOUTUBE_API_KEY:-set-in-env}"
   YOUTUBE_API_URL: "https://www.googleapis.com/youtube/v3"
   RATE_LIMIT: 100
   TIMEOUT: 30
@@ -114,4 +116,4 @@ redis:
   max_connections: 10
   socket_timeout: 5
   socket_connect_timeout: 5
-  retry_on_timeout: true 
+  retry_on_timeout: true

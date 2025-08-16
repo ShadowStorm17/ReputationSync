@@ -19,6 +19,19 @@ class YouTubeService:
         self.client = httpx.AsyncClient(timeout=30.0)
         self.cache_ttl = settings.cache.DEFAULT_TTL
 
+    async def aclose(self):
+        """Close underlying HTTP client."""
+        try:
+            await self.client.aclose()
+        except Exception as e:
+            logger.warning("Error closing YouTube AsyncClient: %s", str(e))
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.aclose()
+
     async def get_channel_info(self, channel_id: str) -> Dict:
         """Get YouTube channel information."""
         cache_key = f"youtube:channel:{channel_id}"

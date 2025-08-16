@@ -242,10 +242,10 @@ class MetricsManager:
                 await asyncio.sleep(30)  # Run every 30 seconds
                 
             except asyncio.CancelledError:
-                logger.info("Metrics analysis task was cancelled")
+                logger.info("Task %s was cancelled", "Metrics analysis")
                 raise
             except Exception as e:
-                logger.error(f"Error analyzing metrics: {str(e)}")
+                logger.error("Error analyzing metrics: %s", e)
                 await asyncio.sleep(60)
 
     def _initialize_default_metrics(self):
@@ -364,7 +364,7 @@ class MetricsManager:
             try:
                 await task
             except asyncio.CancelledError:
-                logger.info(f"Task {task} was cancelled during shutdown")
+                logger.info("Task %s was cancelled during shutdown", task)
                 raise
         self._background_tasks.clear()
 
@@ -406,7 +406,7 @@ class MetricsManager:
             )
             
         except Exception as e:
-            logger.error(f"Error recording request metrics: {str(e)}")
+            logger.error("Error recording request metrics: %s", e)
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def record_reputation_score(self, score: float, score_type: str):
@@ -423,7 +423,7 @@ class MetricsManager:
             )
             
         except Exception as e:
-            logger.error(f"Error recording reputation score: {str(e)}")
+            logger.error("Error recording reputation score: %s", e)
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def record_analysis(self, duration: float, analysis_type: str):
@@ -440,7 +440,7 @@ class MetricsManager:
             )
             
         except Exception as e:
-            logger.error(f"Error recording analysis metrics: {str(e)}")
+            logger.error("Error recording analysis metrics: %s", e)
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
     async def record_prediction(self, model: str, result: str):
@@ -449,7 +449,7 @@ class MetricsManager:
             MODEL_PREDICTIONS.labels(model=model, result=result).inc()
             
         except Exception as e:
-            logger.error(f"Error recording prediction: {str(e)}")
+            logger.error("Error recording prediction: %s", e)
 
     async def _store_metric(
         self, name: str, value: float, windows: List[timedelta]
@@ -475,7 +475,7 @@ class MetricsManager:
                     window.timestamps.append(current_time)
                     
         except Exception as e:
-            logger.error(f"Error storing metric: {str(e)}")
+            logger.error("Error storing metric: %s", e)
 
     async def _collect_system_metrics(self):
         """Collect system metrics periodically."""
@@ -505,7 +505,7 @@ class MetricsManager:
                 await asyncio.sleep(15)  # Collect every 15 seconds
                 
             except Exception as e:
-                logger.error(f"Error collecting system metrics: {str(e)}")
+                logger.error("Error collecting system metrics: %s", e)
                 await asyncio.sleep(60)
 
     async def _cleanup_old_metrics(self):
@@ -545,7 +545,7 @@ class MetricsManager:
                 logger.info("Metrics cleanup task was cancelled")
                 raise
             except Exception as e:
-                logger.error(f"Error cleaning up metrics: {str(e)}")
+                logger.error("Error cleaning up metrics: %s", e)
                 await asyncio.sleep(60)
 
     async def _calculate_aggregates(self):
@@ -561,7 +561,7 @@ class MetricsManager:
                             # Update stats
                             self._update_stats(metric_name, duration, values)
         except Exception as e:
-            logger.error(f"Error calculating aggregates: {str(e)}")
+            logger.error("Error calculating aggregates: %s", e)
 
     async def _check_alerts(self):
         """Check alert conditions and trigger alerts if needed."""
@@ -600,9 +600,9 @@ class MetricsManager:
                     # Add to history
                     self._alert_history[alert_name] = alert_event
                     # Log alert
-                    logger.warning(f"Alert triggered: {alert_name} - {alert_event.message}")
+                    logger.warning("Alert triggered: %s - %s", alert_name, alert_event.message)
         except Exception as e:
-            logger.error(f"Error checking alerts: {str(e)}")
+            logger.error("Error checking alerts: %s", e)
 
     def _get_current_metric_value(self, metric_name: str) -> Optional[float]:
         """Get current value for a metric."""
@@ -611,7 +611,7 @@ class MetricsManager:
             # In a real system, you'd get the actual current metric value
             return None
         except Exception as e:
-            logger.error(f"Error getting metric value: {str(e)}")
+            logger.error("Error getting metric value: %s", e)
             return None
 
     def _sanitize_metric_name(self, name: str) -> str:
@@ -657,7 +657,7 @@ class MetricsManager:
                 }
                 
         except Exception as e:
-            logger.error(f"Error updating stats: {str(e)}")
+            logger.error("Error updating stats: %s", e)
 
     def _format_duration(self, duration: timedelta) -> str:
         """Format duration for metric names."""
@@ -721,7 +721,7 @@ class MetricsManager:
                 return summary
                 
         except Exception as e:
-            logger.error(f"Error getting metrics summary: {str(e)}")
+            logger.error("Error getting metrics summary: %s", e)
             return {}
 
     def register_metric(
@@ -744,9 +744,9 @@ class MetricsManager:
                     "values": [],
                     "labels": {},
                 }
-                logger.info(f"Registered metric: {name}")
+                logger.info("Registered metric: %s", name)
         except Exception as e:
-            logger.error(f"Error registering metric {name}: {str(e)}")
+            logger.error("Error registering metric %s: %s", name, e)
             raise ReputationError(
                 message=f"Failed to register metric {name}: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -783,7 +783,7 @@ class MetricsManager:
                 self._cleanup_old_metrics()
 
         except Exception as e:
-            logger.error(f"Error recording metric {name}: {str(e)}")
+            logger.error("Error recording metric %s: %s", name, e)
             raise ReputationError(
                 message=f"Failed to record metric {name}: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -816,7 +816,7 @@ class MetricsManager:
                     ]
 
         except Exception as e:
-            logger.error(f"Error recording error metric: {str(e)}")
+            logger.error("Error recording error metric: %s", e)
             from app.core.error_handling import ReputationError
             raise ReputationError(
                 message=f"Failed to record error metric: {str(e)}",
@@ -850,7 +850,7 @@ class MetricsManager:
                 return metric
             
         except Exception as e:
-            logger.error(f"Error getting metric {name}: {str(e)}")
+            logger.error("Error getting metric %s: %s", name, e)
             raise ReputationError(
                 message=f"Failed to get metric {name}: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -868,7 +868,7 @@ class MetricsManager:
                 return dict(self._errors)
 
         except Exception as e:
-            logger.error(f"Error getting error metrics: {str(e)}")
+            logger.error("Error getting error metrics: %s", e)
             raise ReputationError(
                 message=f"Failed to get error metrics: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -884,7 +884,7 @@ class MetricsManager:
                 logger.info("Cleared all metrics")
 
         except Exception as e:
-            logger.error(f"Error clearing metrics: {str(e)}")
+            logger.error("Error clearing metrics: %s", e)
             raise ReputationError(
                 message=f"Failed to clear metrics: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -896,8 +896,8 @@ class MetricsManager:
 
     async def record_system_metric(self, metric_type: str, value: float, labels: Optional[Dict[str, str]] = None):
         """Record a system metric (stub implementation for test/integration compatibility)."""
-        logger.debug(f"[DEBUG] record_system_metric called with: {metric_type=}, {value=}, {labels=}")
-        logger.info(f"System metric recorded: {metric_type}={value}, labels={labels}")
+        logger.debug("[DEBUG] record_system_metric called with: metric_type=%s, value=%s, labels=%s", metric_type, value, labels)
+        logger.info("System metric recorded: %s=%s, labels=%s", metric_type, value, labels)
         return
 
 
@@ -923,7 +923,7 @@ def track_metric(
         else:
             gauge.set(value)
     except Exception as e:
-        logger.error(f"Error tracking metric {name}: {str(e)}")
+        logger.error("Error tracking metric %s: %s", name, e)
 
 
 def track_latency(name: str):
@@ -947,7 +947,7 @@ def track_latency(name: str):
                 return result
 
             except Exception as e:
-                logger.error(f"Error tracking latency for {name}: {str(e)}")
+                logger.error("Error tracking latency for %s: %s", name, e)
                 raise
         return wrapper
     return decorator
@@ -958,6 +958,6 @@ def track_performance(func):
         start = time.time()
         result = await func(*args, **kwargs)
         duration = time.time() - start
-        logging.getLogger(func.__module__).info(f"Performance: {func.__name__} took {duration:.4f}s")
+        logging.getLogger(func.__module__).info("Performance: %s took %.4fs", func.__name__, duration)
         return result
     return wrapper

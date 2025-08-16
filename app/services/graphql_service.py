@@ -61,7 +61,7 @@ class SchemaBuilder:
             return True
 
         except Exception as e:
-            logger.error(f"Add type error: {str(e)}")
+            logger.error("Add type error: %s", e)
             return False
 
     def add_query(self, field: SchemaField, resolver: Callable) -> bool:
@@ -75,7 +75,7 @@ class SchemaBuilder:
             return True
 
         except Exception as e:
-            logger.error(f"Add query error: {str(e)}")
+            logger.error("Add query error: %s", e)
             return False
 
     def add_mutation(self, field: SchemaField, resolver: Callable) -> bool:
@@ -89,7 +89,7 @@ class SchemaBuilder:
             return True
 
         except Exception as e:
-            logger.error(f"Add mutation error: {str(e)}")
+            logger.error("Add mutation error: %s", e)
             return False
 
     def add_subscription(self, field: SchemaField, resolver: Callable) -> bool:
@@ -103,7 +103,7 @@ class SchemaBuilder:
             return True
 
         except Exception as e:
-            logger.error(f"Add subscription error: {str(e)}")
+            logger.error("Add subscription error: %s", e)
             return False
 
     def build_schema(self) -> Schema:
@@ -290,7 +290,7 @@ class SchemaBuilder:
             )
 
         except Exception as e:
-            logger.error(f"Build schema error: {str(e)}")
+            logger.error("Build schema error: %s", e)
             return None
 
     def _get_field_type(self, field: SchemaField) -> Any:
@@ -312,7 +312,7 @@ class SchemaBuilder:
             return base_type
 
         except Exception as e:
-            logger.error(f"Get field type error: {str(e)}")
+            logger.error("Get field type error: %s", e)
             return None
 
 
@@ -368,7 +368,7 @@ class GraphQLService:
             }
 
         except Exception as e:
-            logger.error(f"Add type error: {str(e)}")
+            logger.error("Add type error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def add_query(
@@ -404,7 +404,7 @@ class GraphQLService:
             }
 
         except Exception as e:
-            logger.error(f"Add query error: {str(e)}")
+            logger.error("Add query error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def add_mutation(
@@ -440,7 +440,7 @@ class GraphQLService:
             }
 
         except Exception as e:
-            logger.error(f"Add mutation error: {str(e)}")
+            logger.error("Add mutation error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def add_subscription(
@@ -476,7 +476,7 @@ class GraphQLService:
             }
 
         except Exception as e:
-            logger.error(f"Add subscription error: {str(e)}")
+            logger.error("Add subscription error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def build_schema(self) -> Dict[str, Any]:
@@ -495,7 +495,7 @@ class GraphQLService:
             }
 
         except Exception as e:
-            logger.error(f"Build schema error: {str(e)}")
+            logger.error("Build schema error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def execute(
@@ -522,5 +522,5 @@ class GraphQLService:
             }
 
         except Exception as e:
-            logger.error(f"Execute query error: {str(e)}")
+            logger.error("Execute query error: %s", e)
             return {"status": "error", "message": str(e)}

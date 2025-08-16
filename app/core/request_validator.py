@@ -14,7 +14,7 @@ from typing import Any
 from urllib.parse import unquote
 
 from fastapi import HTTPException, Request, status
-
+from app.core.constants import CONTENT_TYPE_JSON
 from app.core.logging import logger
 
 
@@ -118,7 +118,7 @@ class RequestValidator:
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                     detail="Request entity too large"
                 )
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error("Request size validation error: %s", str(e))
             raise
 
@@ -144,7 +144,7 @@ class RequestValidator:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Invalid header value"
                     )
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error("Header validation error: %s", str(e))
             raise
 
@@ -165,7 +165,7 @@ class RequestValidator:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid path"
                 )
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error("Path validation error: %s", str(e))
             raise
 
@@ -194,7 +194,7 @@ class RequestValidator:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Invalid parameter value"
                     )
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error("Query parameter validation error: %s", str(e))
             raise
 
@@ -204,7 +204,7 @@ class RequestValidator:
             content_type = request.headers.get(
                 "content-type", "").split(";")[0].strip()
 
-            if content_type == "application/json":
+            if content_type == CONTENT_TYPE_JSON:
                 await self._validate_json_body(request)
             elif content_type == "application/xml":
                 await self._validate_xml_body(request)
@@ -233,7 +233,7 @@ class RequestValidator:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid JSON"
                 )
-        except Exception as e:
+        except (UnicodeDecodeError, ValueError, TypeError) as e:
             logger.error("JSON validation error: %s", str(e))
             raise
 
@@ -251,7 +251,7 @@ class RequestValidator:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid XML"
                 )
-        except Exception as e:
+        except (UnicodeDecodeError, ValueError, TypeError) as e:
             logger.error("XML validation error: %s", str(e))
             raise
 
@@ -298,7 +298,7 @@ class RequestValidator:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid text content"
                 )
-        except Exception as e:
+        except (UnicodeDecodeError, ValueError, TypeError) as e:
             logger.error("Text validation error: %s", str(e))
             raise
 
@@ -341,7 +341,7 @@ class RequestValidator:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Invalid string content"
                     )
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error("JSON structure validation error: %s", str(e))
             raise
 
@@ -366,7 +366,7 @@ class RequestValidator:
 
             return False
 
-        except Exception as e:
+        except (re.error, TypeError) as e:
             logger.error("Pattern check error: %s", str(e))
             return True
 
@@ -405,12 +405,11 @@ class RequestValidator:
             ]
 
             if request.method in {"POST", "PUT", "PATCH"}:
-                body = request.body()
-                if body:
-                    key_parts.append(hashlib.sha256(body).hexdigest())
+                # Body not read synchronously here to avoid consuming stream
+                # Callers that need body hashing should do it where body is already read
 
             return hashlib.sha256("|".join(key_parts).encode()).hexdigest()
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error("Cache key generation error: %s", str(e))
             return str(uuid.uuid4())
 

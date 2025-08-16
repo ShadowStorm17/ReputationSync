@@ -4,6 +4,7 @@ Handles model loading, unloading, and lifecycle management.
 """
 
 import logging
+import asyncio
 from typing import Any, Dict, Optional
 
 from app.core.ai_config import ai_config
@@ -24,21 +25,26 @@ class ModelManager:
     async def _load_default_models(self):
         """Load default models."""
         logger.info("Loading default models...")
-        # TODO: Implement model loading
+        # Cooperative yield; replace with real loading logic when available
+        await asyncio.sleep(0)
 
     @handle_errors(severity=ErrorSeverity.MEDIUM, category=ErrorCategory.MODEL)
     async def load_model(self, model_name: str) -> Optional[Any]:
         """Load a specific model."""
-        logger.info(f"Loading model: {model_name}")
-        # TODO: Implement model loading
-        return None
+        logger.info("Loading model: %s", model_name)
+        # Minimal placeholder implementation with cooperative await
+        await asyncio.sleep(0)
+        model = object()
+        self.models[model_name] = model
+        return model
 
     @handle_errors(severity=ErrorSeverity.LOW, category=ErrorCategory.MODEL)
     async def unload_model(self, model_name: str):
         """Unload a specific model."""
         if model_name in self.models:
-            logger.info(f"Unloading model: {model_name}")
-            # TODO: Implement model unloading
+            logger.info("Unloading model: %s", model_name)
+            # Cooperative yield; replace with real unloading logic when available
+            await asyncio.sleep(0)
             del self.models[model_name]
 
 

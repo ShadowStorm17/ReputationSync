@@ -1,8 +1,11 @@
 import requests
+import logging
 import time
 from datetime import datetime
 from typing import Optional
 import os
+
+logger = logging.getLogger(__name__)
 
 class APIClient:
     """Client for interacting with the ReputationSync API."""
@@ -47,8 +50,8 @@ class APIClient:
             )
             response.raise_for_status()
             return response.json()
-        except Exception as e:
-            print(f"Failed to record API usage: {str(e)}")
+        except requests.RequestException as e:
+            logger.error("Failed to record API usage: %s", str(e))
             return None
 
     def __enter__(self):

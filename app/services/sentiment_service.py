@@ -122,7 +122,7 @@ class SentimentService:
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error in sentiment analysis: {str(e)}")
+            logger.error("Error in sentiment analysis: %s", e)
             raise
 
     async def _analyze_emotions(self, text: str) -> Dict:
@@ -156,7 +156,7 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error in emotion analysis: {str(e)}")
+            logger.error("Error in emotion analysis: %s", e)
             return {}
 
     async def _analyze_context(self, text: str) -> Dict:
@@ -188,7 +188,7 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error in context analysis: {str(e)}")
+            logger.error("Error in context analysis: %s", e)
             return {}
 
     def _analyze_vader(self, text: str) -> Dict:
@@ -205,7 +205,7 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error in VADER analysis: {str(e)}")
+            logger.error("Error in VADER analysis: %s", e)
             return {}
 
     def _reconcile_analyses(
@@ -242,7 +242,7 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error reconciling analyses: {str(e)}")
+            logger.error("Error reconciling analyses: %s", e)
             return {}
 
     def _determine_overall_sentiment(
@@ -282,7 +282,7 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error determining overall sentiment: {str(e)}")
+            logger.error("Error determining overall sentiment: %s", e)
             return {"label": "neutral", "confidence": 0}
 
     def _emotion_to_sentiment(self, emotion: str) -> str:
@@ -405,7 +405,7 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing sentiment trends: {str(e)}")
+            logger.error("Error analyzing sentiment trends: %s", e)
             return {
                 "error": str(e),
                 "analyzed_at": datetime.now(timezone.utc).isoformat(),
@@ -467,8 +467,8 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing sentiment trend: {str(e)}")
-            raise ValueError(f"Error analyzing sentiment trend: {str(e)}")
+            logger.error("Error analyzing sentiment trend: %s", e)
+            raise ValueError("Error analyzing sentiment trend: %s", e)
 
     def _classify_sentiment(self, polarity: float) -> str:
         """Classify sentiment based on polarity score."""
@@ -528,7 +528,7 @@ class SentimentService:
             return sentiment
 
         except Exception as e:
-            logger.error(f"Error in sentiment analysis: {str(e)}")
+            logger.error("Error in sentiment analysis: %s", e)
             return {
                 "polarity": 0.0,
                 "subjectivity": 0.0,
@@ -546,7 +546,7 @@ class SentimentService:
                 results.append(sentiment)
             return results
         except Exception as e:
-            logger.error(f"Error in bulk sentiment analysis: {str(e)}")
+            logger.error("Error in bulk sentiment analysis: %s", e)
             return [{"error": str(e)}] * len(texts)
 
     async def get_reputation_score(
@@ -597,8 +597,8 @@ class SentimentService:
             }
 
         except Exception as e:
-            logger.error(f"Error calculating reputation score: {str(e)}")
-            raise ValueError(f"Error calculating reputation score: {str(e)}")
+            logger.error("Error calculating reputation score: %s", e)
+            raise ValueError("Error calculating reputation score: %s", e)
 
     def _get_sentiment_label(self, polarity: float) -> str:
         """Convert sentiment polarity to label."""

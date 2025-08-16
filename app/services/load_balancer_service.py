@@ -108,7 +108,7 @@ class LoadBalancer:
             return True
 
         except Exception as e:
-            logger.error(f"Add server error: {str(e)}")
+            logger.error("Add server error: %s", e)
             return False
 
     async def remove_server(self, name: str, drain: bool = True) -> bool:
@@ -131,7 +131,7 @@ class LoadBalancer:
             return True
 
         except Exception as e:
-            logger.error(f"Remove server error: {str(e)}")
+            logger.error("Remove server error: %s", e)
             return False
 
     async def get_next_server(
@@ -182,7 +182,7 @@ class LoadBalancer:
             return available_servers[0]
 
         except Exception as e:
-            logger.error(f"Get next server error: {str(e)}")
+            logger.error("Get next server error: %s", e)
             return None
 
     async def check_server_health(self, server: Server):
@@ -205,7 +205,7 @@ class LoadBalancer:
                         server.status = ServerStatus.UNHEALTHY
 
         except Exception as e:
-            logger.error(f"Health check error for {server.name}: {str(e)}")
+            logger.error("Health check error for %s: %s", server.name, e)
             server.failed_checks += 1
 
             if server.failed_checks >= self.unhealthy_threshold:
@@ -225,7 +225,7 @@ class LoadBalancer:
                 await asyncio.sleep(self.check_interval)
 
             except Exception as e:
-                logger.error(f"Health check loop error: {str(e)}")
+                logger.error("Health check loop error: %s", e)
                 await asyncio.sleep(self.check_interval)
 
     def stop_health_checks(self):
@@ -299,7 +299,7 @@ class LoadBalancerService:
             }
 
         except Exception as e:
-            logger.error(f"Add server error: {str(e)}")
+            logger.error("Add server error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def remove_server_from_balancer(
@@ -326,7 +326,7 @@ class LoadBalancerService:
             }
 
         except Exception as e:
-            logger.error(f"Remove server error: {str(e)}")
+            logger.error("Remove server error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_server_metrics(self, balancer_name: str) -> Dict[str, Any]:
@@ -347,7 +347,7 @@ class LoadBalancerService:
             return {"status": "success", "metrics": metrics}
 
         except Exception as e:
-            logger.error(f"Get metrics error: {str(e)}")
+            logger.error("Get metrics error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def close_all(self):
@@ -359,4 +359,4 @@ class LoadBalancerService:
             self.load_balancers.clear()
 
         except Exception as e:
-            logger.error(f"Close all error: {str(e)}")
+            logger.error("Close all error: %s", e)

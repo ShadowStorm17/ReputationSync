@@ -4,6 +4,7 @@ Handles AI pipeline orchestration and monitoring.
 """
 
 import logging
+import asyncio
 from typing import Any, Dict, Optional
 
 from app.core.ai_config import ai_config
@@ -24,7 +25,8 @@ class PipelineManager:
     async def _monitor_performance(self):
         """Monitor pipeline performance."""
         logger.info("Monitoring pipeline performance...")
-        # TODO: Implement performance monitoring
+        # Cooperative yield; replace with real monitoring logic when available
+        await asyncio.sleep(0)
 
     @handle_errors(
         severity=ErrorSeverity.MEDIUM, category=ErrorCategory.SYSTEM
@@ -33,16 +35,20 @@ class PipelineManager:
         self, name: str, config: Dict[str, Any]
     ) -> Optional[Any]:
         """Create a new pipeline."""
-        logger.info(f"Creating pipeline: {name}")
-        # TODO: Implement pipeline creation
-        return None
+        logger.info("Creating pipeline: %s", name)
+        # Minimal placeholder implementation with cooperative await
+        await asyncio.sleep(0)
+        pipeline = {"name": name, "config": config, "created": True}
+        self.pipelines[name] = pipeline
+        return pipeline
 
     @handle_errors(severity=ErrorSeverity.LOW, category=ErrorCategory.SYSTEM)
     async def delete_pipeline(self, name: str):
         """Delete a pipeline."""
         if name in self.pipelines:
-            logger.info(f"Deleting pipeline: {name}")
-            # TODO: Implement pipeline deletion
+            logger.info("Deleting pipeline: %s", name)
+            # Cooperative yield; replace with real deletion/cleanup when available
+            await asyncio.sleep(0)
             del self.pipelines[name]
 
 

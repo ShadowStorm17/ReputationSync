@@ -6,6 +6,7 @@ import httpx
 
 from app.core.cache import cache
 from app.core.config import get_settings
+from app.core.constants import CONTENT_TYPE_JSON
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -19,6 +20,19 @@ class TwitterService:
         self.rate_limit = getattr(settings.platforms, "RATE_LIMIT", 100)
         self.client = httpx.AsyncClient(timeout=30.0)
         self.cache_ttl = settings.cache.DEFAULT_TTL
+
+    async def aclose(self):
+        """Close underlying HTTP client."""
+        try:
+            await self.client.aclose()
+        except Exception as e:
+            logger.warning("Error closing Twitter AsyncClient: %s", str(e))
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.aclose()
 
     async def get_user_metrics(self, username: str) -> Optional[Dict]:
         """Get Twitter user metrics."""
@@ -196,5 +210,5 @@ class TwitterService:
         """Get headers for Twitter API requests."""
         return {
             "Authorization": f"Bearer {settings.TWITTER_BEARER_TOKEN}",
-            "Accept": "application/json"
+            "Accept": CONTENT_TYPE_JSON
         }

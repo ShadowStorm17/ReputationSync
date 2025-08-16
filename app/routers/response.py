@@ -12,5 +12,5 @@ async def generate_response(
     payload: Dict = Body(...),
     current_user=Depends(get_current_active_user)
 ):
-    # TODO: Implement real response generation logic
-    return {"message": "Response generation not yet implemented."} 
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                        detail="Response generation not implemented yet")

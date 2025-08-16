@@ -116,7 +116,7 @@ class CustomerService:
             return CustomerProfileResponse(**profile.dict())
 
         except Exception as e:
-            logger.error(f"Error creating profile: {str(e)}")
+            logger.error("Error creating profile: %s", e)
             raise ReputationError(
                 message="Failed to create customer profile",
                 severity=ErrorSeverity.HIGH,
@@ -138,7 +138,7 @@ class CustomerService:
             return CustomerProfileResponse(**profile.dict())
 
         except Exception as e:
-            logger.error(f"Error getting profile: {str(e)}")
+            logger.error("Error getting profile: %s", e)
             raise ReputationError(
                 message="Failed to get customer profile",
                 severity=ErrorSeverity.MEDIUM,
@@ -173,7 +173,7 @@ class CustomerService:
             return CustomerProfileResponse(**profile.dict())
 
         except Exception as e:
-            logger.error(f"Error updating profile: {str(e)}")
+            logger.error("Error updating profile: %s", e)
             raise ReputationError(
                 message="Failed to update customer profile",
                 severity=ErrorSeverity.HIGH,
@@ -214,7 +214,7 @@ class CustomerService:
             )
 
         except Exception as e:
-            logger.error(f"Error adding platform profile: {str(e)}")
+            logger.error("Error adding platform profile: %s", e)
             raise ReputationError(
                 message="Failed to add platform profile",
                 severity=ErrorSeverity.HIGH,
@@ -242,7 +242,7 @@ class CustomerService:
             )
 
         except Exception as e:
-            logger.error(f"Error removing platform profile: {str(e)}")
+            logger.error("Error removing platform profile: %s", e)
             raise ReputationError(
                 message="Failed to remove platform profile",
                 severity=ErrorSeverity.MEDIUM,
@@ -271,7 +271,7 @@ class CustomerService:
             )
 
         except Exception as e:
-            logger.error(f"Error upgrading subscription: {str(e)}")
+            logger.error("Error upgrading subscription: %s", e)
             raise ReputationError(
                 message="Failed to upgrade subscription",
                 severity=ErrorSeverity.HIGH,

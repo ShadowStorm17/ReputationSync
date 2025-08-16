@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict, List, Optional
+from app.core.constants import CONTENT_TYPE_JSON
 
 import httpx
 from fastapi import HTTPException
@@ -31,6 +32,19 @@ class InstagramAPI:
         self.client = httpx.AsyncClient(timeout=30.0)
         self.cache_ttl = settings.cache.DEFAULT_TTL
 
+    async def aclose(self):
+        """Close underlying HTTP client."""
+        try:
+            await self.client.aclose()
+        except Exception as e:
+            logger.warning("Error closing Instagram AsyncClient: %s", str(e))
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.aclose()
+
     async def get_user_info(self, username: str) -> Dict:
         """Get Instagram user information using the Graph API."""
         cache_key = f"instagram:user:{username}"
@@ -43,7 +57,7 @@ class InstagramAPI:
                     record_instagram_request("cache_hit")
                     return cached_data
             except Exception as e:
-                logger.warning(f"Cache get error for {username}: {str(e)}")
+                logger.warning("Cache get error for %s: %s", username, e)
 
         # Only support the authenticated user (me) for now
         if username != "me":
@@ -51,11 +65,12 @@ class InstagramAPI:
 
         import os
         access_token = os.getenv("INSTAGRAM_ACCESS_TOKEN")
-        print(f"INSTAGRAM_ACCESS_TOKEN FULL: {access_token}")
+        masked = (access_token[:4] + "...") if access_token else "None"
+        logger.debug("Using INSTAGRAM_ACCESS_TOKEN (masked): %s", masked)
         url = f"https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token={access_token}"
-        print(f"INSTAGRAM API URL: {url}")
+        logger.debug("Requesting Instagram Graph API /me endpoint")
         headers = {}
-        print(f"INSTAGRAM API HEADERS: {headers}")
+        logger.debug("INSTAGRAM API headers: %s", headers)
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(url, headers=headers)
@@ -82,20 +97,20 @@ class InstagramAPI:
                 try:
                     await cache.set(cache_key, user_info, ttl=self.cache_ttl)
                 except Exception as e:
-                    logger.warning(f"Cache set error for {username}: {str(e)}")
+                    logger.warning("Cache set error for %s: %s", username, e)
 
             return user_info
 
         except httpx.HTTPStatusError as e:
             record_instagram_request("error")
-            logger.error(f"Instagram Graph API error for user {username}: {str(e)}")
+            logger.error("Instagram Graph API error for user %s: %s", username, e)
             raise HTTPException(
                 status_code=e.response.status_code,
                 detail=f"Instagram API error: {str(e)}",
             )
         except Exception as e:
             record_instagram_request("error")
-            logger.error(f"Error fetching Instagram user {username}: {str(e)}")
+            logger.error("Error fetching Instagram user %s: %s", username, e)
             raise HTTPException(
                 status_code=503,
                 detail="Instagram service temporarily unavailable",
@@ -136,7 +151,7 @@ class InstagramAPI:
             return posts
 
         except Exception as e:
-            logger.error(f"Error fetching posts for {username}: {str(e)}")
+            logger.error("Error fetching posts for %s: %s", username, e)
             raise HTTPException(
                 status_code=503, detail="Error fetching Instagram posts"
             )
@@ -171,9 +186,7 @@ class InstagramAPI:
             return comments
 
         except Exception as e:
-            logger.error(
-                f"Error fetching comments for post {post_id}: {str(e)}"
-            )
+            logger.error("Error fetching comments for post %s: %s", post_id, e)
             raise HTTPException(
                 status_code=503, detail="Error fetching Instagram comments"
             )
@@ -182,7 +195,7 @@ class InstagramAPI:
         """Get headers for Instagram API requests."""
         return {
             "Authorization": f"Bearer {settings.INSTAGRAM_ACCESS_TOKEN}",
-            "Accept": "application/json",
+            "Accept": CONTENT_TYPE_JSON,
             "User-Agent": "ReputationSync/1.0",
         }
 

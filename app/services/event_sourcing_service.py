@@ -77,7 +77,7 @@ class EventStore:
             return True
 
         except Exception as e:
-            logger.error(f"Append event error: {str(e)}")
+            logger.error("Append event error: %s", e)
             return False
 
     async def get_events(
@@ -105,7 +105,7 @@ class EventStore:
             return events
 
         except Exception as e:
-            logger.error(f"Get events error: {str(e)}")
+            logger.error("Get events error: %s", e)
             return []
 
     async def create_snapshot(
@@ -143,7 +143,7 @@ class EventStore:
             return True
 
         except Exception as e:
-            logger.error(f"Create snapshot error: {str(e)}")
+            logger.error("Create snapshot error: %s", e)
             return False
 
     async def get_snapshot(
@@ -155,7 +155,7 @@ class EventStore:
             return self.snapshots.get(aggregate_key)
 
         except Exception as e:
-            logger.error(f"Get snapshot error: {str(e)}")
+            logger.error("Get snapshot error: %s", e)
             return None
 
     def register_handler(self, event_type: str, handler: Callable):
@@ -174,10 +174,10 @@ class EventStore:
                 try:
                     await handler(event)
                 except Exception as e:
-                    logger.error(f"Handler error: {str(e)}")
+                    logger.error("Handler error: %s", e)
 
         except Exception as e:
-            logger.error(f"Trigger handlers error: {str(e)}")
+            logger.error("Trigger handlers error: %s", e)
 
 
 class EventSourcingService:
@@ -220,7 +220,7 @@ class EventSourcingService:
             }
 
         except Exception as e:
-            logger.error(f"Create aggregate error: {str(e)}")
+            logger.error("Create aggregate error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def update_aggregate(
@@ -260,7 +260,7 @@ class EventSourcingService:
             }
 
         except Exception as e:
-            logger.error(f"Update aggregate error: {str(e)}")
+            logger.error("Update aggregate error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def delete_aggregate(
@@ -299,7 +299,7 @@ class EventSourcingService:
             }
 
         except Exception as e:
-            logger.error(f"Delete aggregate error: {str(e)}")
+            logger.error("Delete aggregate error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_aggregate(
@@ -357,7 +357,7 @@ class EventSourcingService:
             }
 
         except Exception as e:
-            logger.error(f"Get aggregate error: {str(e)}")
+            logger.error("Get aggregate error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_aggregate_history(
@@ -373,7 +373,7 @@ class EventSourcingService:
             }
 
         except Exception as e:
-            logger.error(f"Get history error: {str(e)}")
+            logger.error("Get history error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def register_handler(self, event_type: str, handler: Callable):

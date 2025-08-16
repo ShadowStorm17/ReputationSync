@@ -80,9 +80,9 @@ class AlertManager:
                 await smtp.login(self.smtp_user, self.smtp_password)
                 await smtp.send_message(email)
             
-            logger.info(f"Sent alert: {subject}")
+            logger.info("Sent alert: %s", subject)
         except Exception as e:
-            logger.error(f"Failed to send alert: {str(e)}")
+            logger.error("Failed to send alert: %s", str(e))
 
 class MonitoringManager:
     def __init__(self):
@@ -155,7 +155,7 @@ class MonitoringManager:
                                     "normal"
                                 )
         except Exception as e:
-            logger.error(f"Failed to check metrics: {str(e)}")
+            logger.error("Failed to check metrics: %s", str(e))
     
     def check_ssl_certificate(self) -> None:
         """Check SSL certificate expiration."""
@@ -175,7 +175,7 @@ class MonitoringManager:
                     "high"
                 ))
         except Exception as e:
-            logger.error(f"Failed to check SSL certificate: {str(e)}")
+            logger.error("Failed to check SSL certificate: %s", str(e))
     
     def check_system_resources(self) -> None:
         """Check system resource usage."""
@@ -208,7 +208,7 @@ class MonitoringManager:
                     "high"
                 ))
         except Exception as e:
-            logger.error(f"Failed to check system resources: {str(e)}")
+            logger.error("Failed to check system resources: %s", str(e))
 
 async def main():
     """Main monitoring process."""
@@ -228,7 +228,7 @@ async def main():
             # Wait before next check
             await asyncio.sleep(60)  # Check every minute
         except Exception as e:
-            logger.error(f"Monitoring process error: {str(e)}")
+            logger.error("Monitoring process error: %s", str(e))
             await asyncio.sleep(60)  # Wait before retry
 
 if __name__ == "__main__":

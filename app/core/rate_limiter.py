@@ -52,7 +52,7 @@ class RateLimiter:
             logger.warning("Redis not available, using local cache only")
             self._redis = None
         except Exception as e:
-            logger.error(f"Redis connection failed: {str(e)}")
+            logger.error("Redis connection failed: %s", e)
             self._redis = None
 
     async def check_rate_limit(
@@ -92,7 +92,7 @@ class RateLimiter:
                 return True
 
         except Exception as e:
-            logger.error(f"Rate limit check error: {str(e)}", exc_info=True)
+            logger.error("Rate limit check error: %s", e, exc_info=True)
             return True  # Allow request on error
 
     async def _check_redis_rate_limit(
@@ -130,8 +130,11 @@ class RateLimiter:
 
             except Exception as e:
                 logger.error(
-                    f"Redis rate limit error (attempt {attempt + 1}/{self._max_retries}): {str(e)}",
-                    exc_info=True
+                    "Redis rate limit error (attempt %s/%s): %s",
+                    attempt + 1,
+                    self._max_retries,
+                    e,
+                    exc_info=True,
                 )
                 if attempt < self._max_retries - 1:
                     await asyncio.sleep(self._retry_delay)
@@ -162,7 +165,7 @@ class RateLimiter:
             self._last_cleanup = now
 
         except Exception as e:
-            logger.error(f"Local cache cleanup error: {str(e)}", exc_info=True)
+            logger.error("Local cache cleanup error: %s", e, exc_info=True)
 
     async def get_rate_limit_info(self, key: str) -> Dict[str, Any]:
         """Get rate limit information."""
@@ -180,7 +183,7 @@ class RateLimiter:
                     info["redis_count"] = self._redis.zcard(key)
                     info["redis_ttl"] = self._redis.ttl(key)
                 except Exception as e:
-                    logger.error(f"Redis info error: {str(e)}", exc_info=True)
+                    logger.error("Redis info error: %s", e, exc_info=True)
 
             # Get local cache info
             async with self._local_lock:
@@ -189,7 +192,7 @@ class RateLimiter:
             return info
 
         except Exception as e:
-            logger.error(f"Rate limit info error: {str(e)}", exc_info=True)
+            logger.error("Rate limit info error: %s", e, exc_info=True)
             return {
                 "error": str(e),
                 "timestamp": datetime.now(timezone.utc).isoformat()
@@ -203,7 +206,7 @@ class RateLimiter:
                 try:
                     self._redis.delete(key)
                 except Exception as e:
-                    logger.error(f"Redis reset error: {str(e)}", exc_info=True)
+                    logger.error("Redis reset error: %s", e, exc_info=True)
 
             # Reset local cache
             async with self._local_lock:
@@ -211,7 +214,7 @@ class RateLimiter:
                     del self._local_cache[key]
 
         except Exception as e:
-            logger.error(f"Rate limit reset error: {str(e)}", exc_info=True)
+            logger.error("Rate limit reset error: %s", e, exc_info=True)
             raise ReputationError(
                 message=f"Failed to reset rate limit: {str(e)}",
                 severity=ErrorSeverity.MEDIUM,

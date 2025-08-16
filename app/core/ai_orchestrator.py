@@ -12,7 +12,7 @@ from app.core.error_handling import ErrorCategory, ErrorSeverity, handle_errors
 logger = logging.getLogger(__name__)
 
 
-class AIOchestrator:
+class AIOrchestrator:
     """AI orchestration system."""
 
     def __init__(self):
@@ -24,14 +24,15 @@ class AIOchestrator:
     async def _optimize_model_allocation(self):
         """Optimize model allocation."""
         logger.info("Optimizing model allocation...")
-        # TODO: Implement model allocation optimization
+        # Placeholder: strategy to be implemented in a future iteration
+        return True
 
     @handle_errors(
         severity=ErrorSeverity.MEDIUM, category=ErrorCategory.SYSTEM
     )
     async def register_component(self, name: str, component: Any) -> bool:
         """Register an AI component."""
-        logger.info(f"Registering component: {name}")
+        logger.info("Registering component: %s", name)
         self.components[name] = component
         return True
 
@@ -39,9 +40,9 @@ class AIOchestrator:
     async def unregister_component(self, name: str):
         """Unregister an AI component."""
         if name in self.components:
-            logger.info(f"Unregistering component: {name}")
+            logger.info("Unregistering component: %s", name)
             del self.components[name]
 
 
 # Global instance
-ai_orchestrator = AIOchestrator()
+ai_orchestrator = AIOrchestrator()

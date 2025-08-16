@@ -51,7 +51,7 @@ class RedisStrategy(CacheStrategy):
             value = await self.redis.get(key)
             return json.loads(value) if value else None
         except Exception as e:
-            logger.error(f"Redis get error: {str(e)}")
+            logger.error("Redis get error: %s", str(e))
             return None
 
     async def set(
@@ -62,7 +62,7 @@ class RedisStrategy(CacheStrategy):
             await self.redis.set(key, json.dumps(value), ex=ttl)
             return True
         except Exception as e:
-            logger.error(f"Redis set error: {str(e)}")
+            logger.error("Redis set error: %s", str(e))
             return False
 
     async def delete(self, key: str) -> bool:
@@ -71,7 +71,7 @@ class RedisStrategy(CacheStrategy):
             await self.redis.delete(key)
             return True
         except Exception as e:
-            logger.error(f"Redis delete error: {str(e)}")
+            logger.error("Redis delete error: %s", str(e))
             return False
 
 
@@ -98,7 +98,7 @@ class MemoryStrategy(CacheStrategy):
             return cache_data["value"]
 
         except Exception as e:
-            logger.error(f"Memory get error: {str(e)}")
+            logger.error("Memory get error: %s", str(e))
             return None
 
     async def set(
@@ -117,7 +117,7 @@ class MemoryStrategy(CacheStrategy):
             return True
 
         except Exception as e:
-            logger.error(f"Memory set error: {str(e)}")
+            logger.error("Memory set error: %s", str(e))
             return False
 
     async def delete(self, key: str) -> bool:
@@ -127,7 +127,7 @@ class MemoryStrategy(CacheStrategy):
                 del self.cache[key]
             return True
         except Exception as e:
-            logger.error(f"Memory delete error: {str(e)}")
+            logger.error("Memory delete error: %s", str(e))
             return False
 
 
@@ -161,7 +161,7 @@ class MultiLevelCache:
             return None
 
         except Exception as e:
-            logger.error(f"Multi-level get error: {str(e)}")
+            logger.error("Multi-level get error: %s", str(e))
             return None
 
     async def set(
@@ -185,7 +185,7 @@ class MultiLevelCache:
             return success
 
         except Exception as e:
-            logger.error(f"Multi-level set error: {str(e)}")
+            logger.error("Multi-level set error: %s", str(e))
             return False
 
     async def delete(self, key: str, level: Optional[int] = None) -> bool:
@@ -203,7 +203,7 @@ class MultiLevelCache:
             return success
 
         except Exception as e:
-            logger.error(f"Multi-level delete error: {str(e)}")
+            logger.error("Multi-level delete error: %s", str(e))
             return False
 
 
@@ -290,7 +290,7 @@ class CacheService:
             return True
 
         except Exception as e:
-            logger.error(f"Pattern clear error: {str(e)}")
+            logger.error("Pattern clear error: %s", str(e))
             return False
 
     async def get_stats(self) -> Dict[str, Any]:
@@ -312,5 +312,5 @@ class CacheService:
             return {"status": "success", "stats": stats}
 
         except Exception as e:
-            logger.error(f"Stats error: {str(e)}")
+            logger.error("Stats error: %s", str(e))
             return {"status": "error", "message": str(e)}

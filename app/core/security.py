@@ -365,7 +365,7 @@ async def get_current_user_by_api_key(
         if signature != expected_signature:
             raise HTTPException(
                 status_code=401,
-                detail=f"Invalid signature. Expected: {expected_signature[:8]}..., Got: {signature[:8]}...",
+                detail="Invalid signature",
                 headers={"WWW-Authenticate": "ApiKey"},
             )
 
@@ -383,10 +383,11 @@ async def get_current_user_by_api_key(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except (ValueError, TypeError):
+        # e.g., invalid timestamp format or header type issues
         raise HTTPException(
             status_code=401,
-            detail="Authentication failed",
+            detail="Invalid API Key",
             headers={"WWW-Authenticate": "ApiKey"},
         )
 

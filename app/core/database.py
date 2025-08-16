@@ -65,7 +65,7 @@ class DatabaseManager:
             logger.info("Database manager initialized successfully")
 
         except Exception as e:
-            logger.error(f"Error initializing database: {str(e)}")
+            logger.error("Error initializing database: %s", e)
             raise ReputationError(
                 message=f"Failed to initialize database: {str(e)}",
                 severity=ErrorSeverity.CRITICAL,
@@ -95,7 +95,7 @@ class DatabaseManager:
                 logger.debug("Database connection reset")
 
         except Exception as e:
-            logger.error(f"Error setting up event listeners: {str(e)}")
+            logger.error("Error setting up event listeners: %s", e)
             raise ReputationError(
                 message=f"Failed to setup database event listeners: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -118,7 +118,7 @@ class DatabaseManager:
             session.commit()
         except Exception as e:
             session.rollback()
-            logger.error(f"Database session error: {str(e)}")
+            logger.error("Database session error: %s", e)
             raise ReputationError(
                 message=f"Database operation failed: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -141,7 +141,7 @@ class DatabaseManager:
             logger.info("Database tables created successfully")
 
         except Exception as e:
-            logger.error(f"Error creating database tables: {str(e)}")
+            logger.error("Error creating database tables: %s", e)
             raise ReputationError(
                 message=f"Failed to create database tables: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -162,7 +162,7 @@ class DatabaseManager:
             logger.info("Database tables dropped successfully")
 
         except Exception as e:
-            logger.error(f"Error dropping database tables: {str(e)}")
+            logger.error("Error dropping database tables: %s", e)
             raise ReputationError(
                 message=f"Failed to drop database tables: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -179,10 +179,10 @@ class DatabaseManager:
             with self.get_session() as session:
                 session.add(model)
                 session.commit()
-                logger.debug(f"Added model instance: {model}")
+                logger.debug("Added model instance: %s", model)
 
         except Exception as e:
-            logger.error(f"Error adding model instance: {str(e)}")
+            logger.error("Error adding model instance: %s", e)
             raise ReputationError(
                 message=f"Failed to add model instance: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -195,10 +195,10 @@ class DatabaseManager:
             with self.get_session() as session:
                 session.merge(model)
                 session.commit()
-                logger.debug(f"Updated model instance: {model}")
+                logger.debug("Updated model instance: %s", model)
 
         except Exception as e:
-            logger.error(f"Error updating model instance: {str(e)}")
+            logger.error("Error updating model instance: %s", e)
             raise ReputationError(
                 message=f"Failed to update model instance: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -211,10 +211,10 @@ class DatabaseManager:
             with self.get_session() as session:
                 session.delete(model)
                 session.commit()
-                logger.debug(f"Deleted model instance: {model}")
+                logger.debug("Deleted model instance: %s", model)
 
         except Exception as e:
-            logger.error(f"Error deleting model instance: {str(e)}")
+            logger.error("Error deleting model instance: %s", e)
             raise ReputationError(
                 message=f"Failed to delete model instance: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -230,7 +230,7 @@ class DatabaseManager:
                 return session.get(model_class, id)
 
         except Exception as e:
-            logger.error(f"Error getting model by ID: {str(e)}")
+            logger.error("Error getting model by ID: %s", e)
             raise ReputationError(
                 message=f"Failed to get model by ID: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -244,7 +244,7 @@ class DatabaseManager:
                 return session.query(model_class).all()
 
         except Exception as e:
-            logger.error(f"Error getting all model instances: {str(e)}")
+            logger.error("Error getting all model instances: %s", e)
             raise ReputationError(
                 message=f"Failed to get all model instances: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -258,7 +258,7 @@ class DatabaseManager:
                 return session.query(model_class)
 
         except Exception as e:
-            logger.error(f"Error creating query: {str(e)}")
+            logger.error("Error creating query: %s", e)
             raise ReputationError(
                 message=f"Failed to create query: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -274,7 +274,7 @@ class DatabaseManager:
                 return session.execute(query, params or {})
 
         except Exception as e:
-            logger.error(f"Error executing query: {str(e)}")
+            logger.error("Error executing query: %s", e)
             raise ReputationError(
                 message=f"Failed to execute query: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -289,7 +289,7 @@ class DatabaseManager:
                 logger.info("Database connections closed")
 
         except Exception as e:
-            logger.error(f"Error closing database connections: {str(e)}")
+            logger.error("Error closing database connections: %s", e)
             raise ReputationError(
                 message=f"Failed to close database connections: {str(e)}",
                 severity=ErrorSeverity.ERROR,

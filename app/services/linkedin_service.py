@@ -6,6 +6,7 @@ Provides integration with LinkedIn API for reputation management.
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from app.core.constants import CONTENT_TYPE_JSON
 
 import aiohttp
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -13,6 +14,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from app.core.cache import cache
 from app.core.config import get_settings
 from app.core.metrics import LINKEDIN_API_LATENCY, LINKEDIN_REQUESTS_TOTAL, LINKEDIN_ERRORS_TOTAL
+from app.core.error_handling import IntegrationError
 from app.services.sentiment_service import SentimentService
 
 import os
@@ -127,12 +129,12 @@ class LinkedInService:
                     else:
                         self.error_counter.inc()
                         error_data = await response.json()
-                        logger.error(f"LinkedIn API error: {error_data}")
-                        raise Exception(f"LinkedIn API error: {error_data}")
+                        logger.error("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error: %s", error_data)
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error getting LinkedIn profile: {str(e)}")
+            logger.error("Error getting LinkedIn profile: %s", e)
             raise
 
     @retry(
@@ -187,12 +189,12 @@ class LinkedInService:
                     else:
                         self.error_counter.inc()
                         error_data = await response.json()
-                        logger.error(f"LinkedIn API error: {error_data}")
-                        raise Exception(f"LinkedIn API error: {error_data}")
+                        logger.error("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error: %s", error_data)
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error getting LinkedIn activity: {str(e)}")
+            logger.error("Error getting LinkedIn activity: %s", e)
             raise
 
     @retry(
@@ -243,12 +245,12 @@ class LinkedInService:
                     else:
                         self.error_counter.inc()
                         error_data = await response.json()
-                        logger.error(f"LinkedIn API error: {error_data}")
-                        raise Exception(f"LinkedIn API error: {error_data}")
+                        logger.error("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error: %s", error_data)
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error getting LinkedIn analytics: {str(e)}")
+            logger.error("Error getting LinkedIn analytics: %s", e)
             raise
 
     @retry(
@@ -278,7 +280,7 @@ class LinkedInService:
                 headers = {
                     "Authorization": f"Bearer {access_token}",
                     "X-Restli-Protocol-Version": "2.0.0",
-                    "Content-Type": "application/json",
+                    "Content-Type": CONTENT_TYPE_JSON,
                 }
 
                 async with session.post(
@@ -298,12 +300,12 @@ class LinkedInService:
                     else:
                         self.error_counter.inc()
                         error_data = await response.json()
-                        logger.error(f"LinkedIn API error: {error_data}")
-                        raise Exception(f"LinkedIn API error: {error_data}")
+                        logger.error("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error: %s", error_data)
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error posting LinkedIn comment: {str(e)}")
+            logger.error("Error posting LinkedIn comment: %s", e)
             raise
 
     async def analyze_engagement(
@@ -353,12 +355,12 @@ class LinkedInService:
                     else:
                         self.error_counter.inc()
                         error_data = await response.json()
-                        logger.error(f"LinkedIn API error: {error_data}")
-                        raise Exception(f"LinkedIn API error: {error_data}")
+                        logger.error("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error: %s", error_data)
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error analyzing LinkedIn engagement: {str(e)}")
+            logger.error("Error analyzing LinkedIn engagement: %s", e)
             raise
 
     def _calculate_sentiment_distribution(

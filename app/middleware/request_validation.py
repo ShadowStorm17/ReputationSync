@@ -4,6 +4,7 @@ import re
 from fastapi import HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.constants import CONTENT_TYPE_JSON
 from app.core.logging import logger
 from app.core.monitoring import monitoring_manager
 from app.core.security_config import security_settings
@@ -25,7 +26,7 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
             # Validate content type for POST/PUT requests
             if request.method in ["POST", "PUT"]:
                 content_type = request.headers.get("content-type", "")
-                if not content_type.startswith("application/json"):
+                if not content_type.startswith(CONTENT_TYPE_JSON):
                     await monitoring_manager.track_security_event(
                         "invalid_content_type", {"content_type": content_type}
                     )
@@ -63,7 +64,7 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
             if request.method in [
                 "POST",
                 "PUT",
-            ] and "application/json" in request.headers.get(
+            ] and CONTENT_TYPE_JSON in request.headers.get(
                 "content-type", ""
             ):
                 try:

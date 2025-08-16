@@ -83,7 +83,7 @@ class WebSocketChannel:
                 return True
 
         except Exception as e:
-            logger.error(f"Add connection error: {str(e)}")
+            logger.error("Add connection error: %s", e)
             return False
 
     async def remove_connection(self, connection_id: str) -> bool:
@@ -97,7 +97,7 @@ class WebSocketChannel:
                 return True
 
         except Exception as e:
-            logger.error(f"Remove connection error: {str(e)}")
+            logger.error("Remove connection error: %s", e)
             return False
 
     def add_message_handler(self, handler: Callable):
@@ -126,7 +126,7 @@ class WebSocketChannel:
                             )
 
         except Exception as e:
-            logger.error(f"Broadcast error: {str(e)}")
+            logger.error("Broadcast error: %s", e)
 
     def _validate_message(self, message: Dict[str, Any]) -> bool:
         """Validate message format and size."""
@@ -166,10 +166,10 @@ class WebSocketChannel:
                     try:
                         await handler(connection, message)
                     except Exception as e:
-                        logger.error(f"Handler error: {str(e)}")
+                        logger.error("Handler error: %s", e)
 
         except Exception as e:
-            logger.error(f"Handle message error: {str(e)}")
+            logger.error("Handle message error: %s", e)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert channel to dictionary."""
@@ -220,7 +220,7 @@ class WebSocketService:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Cleanup error: {str(e)}")
+                logger.error("Cleanup error: %s", e)
 
     async def create_channel(
         self,
@@ -248,7 +248,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Create channel error: {str(e)}")
+            logger.error("Create channel error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def delete_channel(self, channel_id: str) -> Dict[str, Any]:
@@ -272,7 +272,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Delete channel error: {str(e)}")
+            logger.error("Delete channel error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def register_connection(
@@ -293,7 +293,7 @@ class WebSocketService:
             }
 
         except Exception as e:
-            logger.error(f"Register connection error: {str(e)}")
+            logger.error("Register connection error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def unregister_connection(
@@ -324,7 +324,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Unregister connection error: {str(e)}")
+            logger.error("Unregister connection error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def subscribe(
@@ -353,7 +353,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Subscribe error: {str(e)}")
+            logger.error("Subscribe error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def unsubscribe(
@@ -382,7 +382,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Unsubscribe error: {str(e)}")
+            logger.error("Unsubscribe error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def broadcast(
@@ -406,7 +406,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Broadcast error: {str(e)}")
+            logger.error("Broadcast error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def handle_message(
@@ -434,7 +434,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Handle message error: {str(e)}")
+            logger.error("Handle message error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_channel_info(self, channel_id: str) -> Dict[str, Any]:
@@ -457,7 +457,7 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Get channel info error: {str(e)}")
+            logger.error("Get channel info error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_connection_info(self, connection_id: str) -> Dict[str, Any]:
@@ -484,5 +484,5 @@ class WebSocketService:
                 }
 
         except Exception as e:
-            logger.error(f"Get connection info error: {str(e)}")
+            logger.error("Get connection info error: %s", e)
             return {"status": "error", "message": str(e)}

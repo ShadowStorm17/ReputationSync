@@ -104,7 +104,7 @@ class MonitoringOrchestrator:
             # (Validation step skipped: _validate_ml_models not implemented)
 
         except Exception as e:
-            logger.error(f"Error initializing ML models: {str(e)}")
+            logger.error("Error initializing ML models: %s", e)
             # Fallback to simpler models if necessary
             self.anomaly_detector = None
             self.scaler = None
@@ -174,7 +174,7 @@ class MonitoringOrchestrator:
                 }
             }
         except Exception as e:
-            logger.error(f"Error initializing monitor: {str(e)}")
+            logger.error("Error initializing monitor: %s", e)
             # Attempt recovery or use fallback configuration
             return await self._get_fallback_configuration(entity_id, config)
 
@@ -231,7 +231,7 @@ class MonitoringOrchestrator:
         monitor = self.active_monitors[monitor_id]
         monitor["health"]["error_count"] += 1
 
-        logger.error(f"Monitoring error for {monitor_id}: {str(error)}")
+        logger.error("Monitoring error for %s: %s", monitor_id, error)
         MONITOR_ERRORS.inc()
 
         # Update error statistics
@@ -266,9 +266,7 @@ class MonitoringOrchestrator:
                 return success
 
         except Exception as recovery_error:
-            logger.error(
-                f"Recovery failed for {monitor_id}: {str(recovery_error)}"
-            )
+            logger.error("Recovery failed for %s: %s", monitor_id, recovery_error)
             return False
 
     async def _initiate_failover(self, monitor_id: str):
@@ -284,7 +282,7 @@ class MonitoringOrchestrator:
             self.active_monitors[monitor_id]["status"] = "failover"
 
         except Exception as e:
-            logger.error(f"Failover failed for {monitor_id}: {str(e)}")
+            logger.error("Failover failed for %s: %s", monitor_id, e)
             # Last resort: suspend monitoring
             await self._suspend_monitoring(monitor_id)
 
@@ -309,7 +307,7 @@ class MonitoringOrchestrator:
             return analysis
 
         except Exception as e:
-            logger.error(f"Analysis error: {str(e)}")
+            logger.error("Analysis error: %s", e)
             # Return fallback analysis
             return await self._generate_fallback_analysis(data)
 
@@ -352,7 +350,7 @@ class MonitoringOrchestrator:
             return alerts
 
         except Exception as e:
-            logger.error(f"Error checking alerts: {str(e)}")
+            logger.error("Error checking alerts: %s", e)
             return []
 
     def _validate_analysis_results(self, analysis: Dict):
@@ -436,7 +434,7 @@ class MonitoringOrchestrator:
             }
 
         except Exception as e:
-            logger.error(f"Error collecting monitoring data: {str(e)}")
+            logger.error("Error collecting monitoring data: %s", e)
             raise
 
     async def _analyze_core_metrics(self, data: Dict) -> Dict:
@@ -445,7 +443,7 @@ class MonitoringOrchestrator:
             # Implement core metrics analysis logic here
             return {}
         except Exception as e:
-            logger.error(f"Error analyzing core metrics: {str(e)}")
+            logger.error("Error analyzing core metrics: %s", e)
             raise
 
     async def _detect_advanced_anomalies(
@@ -455,7 +453,7 @@ class MonitoringOrchestrator:
             # Implement advanced anomaly detection logic here
             return []
         except Exception as e:
-            logger.error(f"Error detecting advanced anomalies: {str(e)}")
+            logger.error("Error detecting advanced anomalies: %s", e)
             raise
 
     async def _generate_enhanced_predictions(self, data: Dict) -> Dict:
@@ -464,7 +462,7 @@ class MonitoringOrchestrator:
             # Implement enhanced prediction logic here
             return {}
         except Exception as e:
-            logger.error(f"Error generating enhanced predictions: {str(e)}")
+            logger.error("Error generating enhanced predictions: %s", e)
             raise
 
     async def _analyze_complex_patterns(self, data: Dict) -> Dict:
@@ -473,7 +471,7 @@ class MonitoringOrchestrator:
             # Implement complex pattern analysis logic here
             return {}
         except Exception as e:
-            logger.error(f"Error analyzing complex patterns: {str(e)}")
+            logger.error("Error analyzing complex patterns: %s", e)
             raise
 
     async def _analyze_metric_correlations(self, data: Dict) -> Dict:
@@ -482,7 +480,7 @@ class MonitoringOrchestrator:
             # Implement metric correlation analysis logic here
             return {}
         except Exception as e:
-            logger.error(f"Error analyzing metric correlations: {str(e)}")
+            logger.error("Error analyzing metric correlations: %s", e)
             raise
 
     async def _generate_fallback_analysis(self, data: Dict) -> Dict:
@@ -491,7 +489,7 @@ class MonitoringOrchestrator:
             # Implement fallback analysis logic here
             return {}
         except Exception as e:
-            logger.error(f"Error generating fallback analysis: {str(e)}")
+            logger.error("Error generating fallback analysis: %s", e)
             raise
 
     def _initialize_adaptive_thresholds(self) -> Dict:
@@ -516,15 +514,15 @@ class MonitoringOrchestrator:
 
     def _recover_data_collection(self, monitor_id):
         """Stub: Recover data collection."""
-        logger.warning(f"Stub: Recovering data collection for {monitor_id}")
+        logger.warning("Stub: Recovering data collection for %s", monitor_id)
         return True
 
     def _recover_analysis(self, monitor_id):
         """Stub: Recover analysis."""
-        logger.warning(f"Stub: Recovering analysis for {monitor_id}")
+        logger.warning("Stub: Recovering analysis for %s", monitor_id)
         return True
 
     def _recover_alerting(self, monitor_id):
         """Stub: Recover alerting."""
-        logger.warning(f"Stub: Recovering alerting for {monitor_id}")
+        logger.warning("Stub: Recovering alerting for %s", monitor_id)
         return True

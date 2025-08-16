@@ -49,7 +49,7 @@ class DatabaseService:
                     }
                 return None
         except Exception as e:
-            logger.error(f"Error getting API key: {str(e)}")
+            logger.error("Error getting API key: %s", e)
             return None
 
     async def create_api_key(
@@ -72,7 +72,7 @@ class DatabaseService:
                 await conn.commit()
                 return await self.get_api_key(key)
         except Exception as e:
-            logger.error(f"Error creating API key: {str(e)}")
+            logger.error("Error creating API key: %s", e)
             return None
 
     async def revoke_api_key(self, key_id: str) -> bool:
@@ -85,7 +85,7 @@ class DatabaseService:
                 await conn.commit()
                 return True
         except Exception as e:
-            logger.error(f"Error revoking API key: {str(e)}")
+            logger.error("Error revoking API key: %s", e)
             return False
 
     async def record_api_usage(
@@ -103,7 +103,7 @@ class DatabaseService:
                 await conn.commit()
                 return True
         except Exception as e:
-            logger.error(f"Error recording API usage: {str(e)}")
+            logger.error("Error recording API usage: %s", e)
             return False
 
     async def get_usage_stats(
@@ -144,7 +144,7 @@ class DatabaseService:
                     for row in rows
                 ]
         except Exception as e:
-            logger.error(f"Error getting usage stats: {str(e)}")
+            logger.error("Error getting usage stats: %s", e)
             return []
 
 

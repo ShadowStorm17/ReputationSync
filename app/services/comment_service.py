@@ -140,7 +140,7 @@ class CommentService:
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error analyzing comments: {str(e)}")
+            logger.error("Error analyzing comments: %s", str(e))
             raise
 
     async def _analyze_sentiment_advanced(
@@ -218,7 +218,7 @@ class CommentService:
             }
 
         except Exception as e:
-            logger.error(f"Error in sentiment analysis: {str(e)}")
+            logger.error("Error in sentiment analysis: %s", str(e))
             return {}
 
     async def _analyze_topics(self, texts: List[str]) -> Dict:
@@ -286,7 +286,7 @@ class CommentService:
             }
 
         except Exception as e:
-            logger.error(f"Error in topic analysis: {str(e)}")
+            logger.error("Error in topic analysis: %s", str(e))
             return {}
 
     def _calculate_topic_coherence(self, topic_words: List[tuple]) -> float:
@@ -341,7 +341,7 @@ class CommentService:
             }
 
         except Exception as e:
-            logger.error(f"Error in entity analysis: {str(e)}")
+            logger.error("Error in entity analysis: %s", str(e))
             return {}
 
     def _analyze_user_behavior(self, comments: List[Dict]) -> Dict:
@@ -405,7 +405,7 @@ class CommentService:
                 "engagement_patterns": self._analyze_engagement_distribution(user_metrics)}
 
         except Exception as e:
-            logger.error(f"Error in user behavior analysis: {str(e)}")
+            logger.error("Error in user behavior analysis: %s", str(e))
             return {}
 
     def _analyze_activity_pattern(
@@ -515,7 +515,7 @@ class CommentService:
             return insights
 
         except Exception as e:
-            logger.error(f"Error extracting insights: {str(e)}")
+            logger.error("Error extracting insights: %s", str(e))
             return {}
 
     def _analyze_engagement_patterns(
@@ -561,7 +561,7 @@ class CommentService:
             return patterns
 
         except Exception as e:
-            logger.error(f"Error analyzing engagement patterns: {str(e)}")
+            logger.error("Error analyzing engagement patterns: %s", str(e))
             return {}
 
     def _determine_user_segment(self, comment: Dict) -> str:
@@ -688,7 +688,7 @@ class CommentService:
             return insights
 
         except Exception as e:
-            logger.error(f"Error generating insights: {str(e)}")
+            logger.error("Error generating insights: %s", str(e))
             return []
 
     async def detect_spam(
@@ -713,7 +713,7 @@ class CommentService:
             return spam_indicators
 
         except Exception as e:
-            logger.error(f"Error detecting spam: {str(e)}")
+            logger.error("Error detecting spam: %s", str(e))
             raise
 
     async def analyze_user_sentiment(
@@ -743,7 +743,7 @@ class CommentService:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing user sentiment: {str(e)}")
+            logger.error("Error analyzing user sentiment: %s", str(e))
             raise
 
     def _identify_themes(self, texts: List[str]) -> List[Dict]:

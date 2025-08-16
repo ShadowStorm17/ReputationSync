@@ -12,6 +12,7 @@ from typing import Any, Callable, Dict, List, Optional
 import redis.asyncio as redis
 
 from app.core.config import get_settings
+from app.core.error_handling import SystemError
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -68,7 +69,7 @@ class CircuitBreaker:
             return state["state"]
 
         except Exception as e:
-            logger.error(f"Get state error: {str(e)}")
+            logger.error("Get state error: %s", e)
             return CircuitState.CLOSED
 
     async def record_success(self):
@@ -83,7 +84,7 @@ class CircuitBreaker:
             await self.redis.set(f"circuit:{self.name}:failures", 0)
 
         except Exception as e:
-            logger.error(f"Record success error: {str(e)}")
+            logger.error("Record success error: %s", e)
 
     async def record_failure(self):
         """Record failed operation."""
@@ -101,7 +102,7 @@ class CircuitBreaker:
                 await self.open_circuit()
 
         except Exception as e:
-            logger.error(f"Record failure error: {str(e)}")
+            logger.error("Record failure error: %s", e)
 
     async def open_circuit(self):
         """Open the circuit."""
@@ -116,7 +117,7 @@ class CircuitBreaker:
             )
 
         except Exception as e:
-            logger.error(f"Open circuit error: {str(e)}")
+            logger.error("Open circuit error: %s", e)
 
     async def close_circuit(self):
         """Close the circuit."""
@@ -134,7 +135,7 @@ class CircuitBreaker:
             await self.redis.set(f"circuit:{self.name}:failures", 0)
 
         except Exception as e:
-            logger.error(f"Close circuit error: {str(e)}")
+            logger.error("Close circuit error: %s", e)
 
     async def transition_to_half_open(self):
         """Transition to half-open state."""
@@ -149,7 +150,7 @@ class CircuitBreaker:
             )
 
         except Exception as e:
-            logger.error(f"Half-open transition error: {str(e)}")
+            logger.error("Half-open transition error: %s", e)
 
     async def get_metrics(self) -> Dict[str, Any]:
         """Get circuit metrics."""
@@ -172,7 +173,7 @@ class CircuitBreaker:
             return {"status": "success", "metrics": metrics}
 
         except Exception as e:
-            logger.error(f"Get metrics error: {str(e)}")
+            logger.error("Get metrics error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def reset(self):
@@ -186,7 +187,7 @@ class CircuitBreaker:
             return {"status": "success", "message": "Circuit reset"}
 
         except Exception as e:
-            logger.error(f"Reset error: {str(e)}")
+            logger.error("Reset error: %s", e)
             return {"status": "error", "message": str(e)}
 
 
@@ -213,7 +214,7 @@ def circuit_breaker(
             state = await breaker.get_state()
 
             if state == CircuitState.OPEN:
-                raise Exception(f"Circuit {name} is OPEN")
+                raise SystemError(f"Circuit {name} is OPEN")
 
             try:
                 result = await func(*args, **kwargs)
@@ -275,7 +276,7 @@ class CircuitBreakerService:
             return {"status": "success", "metrics": metrics}
 
         except Exception as e:
-            logger.error(f"Get all metrics error: {str(e)}")
+            logger.error("Get all metrics error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def reset_all(self) -> Dict[str, Any]:
@@ -289,5 +290,5 @@ class CircuitBreakerService:
             return {"status": "success", "results": results}
 
         except Exception as e:
-            logger.error(f"Reset all error: {str(e)}")
+            logger.error("Reset all error: %s", e)
             return {"status": "error", "message": str(e)}

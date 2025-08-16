@@ -74,7 +74,7 @@ class AutonomousAIService:
                 await asyncio.sleep(self._monitoring_interval)
 
             except Exception as e:
-                logger.error(f"Error in performance monitoring: {str(e)}")
+                logger.error("Error in performance monitoring: %s", e)
                 await asyncio.sleep(60)  # Wait before retrying
 
     async def _analyze_patterns(self):
@@ -109,7 +109,7 @@ class AutonomousAIService:
                 await asyncio.sleep(self._analysis_interval)
 
             except Exception as e:
-                logger.error(f"Error in pattern analysis: {str(e)}")
+                logger.error("Error in pattern analysis: %s", e)
                 await asyncio.sleep(300)  # Wait before retrying
 
     async def _implement_improvements(self):
@@ -137,7 +137,7 @@ class AutonomousAIService:
                 await asyncio.sleep(self._improvement_interval)
 
             except Exception as e:
-                logger.error(f"Error in improvement implementation: {str(e)}")
+                logger.error("Error in improvement implementation: %s", e)
                 await asyncio.sleep(600)  # Wait before retrying
 
     async def _analyze_rate_limits(self, stats: APIKeyStats):
@@ -163,7 +163,7 @@ class AutonomousAIService:
                     await self._adjust_rate_limit(plan, new_limit)
 
         except Exception as e:
-            logger.error(f"Error analyzing rate limits: {str(e)}")
+            logger.error("Error analyzing rate limits: %s", e)
 
     async def _monitor_errors(self):
         """Monitor and analyze error patterns."""
@@ -185,7 +185,7 @@ class AutonomousAIService:
                     await self._handle_critical_error(error_type, count)
 
         except Exception as e:
-            logger.error(f"Error monitoring errors: {str(e)}")
+            logger.error("Error monitoring errors: %s", e)
 
     async def _check_system_health(self):
         """Check overall system health."""
@@ -202,7 +202,7 @@ class AutonomousAIService:
                 await self._handle_high_resource_usage(cpu_usage, memory_usage)
 
         except Exception as e:
-            logger.error(f"Error checking system health: {str(e)}")
+            logger.error("Error checking system health: %s", e)
 
     async def _analyze_usage_patterns(self, stats: APIKeyStats) -> Dict:
         """Analyze API usage patterns."""
@@ -237,7 +237,7 @@ class AutonomousAIService:
             return patterns
 
         except Exception as e:
-            logger.error(f"Error analyzing usage patterns: {str(e)}")
+            logger.error("Error analyzing usage patterns: %s", e)
             return {}
 
     async def _identify_optimizations(self, patterns: Dict) -> List[Dict]:
@@ -273,7 +273,7 @@ class AutonomousAIService:
             return optimizations
 
         except Exception as e:
-            logger.error(f"Error identifying optimizations: {str(e)}")
+            logger.error("Error identifying optimizations: %s", e)
             return []
 
     async def _apply_optimization(self, optimization: Dict):
@@ -307,7 +307,7 @@ class AutonomousAIService:
             )
 
         except Exception as e:
-            logger.error(f"Error applying optimization: {str(e)}")
+            logger.error("Error applying optimization: %s", e)
 
     async def _adjust_rate_limit(self, plan: str, new_limit: int):
         """Adjust rate limit for a subscription plan."""
@@ -331,7 +331,7 @@ class AutonomousAIService:
             )
 
         except Exception as e:
-            logger.error(f"Error adjusting rate limit: {str(e)}")
+            logger.error("Error adjusting rate limit: %s", e)
 
     async def _handle_critical_error(self, error_type: str, count: int):
         """Handle critical error patterns."""
@@ -353,7 +353,7 @@ class AutonomousAIService:
             )
 
         except Exception as e:
-            logger.error(f"Error handling critical error: {str(e)}")
+            logger.error("Error handling critical error: %s", e)
 
     async def _handle_high_resource_usage(
         self, cpu_usage: float, memory_usage: float
@@ -376,7 +376,7 @@ class AutonomousAIService:
             )
 
         except Exception as e:
-            logger.error(f"Error handling high resource usage: {str(e)}")
+            logger.error("Error handling high resource usage: %s", e)
 
     async def _optimize_response_time(self, endpoint: str, target: float):
         """Optimize endpoint response time."""
@@ -390,7 +390,7 @@ class AutonomousAIService:
                 await self._optimize_queries(endpoint)
 
         except Exception as e:
-            logger.error(f"Error optimizing response time: {str(e)}")
+            logger.error("Error optimizing response time: %s", e)
 
     async def _optimize_error_rate(self, endpoint: str, target: int):
         """Optimize endpoint error rate."""
@@ -404,7 +404,7 @@ class AutonomousAIService:
                 await self._implement_circuit_breaker(endpoint)
 
         except Exception as e:
-            logger.error(f"Error optimizing error rate: {str(e)}")
+            logger.error("Error optimizing error rate: %s", e)
 
     async def _implement_caching(self, endpoint: str):
         """Implement caching for an endpoint."""
@@ -415,7 +415,7 @@ class AutonomousAIService:
             pass
 
         except Exception as e:
-            logger.error(f"Error implementing caching: {str(e)}")
+            logger.error("Error implementing caching: %s", e)
 
     async def _optimize_queries(self, endpoint: str):
         """Optimize database queries for an endpoint."""
@@ -426,7 +426,7 @@ class AutonomousAIService:
             pass
 
         except Exception as e:
-            logger.error(f"Error optimizing queries: {str(e)}")
+            logger.error("Error optimizing queries: %s", e)
 
     async def _implement_retry(self, endpoint: str):
         """Implement retry mechanism for an endpoint."""
@@ -437,7 +437,7 @@ class AutonomousAIService:
             pass
 
         except Exception as e:
-            logger.error(f"Error implementing retry: {str(e)}")
+            logger.error("Error implementing retry: %s", e)
 
     async def _implement_circuit_breaker(self, endpoint: str):
         """Implement circuit breaker for an endpoint."""
@@ -448,4 +448,4 @@ class AutonomousAIService:
             pass
 
         except Exception as e:
-            logger.error(f"Error implementing circuit breaker: {str(e)}")
+            logger.error("Error implementing circuit breaker: %s", e)

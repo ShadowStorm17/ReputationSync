@@ -57,10 +57,10 @@ class BackupManager:
             backup_path = self.backup_dir / f"redis_{self.timestamp}.rdb"
             self.redis_client.save()
             shutil.copy("/var/lib/redis/dump.rdb", backup_path)
-            logger.info(f"Redis backup created at {backup_path}")
+            logger.info("Redis backup created at %s", backup_path)
             return backup_path
         except Exception as e:
-            logger.error(f"Redis backup failed: {str(e)}")
+            logger.error("Redis backup failed: %s", str(e))
             return None
     
     def backup_logs(self) -> Optional[Path]:
@@ -75,10 +75,10 @@ class BackupManager:
             with tarfile.open(archive_path, "w:gz") as tar:
                 tar.add(log_dir, arcname=log_dir.name)
             
-            logger.info(f"Logs archived at {archive_path}")
+            logger.info("Logs archived at %s", archive_path)
             return archive_path
         except Exception as e:
-            logger.error(f"Log archival failed: {str(e)}")
+            logger.error("Log archival failed: %s", str(e))
             return None
     
     def backup_configs(self) -> Optional[Path]:
@@ -93,10 +93,10 @@ class BackupManager:
             with tarfile.open(archive_path, "w:gz") as tar:
                 tar.add(config_dir, arcname=config_dir.name)
             
-            logger.info(f"Configs backed up at {archive_path}")
+            logger.info("Configs backed up at %s", archive_path)
             return archive_path
         except Exception as e:
-            logger.error(f"Config backup failed: {str(e)}")
+            logger.error("Config backup failed: %s", str(e))
             return None
     
     async def upload_to_remote(self, file_path: Path) -> bool:
@@ -121,13 +121,13 @@ class BackupManager:
                         headers=headers
                     ) as response:
                         if response.status == 200:
-                            logger.info(f"Uploaded {file_path.name} to remote storage")
+                            logger.info("Uploaded %s to remote storage", file_path.name)
                             return True
                         else:
-                            logger.error(f"Upload failed: {await response.text()}")
+                            logger.error("Upload failed: %s", await response.text())
                             return False
         except Exception as e:
-            logger.error(f"Upload failed: {str(e)}")
+            logger.error("Upload failed: %s", str(e))
             return False
     
     def cleanup_old_backups(self, days: int = 7) -> None:
@@ -136,9 +136,9 @@ class BackupManager:
             for backup_file in self.backup_dir.glob("*"):
                 if backup_file.stat().st_mtime < (datetime.now(timezone.utc).timestamp() - days * 86400):
                     backup_file.unlink()
-                    logger.info(f"Removed old backup: {backup_file}")
+                    logger.info("Removed old backup: %s", backup_file)
         except Exception as e:
-            logger.error(f"Cleanup failed: {str(e)}")
+            logger.error("Cleanup failed: %s", str(e))
 
 async def main():
     """Main backup process."""
@@ -169,7 +169,7 @@ async def main():
         
         logger.info("Backup process completed successfully")
     except Exception as e:
-        logger.error(f"Backup process failed: {str(e)}")
+        logger.error("Backup process failed: %s", str(e))
         sys.exit(1)
 
 if __name__ == "__main__":

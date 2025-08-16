@@ -130,7 +130,7 @@ class APIKeyService:
             await self._notification_service.send_notification(
                 type="api_key_created",
                 title="New API Key Generated",
-                message=f"API key '{key.name}' has been generated for your account.",
+                message="API key '%s' has been generated for your account." % key.name,
                 data={
                     "key_id": key_id,
                     "customer_id": key_data.customer_id,
@@ -141,7 +141,7 @@ class APIKeyService:
             return APIKeyResponse(**key.dict())
 
         except Exception as e:
-            logger.error(f"Error creating API key: {str(e)}")
+            logger.error("Error creating API key: %s", str(e))
             raise ReputationError(
                 message="Failed to create API key",
                 severity=ErrorSeverity.HIGH,
@@ -155,7 +155,7 @@ class APIKeyService:
             key = self._keys.get(key_id)
             if not key:
                 raise ReputationError(
-                    message=f"API key not found: {key_id}",
+                    message="API key not found: %s" % key_id,
                     severity=ErrorSeverity.MEDIUM,
                     category=ErrorCategory.SECURITY,
                 )
@@ -182,7 +182,7 @@ class APIKeyService:
             await self._notification_service.send_notification(
                 type="api_key_revoked",
                 title="API Key Revoked",
-                message=f"API key '{key.name}' has been revoked.",
+                message="API key '%s' has been revoked." % key.name,
                 data={
                     "key_id": key_id,
                     "customer_id": key.customer_id,
@@ -193,7 +193,7 @@ class APIKeyService:
             return APIKeyResponse(**key.dict())
 
         except Exception as e:
-            logger.error(f"Error revoking API key: {str(e)}")
+            logger.error("Error revoking API key: %s", str(e))
             raise ReputationError(
                 message="Failed to revoke API key",
                 severity=ErrorSeverity.HIGH,
@@ -266,7 +266,7 @@ class APIKeyService:
             return key
 
         except Exception as e:
-            logger.error(f"Error validating API key: {str(e)}")
+            logger.error("Error validating API key: %s", str(e))
             raise ReputationError(
                 message="Failed to validate API key",
                 severity=ErrorSeverity.HIGH,
@@ -329,7 +329,7 @@ class APIKeyService:
             )
 
         except Exception as e:
-            logger.error(f"Error getting API key stats: {str(e)}")
+            logger.error("Error getting API key stats: %s", str(e))
             raise ReputationError(
                 message="Failed to get API key statistics",
                 severity=ErrorSeverity.MEDIUM,
@@ -356,7 +356,7 @@ class APIKeyService:
                 await self._notification_service.send_notification(
                     type="api_key_expired",
                     title="API Key Expired",
-                    message=f"API key '{key.name}' has expired.",
+                    message="API key '%s' has expired." % key.name,
                     data={
                         "key_id": key.id,
                         "customer_id": key.customer_id,
@@ -367,7 +367,7 @@ class APIKeyService:
             return len(expired_keys)
 
         except Exception as e:
-            logger.error(f"Error cleaning up expired keys: {str(e)}")
+            logger.error("Error cleaning up expired keys: %s", str(e))
             raise ReputationError(
                 message="Failed to clean up expired API keys",
                 severity=ErrorSeverity.MEDIUM,

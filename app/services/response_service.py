@@ -314,7 +314,7 @@ class ResponsePersonalizer:
             return response
 
         except Exception as e:
-            logger.error(f"Error personalizing response: {str(e)}")
+            logger.error("Error personalizing response: %s", e)
             return template
 
     def _build_personalization_context(
@@ -471,7 +471,7 @@ class ResponsePersonalizer:
             return self._post_process_response(response, context)
 
         except Exception as e:
-            logger.error(f"Error generating personalized response: {str(e)}")
+            logger.error("Error generating personalized response: %s", e)
             return template
 
     def _prepare_personalization_prompt(
@@ -774,7 +774,7 @@ class ResponseService:
             return info
 
         except Exception as e:
-            logger.error(f"Error extracting response info: {str(e)}")
+            logger.error("Error extracting response info: %s", e)
             return {}
 
     async def _generate_ai_response(
@@ -820,7 +820,7 @@ class ResponseService:
             return response
 
         except Exception as e:
-            logger.error(f"Error generating AI response: {str(e)}")
+            logger.error("Error generating AI response: %s", e)
             return self._get_fallback_response({"sentiment": "neutral"})
 
     def _prepare_response_prompt(
@@ -896,7 +896,7 @@ class ResponseService:
             return enhanced.strip()
 
         except Exception as e:
-            logger.error(f"Error enhancing response: {str(e)}")
+            logger.error("Error enhancing response: %s", e)
             return response
 
     def _validate_response(
@@ -926,7 +926,7 @@ class ResponseService:
             return response
 
         except Exception as e:
-            logger.error(f"Error validating response: {str(e)}")
+            logger.error("Error validating response: %s", e)
             return self._get_fallback_response({"sentiment": "neutral"})
 
     def _check_response_relevance(
@@ -989,7 +989,7 @@ class ResponseService:
             await self.redis.ltrim("response_history", 0, 999)
 
         except Exception as e:
-            logger.error(f"Error recording response: {str(e)}")
+            logger.error("Error recording response: %s", e)
 
     def _get_fallback_response(self, sentiment: Dict) -> str:
         """Get appropriate fallback response."""
@@ -1068,7 +1068,7 @@ class ResponseService:
             }
 
         except Exception as e:
-            logger.error(f"Error checking crisis status: {str(e)}")
+            logger.error("Error checking crisis status: %s", e)
             raise
 
     async def _analyze_crisis_indicators(self, metrics: Dict) -> List[Dict]:
@@ -1118,7 +1118,7 @@ class ResponseService:
             return indicators
 
         except Exception as e:
-            logger.error(f"Error analyzing crisis indicators: {str(e)}")
+            logger.error("Error analyzing crisis indicators: %s", e)
             return []
 
     def _determine_crisis_level(self, indicators: List[Dict]) -> str:
@@ -1199,7 +1199,7 @@ class ResponseService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating crisis response plan: {str(e)}")
+            logger.error("Error generating crisis response plan: %s", e)
             return {}
 
     def _get_crisis_recommendations(
@@ -1284,8 +1284,8 @@ class ResponseService:
             return response_data
 
         except Exception as e:
-            logger.error(f"Error generating response: {str(e)}")
-            raise ValueError(f"Error generating response: {str(e)}")
+            logger.error("Error generating response: %s", e)
+            raise ValueError("Error generating response: %s", e)
 
     async def escalate_issue(
         self,
@@ -1321,8 +1321,8 @@ class ResponseService:
             return issue_data
 
         except Exception as e:
-            logger.error(f"Error escalating issue: {str(e)}")
-            raise ValueError(f"Error escalating issue: {str(e)}")
+            logger.error("Error escalating issue: %s", e)
+            raise ValueError("Error escalating issue: %s", e)
 
     async def check_crisis_conditions(
         self,
@@ -1368,8 +1368,8 @@ class ResponseService:
             return crisis_data
 
         except Exception as e:
-            logger.error(f"Error checking crisis conditions: {str(e)}")
-            raise ValueError(f"Error checking crisis conditions: {str(e)}")
+            logger.error("Error checking crisis conditions: %s", e)
+            raise ValueError("Error checking crisis conditions: %s", e)
 
     async def update_issue(
         self,
@@ -1380,7 +1380,7 @@ class ResponseService:
         try:
             issue_data = await self.redis.hget('issues', issue_id)
             if not issue_data:
-                raise ValueError(f"Issue {issue_id} not found")
+                raise ValueError("Issue %s not found", issue_id)
 
             issue = json.loads(issue_data)
             issue.update(updates)
@@ -1395,8 +1395,8 @@ class ResponseService:
             return issue
 
         except Exception as e:
-            logger.error(f"Error updating issue: {str(e)}")
-            raise ValueError(f"Error updating issue: {str(e)}")
+            logger.error("Error updating issue: %s", e)
+            raise ValueError("Error updating issue: %s", e)
 
     async def _get_response_template(
         self,
@@ -1479,7 +1479,7 @@ class ResponseService:
             # Additional crisis handling logic here
 
         except Exception as e:
-            logger.error(f"Error handling crisis: {str(e)}")
+            logger.error("Error handling crisis: %s", e)
 
     async def _get_interaction_history(
         self,

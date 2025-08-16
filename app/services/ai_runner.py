@@ -53,7 +53,7 @@ class AIRunner:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in continuous processing: {str(e)}")
+                logger.error("Error in continuous processing: %s", str(e))
                 await asyncio.sleep(10)  # Wait before retrying
 
 

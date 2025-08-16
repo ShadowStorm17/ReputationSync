@@ -61,7 +61,7 @@ class AuthManager:
             }
 
         except Exception as e:
-            logger.error(f"Authentication error: {str(e)}")
+            logger.error("Authentication error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def verify_token(
@@ -106,7 +106,7 @@ class AuthManager:
             return {"status": "success", "access_token": access_token}
 
         except Exception as e:
-            logger.error(f"Token refresh error: {str(e)}")
+            logger.error("Token refresh error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def _generate_token(
@@ -192,7 +192,7 @@ class RateLimiter:
             return {"status": "success", "remaining": limit - (count + 1)}
 
         except Exception as e:
-            logger.error(f"Rate limit error: {str(e)}")
+            logger.error("Rate limit error: %s", e)
             return {"status": "error", "message": str(e)}
 
 
@@ -232,7 +232,7 @@ class SecurityService:
             return {"status": "success", "user": verification["payload"]}
 
         except Exception as e:
-            logger.error(f"Security check error: {str(e)}")
+            logger.error("Security check error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def generate_api_key(
@@ -254,7 +254,7 @@ class SecurityService:
             return {"status": "success", "api_key": api_key, "info": key_info}
 
         except Exception as e:
-            logger.error(f"API key generation error: {str(e)}")
+            logger.error("API key generation error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def verify_api_key(
@@ -278,5 +278,5 @@ class SecurityService:
             return {"status": "success", "key_info": key_info}
 
         except Exception as e:
-            logger.error(f"API key verification error: {str(e)}")
+            logger.error("API key verification error: %s", e)
             return {"status": "error", "message": str(e)}

@@ -77,7 +77,7 @@ class Orchestrator:
             logger.info("All components initialized successfully")
 
         except Exception as e:
-            logger.error(f"Component initialization error: {str(e)}")
+            logger.error("Component initialization error: %s", e)
             raise
 
     async def _health_check(self):
@@ -116,14 +116,14 @@ class Orchestrator:
 
                     except Exception as e:
                         logger.error(
-                            f"Health check error for {name}: {str(e)}"
+                            "Health check error for %s: %s", name, e
                         )
                         state.error_count += 1
 
                 await asyncio.sleep(settings.HEALTH_CHECK_INTERVAL)
 
             except Exception as e:
-                logger.error(f"Health check loop error: {str(e)}")
+                logger.error("Health check loop error: %s", e)
                 await asyncio.sleep(60)
 
     async def _check_component_health(self, component: Any) -> bool:
@@ -137,7 +137,7 @@ class Orchestrator:
             return True
 
         except Exception as e:
-            logger.error(f"Component health check error: {str(e)}")
+            logger.error("Component health check error: %s", e)
             return False
 
     async def _handle_unhealthy_component(
@@ -159,17 +159,17 @@ class Orchestrator:
                     start_time).total_seconds()
 
                 if success:
-                    logger.info(f"Successfully recovered component {name}")
+                    logger.info("Successfully recovered component %s", name)
                     state.error_count = 0
                     RECOVERY_TIME.labels(component=name).observe(recovery_time)
                 else:
-                    logger.error(f"Failed to recover component {name}")
+                    logger.error("Failed to recover component %s", name)
                     if state.recovery_attempts >= settings.MAX_RECOVERY_ATTEMPTS:
                         await self._failover_component(name, component)
 
         except Exception as e:
             logger.error(
-                f"Error handling unhealthy component {name}: {str(e)}"
+                "Error handling unhealthy component %s: %s", name, e
             )
 
     async def _recover_component(self, name: str, component: Any) -> bool:
@@ -184,7 +184,7 @@ class Orchestrator:
             return True
 
         except Exception as e:
-            logger.error(f"Component recovery error: {str(e)}")
+            logger.error("Component recovery error: %s", e)
             return False
 
     async def _failover_component(self, name: str, component: Any):
@@ -200,10 +200,10 @@ class Orchestrator:
             with self._lock:
                 self._components[name] = new_component
 
-            logger.info(f"Successfully failed over component {name}")
+            logger.info("Successfully failed over component %s", name)
 
         except Exception as e:
-            logger.error(f"Failover error for component {name}: {str(e)}")
+            logger.error("Failover error for component %s: %s", name, e)
 
     def _start_background_tasks(self):
         """Start background tasks."""

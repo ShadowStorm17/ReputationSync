@@ -104,7 +104,7 @@ class ServiceRegistry:
             return True
 
         except Exception as e:
-            logger.error(f"Register instance error: {str(e)}")
+            logger.error("Register instance error: %s", e)
             return False
 
     async def deregister_instance(
@@ -131,7 +131,7 @@ class ServiceRegistry:
             return True
 
         except Exception as e:
-            logger.error(f"Deregister instance error: {str(e)}")
+            logger.error("Deregister instance error: %s", e)
             return False
 
     async def heartbeat(
@@ -153,7 +153,7 @@ class ServiceRegistry:
             return True
 
         except Exception as e:
-            logger.error(f"Heartbeat error: {str(e)}")
+            logger.error("Heartbeat error: %s", e)
             return False
 
     async def check_instance_health(
@@ -178,9 +178,8 @@ class ServiceRegistry:
 
         except Exception as e:
             logger.error(
-                f"Health check error for {
-                    instance.instance_id}: {
-                    str(e)}")
+                "Health check error for %s: %s",
+                instance.instance_id, e)
             instance.status = ServiceStatus.FAILED
 
     async def cleanup_expired_instances(self):
@@ -200,7 +199,7 @@ class ServiceRegistry:
                         )
 
         except Exception as e:
-            logger.error(f"Cleanup error: {str(e)}")
+            logger.error("Cleanup error: %s", e)
 
     async def start_health_checks(self):
         """Start health check and cleanup tasks."""
@@ -220,7 +219,7 @@ class ServiceRegistry:
                 await asyncio.sleep(self.cleanup_interval)
 
             except Exception as e:
-                logger.error(f"Health check loop error: {str(e)}")
+                logger.error("Health check loop error: %s", e)
                 await asyncio.sleep(self.cleanup_interval)
 
     def stop_health_checks(self):
@@ -275,7 +274,7 @@ class DiscoveryService:
             }
 
         except Exception as e:
-            logger.error(f"Register service error: {str(e)}")
+            logger.error("Register service error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)
@@ -303,7 +302,7 @@ class DiscoveryService:
             }
 
         except Exception as e:
-            logger.error(f"Deregister service error: {str(e)}")
+            logger.error("Deregister service error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)
@@ -333,7 +332,7 @@ class DiscoveryService:
             }
 
         except Exception as e:
-            logger.error(f"Get instances error: {str(e)}")
+            logger.error("Get instances error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)
@@ -361,7 +360,7 @@ class DiscoveryService:
             }
 
         except Exception as e:
-            logger.error(f"Heartbeat error: {str(e)}")
+            logger.error("Heartbeat error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)

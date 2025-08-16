@@ -12,5 +12,5 @@ async def check_crisis(
     metrics: Dict,
     current_user=Depends(get_current_active_user)
 ):
-    # TODO: Implement real crisis check logic
-    return {"message": "Crisis check not yet implemented."} 
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                        detail="Crisis check not implemented yet")

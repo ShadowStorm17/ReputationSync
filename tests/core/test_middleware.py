@@ -232,7 +232,7 @@ def temp_dir():
         try:
             shutil.rmtree(temp_dir)
         except Exception as e:
-            logger.error(f"Error cleaning up temp directory: {str(e)}")
+            logger.error("Error cleaning up temp directory: %s", str(e))
 
 @pytest.fixture
 def error_recovery_payloads() -> List[Dict[str, Any]]:

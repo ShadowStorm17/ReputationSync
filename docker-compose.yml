@@ -23,9 +23,9 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/reputation_sync
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379/0
-      - SECURITY_JWT_SECRET_KEY=development-secret-key
+      - SECURITY_JWT_SECRET_KEY=${SECURITY_JWT_SECRET_KEY:-dev-only-not-for-prod}
     volumes:
       - .:/app
     depends_on:
@@ -45,7 +45,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
-  - .env
+      - .env
 
   redis:
     image: redis:7-alpine
@@ -101,4 +101,4 @@ volumes:
 
 networks:
   reputation_network:
-    driver: bridge 
+    driver: bridge

@@ -5,6 +5,7 @@ Creates initial database schema and default data.
 
 import asyncio
 from datetime import datetime, timezone
+import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -60,7 +61,7 @@ async def init_db():
                 await session.commit()
 
     except Exception as e:
-        print(f"Error initializing database: {e}")
+        logging.getLogger(__name__).error("Error initializing database: %s", str(e))
         raise
 
 
