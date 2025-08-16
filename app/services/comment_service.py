@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 import numpy as np
@@ -88,7 +88,7 @@ class CommentService:
     ) -> Dict:
         """Perform comprehensive comment analysis with advanced NLP."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.analysis_counter.inc()
 
             # Extract text and metadata
@@ -121,19 +121,19 @@ class CommentService:
                 "key_insights": results[7],
                 "metadata": {
                     "platform": platform,
-                    "analyzed_at": datetime.utcnow().isoformat(),
+                    "analyzed_at": datetime.now(timezone.utc).isoformat(),
                     "processing_time": (
-                        datetime.utcnow() -
+                        datetime.now(timezone.utc) -
                         start_time).total_seconds(),
                     "comment_count": len(comments)}}
 
             # Cache results
-            cache_key = f"comment_analysis:{platform}:{datetime.utcnow().date()}"
+            cache_key = f"comment_analysis:{platform}:{datetime.now(timezone.utc).date()}"
             await cache.set(cache_key, analysis_results, ttl=self.cache_ttl)
 
             # Record latency
             COMMENT_ANALYSIS_LATENCY.observe(
-                (datetime.utcnow() - start_time).total_seconds()
+                (datetime.now(timezone.utc) - start_time).total_seconds()
             )
 
             return analysis_results
@@ -739,7 +739,7 @@ class CommentService:
                 "sentiment_trend": sentiment_trend,
                 "total_comments": len(user_comments),
                 "timeframe": timeframe,
-                "analyzed_at": datetime.utcnow().isoformat()
+                "analyzed_at": datetime.now(timezone.utc).isoformat()
             }
 
         except Exception as e:

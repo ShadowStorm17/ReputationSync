@@ -4,7 +4,7 @@ Provides ML-powered insights and predictive capabilities.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 import numpy as np
@@ -60,7 +60,7 @@ class TrendPredictor:
                 "predictions": [
                     {
                         "date": (
-                            datetime.utcnow() + timedelta(days=i)
+                            datetime.now(timezone.utc) + timedelta(days=i)
                         ).isoformat(),
                         "value": float(pred),
                     }
@@ -303,7 +303,7 @@ class MLService:
         self, data: List[Dict[str, Any]], analysis_types: List[str]
     ) -> Dict[str, Any]:
         """Perform comprehensive data analysis."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         results = {}
 
         try:
@@ -327,7 +327,7 @@ class MLService:
                 results["sentiment"] = await self._analyze_sentiment(data)
 
             # Record latency
-            duration = (datetime.utcnow() - start_time).total_seconds()
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             ML_PREDICTION_LATENCY.observe(duration)
 
             return {

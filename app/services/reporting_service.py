@@ -1,7 +1,6 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
-
 import pandas as pd
 
 from app.core.config import get_settings
@@ -62,7 +61,7 @@ class ReportingService:
                     trends,
                     predictions
                 ),
-                "generated_at": datetime.utcnow().isoformat()
+                "generated_at": datetime.now(timezone.utc).isoformat()
             }
 
         except Exception as e:
@@ -117,7 +116,7 @@ class ReportingService:
                     market_analysis,
                     competitive_gaps
                 ),
-                "generated_at": datetime.utcnow().isoformat()
+                "generated_at": datetime.now(timezone.utc).isoformat()
             }
 
         except Exception as e:
@@ -156,7 +155,7 @@ class ReportingService:
                 "correlations": correlations,
                 "summary": self._generate_trend_summary(trend_analysis),
                 "anomalies": self._detect_anomalies(historical_data, metrics),
-                "generated_at": datetime.utcnow().isoformat()
+                "generated_at": datetime.now(timezone.utc).isoformat()
             }
 
         except Exception as e:

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 from circuitbreaker import circuit
@@ -122,7 +122,7 @@ class MonitoringOrchestrator:
         """Start comprehensive monitoring with advanced ML features and error
         recovery."""
         try:
-            monitor_id = f"monitor_{entity_id}_{datetime.utcnow().timestamp()}"
+            monitor_id = f"monitor_{entity_id}_{datetime.now(timezone.utc).timestamp()}"
 
             # Validate configuration
             self._validate_monitor_config(config)
@@ -140,7 +140,7 @@ class MonitoringOrchestrator:
                 "monitor_id": monitor_id,
                 "status": "started",
                 "config": config,
-                "started_at": datetime.utcnow().isoformat(),
+                "started_at": datetime.now(timezone.utc).isoformat(),
                 "health_check": await self._perform_health_check(monitor_id)
             }
 
@@ -158,7 +158,7 @@ class MonitoringOrchestrator:
                 "metrics": {},
                 "baselines": await self._calculate_baselines(entity_id),
                 "active_alerts": [],
-                "last_check": datetime.utcnow(),
+                "last_check": datetime.now(timezone.utc),
                 "status": "active",
                 "health": {
                     "last_successful_run": None,
@@ -211,7 +211,7 @@ class MonitoringOrchestrator:
 
                     # Update health metrics
                     monitor["health"]["last_successful_run"] = (
-                        datetime.utcnow())
+                        datetime.now(timezone.utc))
 
                 except Exception as e:
                     await self._handle_monitoring_error(monitor_id, e)
@@ -432,7 +432,7 @@ class MonitoringOrchestrator:
                 "mentions": results[2],
                 "comments": results[3],
                 "competitor": results[4],
-                "collected_at": datetime.utcnow().isoformat()
+                "collected_at": datetime.now(timezone.utc).isoformat()
             }
 
         except Exception as e:

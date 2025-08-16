@@ -97,7 +97,8 @@ class InstagramStatsClient:
             json={
                 "client_id": self.client_id,
                 "client_secret": self.client_secret
-            }
+            },
+            timeout=30
         )
         self._handle_response(response)
         self.api_key = response.json()["access_token"]
@@ -138,7 +139,8 @@ class InstagramStatsClient:
         headers = self._sign_request("GET", "/stats/profile")
         response = requests.get(
             f"{self.base_url}/stats/profile",
-            headers=headers
+            headers=headers,
+            timeout=30
         )
         self._handle_response(response)
         data = response.json()
@@ -171,7 +173,8 @@ class InstagramStatsClient:
         response = requests.get(
             f"{self.base_url}/stats/posts",
             headers=headers,
-            params=params
+            params=params,
+            timeout=30
         )
         self._handle_response(response)
         data = response.json()
@@ -209,7 +212,8 @@ class InstagramStatsClient:
         response = requests.get(
             f"{self.base_url}/stats/engagement",
             headers=headers,
-            params=params
+            params=params,
+            timeout=30
         )
         self._handle_response(response)
         data = response.json()
@@ -225,7 +229,8 @@ class InstagramStatsClient:
         headers = self._sign_request("GET", "/stats/audience")
         response = requests.get(
             f"{self.base_url}/stats/audience",
-            headers=headers
+            headers=headers,
+            timeout=30
         )
         self._handle_response(response)
         data = response.json()

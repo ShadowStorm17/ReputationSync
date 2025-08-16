@@ -4,7 +4,7 @@ Provides integration with LinkedIn API for reputation management.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -78,7 +78,7 @@ class LinkedInService:
     ) -> Dict[str, Any]:
         """Get LinkedIn profile information."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.request_counter.inc()
 
             # Set default fields if none provided
@@ -102,7 +102,7 @@ class LinkedInService:
                 return cached
 
             # Make API request
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 headers = {
                     "Authorization": f"Bearer {access_token}",
                     "X-Restli-Protocol-Version": "2.0.0",
@@ -120,7 +120,7 @@ class LinkedInService:
 
                         # Record latency
                         LINKEDIN_API_LATENCY.observe(
-                            (datetime.utcnow() - start_time).total_seconds()
+                            (datetime.now(timezone.utc) - start_time).total_seconds()
                         )
 
                         return data
@@ -144,7 +144,7 @@ class LinkedInService:
     ) -> Dict[str, Any]:
         """Get recent LinkedIn activity."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.request_counter.inc()
 
             # Check cache
@@ -154,7 +154,7 @@ class LinkedInService:
                 return cached
 
             # Make API request
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 headers = {
                     "Authorization": f"Bearer {access_token}",
                     "X-Restli-Protocol-Version": "2.0.0",
@@ -180,7 +180,7 @@ class LinkedInService:
 
                         # Record latency
                         LINKEDIN_API_LATENCY.observe(
-                            (datetime.utcnow() - start_time).total_seconds()
+                            (datetime.now(timezone.utc) - start_time).total_seconds()
                         )
 
                         return data
@@ -204,7 +204,7 @@ class LinkedInService:
     ) -> Dict[str, Any]:
         """Get LinkedIn analytics data."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.request_counter.inc()
 
             # Check cache
@@ -214,7 +214,7 @@ class LinkedInService:
                 return cached
 
             # Make API request
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 headers = {
                     "Authorization": f"Bearer {access_token}",
                     "X-Restli-Protocol-Version": "2.0.0",
@@ -236,7 +236,7 @@ class LinkedInService:
 
                         # Record latency
                         LINKEDIN_API_LATENCY.observe(
-                            (datetime.utcnow() - start_time).total_seconds()
+                            (datetime.now(timezone.utc) - start_time).total_seconds()
                         )
 
                         return data
@@ -264,7 +264,7 @@ class LinkedInService:
     ) -> Dict[str, Any]:
         """Post a comment on LinkedIn."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.request_counter.inc()
 
             # Prepare request body
@@ -274,7 +274,7 @@ class LinkedInService:
                 body["parentComment"] = parent_comment_urn
 
             # Make API request
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 headers = {
                     "Authorization": f"Bearer {access_token}",
                     "X-Restli-Protocol-Version": "2.0.0",
@@ -291,7 +291,7 @@ class LinkedInService:
 
                         # Record latency
                         LINKEDIN_API_LATENCY.observe(
-                            (datetime.utcnow() - start_time).total_seconds()
+                            (datetime.now(timezone.utc) - start_time).total_seconds()
                         )
 
                         return data
@@ -312,7 +312,7 @@ class LinkedInService:
         """Analyze engagement on a LinkedIn post."""
         try:
             # Get post comments
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 headers = {
                     "Authorization": f"Bearer {access_token}",
                     "X-Restli-Protocol-Version": "2.0.0",
@@ -348,7 +348,7 @@ class LinkedInService:
                             "engagement_score": self._calculate_engagement_score(
                                 comments_data
                             ),
-                            "analyzed_at": datetime.utcnow().isoformat(),
+                            "analyzed_at": datetime.now(timezone.utc).isoformat(),
                         }
                     else:
                         self.error_counter.inc()

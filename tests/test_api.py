@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 
 def test_health_check(test_client: TestClient):
@@ -141,7 +141,7 @@ async def test_request_signing(
     assert response.status_code == 401
     
     # Test with expired timestamp
-    old_time = int(datetime.now().timestamp()) - 600  # 10 minutes ago
+    old_time = int(datetime.now(timezone.utc).timestamp()) - 600  # 10 minutes ago
     headers = security_service.generate_signature(
         test_api_key["key"],
         test_api_key["key"]

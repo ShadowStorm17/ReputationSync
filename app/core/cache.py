@@ -44,14 +44,14 @@ class CacheManager:
             return None
 
     async def set(
-        self, key: str, value: Any, expire: Optional[timedelta] = None
+        self, key: str, value: Any, expire: Optional[int] = None
     ) -> bool:
         """Set value in cache with optional expiration."""
         try:
             await self.redis.set(
                 key,
                 json.dumps(value),
-                ex=expire.total_seconds() if expire else None,
+                ex=expire if expire else None,
             )
             return True
         except Exception:
@@ -76,7 +76,7 @@ class CacheManager:
             return False
 
 
-def _default_cache_key(request: Request, *args, **kwargs) -> str:
+def _default_cache_key(request: Request, **kwargs) -> str:
     """Default cache key: method + path + sorted query + body hash (if POST/PUT)."""
     key = f"{request.method}:{request.url.path}"
     if request.query_params:
@@ -88,7 +88,7 @@ def _default_cache_key(request: Request, *args, **kwargs) -> str:
             if body is None and hasattr(request, "_body"):
                 body = request._body
             if body is not None:
-                key += f":{hashlib.md5(str(body).encode()).hexdigest()}"
+                key += f":{hashlib.sha256(str(body).encode()).hexdigest()}"
         except Exception:
             pass
     return key

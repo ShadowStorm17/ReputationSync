@@ -3,7 +3,7 @@ Customer router.
 Handles customer profile operations.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Optional, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -136,7 +136,7 @@ async def get_customer_reputation(
     return {
         "customer_id": customer_id,
         "reputation_data": reputation_data,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -173,7 +173,7 @@ async def fix_customer_reputation(
     return {
         "customer_id": customer_id,
         "fix_results": fix_results,
-        "completed_at": datetime.utcnow().isoformat(),
+        "completed_at": datetime.now(timezone.utc).isoformat(),
     }
 
 

@@ -6,7 +6,7 @@ Provides OpenAPI/Swagger integration and documentation management.
 import inspect
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -43,7 +43,7 @@ class APIVersion(BaseModel):
     endpoints: List[APIEndpoint] = []
     servers: List[Dict[str, str]] = []
     security_schemes: Dict[str, Dict[str, Any]] = {}
-    created_at: datetime = datetime.utcnow()
+    created_at: datetime = datetime.now(timezone.utc)
 
 
 class DocumentationService:

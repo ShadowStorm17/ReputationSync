@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 import aiosqlite
@@ -66,7 +66,7 @@ class DatabaseService:
                     name,
                     key,
                     user_id,
-                    datetime.utcnow().isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
                 ),
             ):
                 await conn.commit()

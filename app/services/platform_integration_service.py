@@ -3,9 +3,8 @@ Platform integration service.
 Provides integration with various platforms and webhook support.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-
 import aiohttp
 
 from app.core.config import settings
@@ -74,7 +73,7 @@ class PlatformIntegrationService:
 
             platform_config = self.platform_apis[platform]
 
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 headers = {
                     "Authorization": f"Bearer {platform_config['api_key']}",
                     "Content-Type": "application/json",
@@ -120,7 +119,7 @@ class PlatformIntegrationService:
                 "url": webhook_url,
                 "events": events,
                 "secret": secret,
-                "created_at": datetime.utcnow(),
+                "created_at": datetime.now(timezone.utc),
             }
 
             return {
@@ -160,7 +159,7 @@ class PlatformIntegrationService:
             payload = {
                 "event": event,
                 "data": data,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
             headers = {"Content-Type": "application/json"}
@@ -171,7 +170,7 @@ class PlatformIntegrationService:
                     payload, client["secret"]
                 )
 
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 async with session.post(
                     client["url"], json=payload, headers=headers
                 ) as response:

@@ -5,7 +5,7 @@ Provides circuit breaker pattern implementation.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional
 
@@ -59,7 +59,7 @@ class CircuitBreaker:
             # Check if recovery timeout has passed
             if state["state"] == CircuitState.OPEN:
                 opened_at = datetime.fromisoformat(state["opened_at"])
-                if datetime.utcnow() - opened_at > timedelta(
+                if datetime.now(timezone.utc) - opened_at > timedelta(
                     seconds=self.recovery_timeout
                 ):
                     await self.transition_to_half_open()
@@ -108,7 +108,7 @@ class CircuitBreaker:
         try:
             state_data = {
                 "state": CircuitState.OPEN,
-                "opened_at": datetime.utcnow().isoformat(),
+                "opened_at": datetime.now(timezone.utc).isoformat(),
             }
 
             await self.redis.set(
@@ -123,7 +123,7 @@ class CircuitBreaker:
         try:
             state_data = {
                 "state": CircuitState.CLOSED,
-                "closed_at": datetime.utcnow().isoformat(),
+                "closed_at": datetime.now(timezone.utc).isoformat(),
             }
 
             await self.redis.set(
@@ -141,7 +141,7 @@ class CircuitBreaker:
         try:
             state_data = {
                 "state": CircuitState.HALF_OPEN,
-                "transitioned_at": datetime.utcnow().isoformat(),
+                "transitioned_at": datetime.now(timezone.utc).isoformat(),
             }
 
             await self.redis.set(

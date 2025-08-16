@@ -3,7 +3,7 @@ Optimization implementations for the API.
 Provides performance, security, and reliability enhancements.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, List, Optional
 
@@ -91,7 +91,7 @@ class CircuitBreaker:
         if self.state == "open":
             if (
                 self.last_failure_time
-                and datetime.utcnow() - self.last_failure_time
+                and datetime.now(timezone.utc) - self.last_failure_time
                 > timedelta(seconds=self.reset_timeout)
             ):
                 self.state = "half-open"
@@ -108,7 +108,7 @@ class CircuitBreaker:
     async def on_failure(self):
         """Handle failed call."""
         self.failures += 1
-        self.last_failure_time = datetime.utcnow()
+        self.last_failure_time = datetime.now(timezone.utc)
 
         if self.failures >= self.failure_threshold:
             self.state = "open"
@@ -191,7 +191,7 @@ class PerformanceMonitor:
                 {
                     "query": query,
                     "duration": duration,
-                    "timestamp": datetime.utcnow(),
+                    "timestamp": datetime.now(timezone.utc),
                 }
             )
 
@@ -201,7 +201,7 @@ class PerformanceMonitor:
             {
                 "endpoint": endpoint,
                 "duration": duration,
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(timezone.utc),
             }
         )
         REQUEST_DURATION.labels(endpoint=endpoint, method="GET").observe(

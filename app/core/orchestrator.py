@@ -9,6 +9,7 @@ import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Optional
+from datetime import timezone
 
 from prometheus_client import Counter, Gauge, Histogram
 
@@ -42,7 +43,7 @@ settings = get_settings()
 class ComponentState:
     """Component state tracking."""
     is_healthy: bool = True
-    last_check: datetime = field(default_factory=datetime.utcnow)
+    last_check: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     error_count: int = 0
     recovery_attempts: int = 0
     latency: float = 0.0
@@ -88,16 +89,16 @@ class Orchestrator:
 
                     try:
                         # Check component health
-                        start_time = datetime.utcnow()
+                        start_time = datetime.now(timezone.utc)
                         is_healthy = await self._check_component_health(component)
                         latency = (
-                            datetime.utcnow() -
+                            datetime.now(timezone.utc) -
                             start_time).total_seconds()
 
                         # Update state
                         state.is_healthy = is_healthy
                         state.latency = latency
-                        state.last_check = datetime.utcnow()
+                        state.last_check = datetime.now(timezone.utc)
 
                         if is_healthy:
                             state.error_count = 0
@@ -151,10 +152,10 @@ class Orchestrator:
             if state.error_count >= settings.MAX_ERRORS_BEFORE_RECOVERY:
                 state.recovery_attempts += 1
 
-                start_time = datetime.utcnow()
+                start_time = datetime.now(timezone.utc)
                 success = await self._recover_component(name, component)
                 recovery_time = (
-                    datetime.utcnow() -
+                    datetime.now(timezone.utc) -
                     start_time).total_seconds()
 
                 if success:

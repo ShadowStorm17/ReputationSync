@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from fastapi import HTTPException
@@ -125,7 +125,7 @@ class PlatformService:
                 }
 
             # Add timestamp
-            metrics["fetched_at"] = datetime.utcnow().isoformat()
+            metrics["fetched_at"] = datetime.now(timezone.utc).isoformat()
 
             # Cache metrics
             if settings.cache.ENABLED:
@@ -155,7 +155,7 @@ class PlatformService:
 
             # Get platform-specific activity
             platform_service = self.platforms[platform]
-            since = datetime.utcnow() - timedelta(days=days)
+            since = datetime.now(timezone.utc) - timedelta(days=days)
 
             if platform == "twitter":
                 activity = await platform_service.get_user_activity(
@@ -173,7 +173,7 @@ class PlatformService:
                 }
 
             # Add timestamp
-            activity["fetched_at"] = datetime.utcnow().isoformat()
+            activity["fetched_at"] = datetime.now(timezone.utc).isoformat()
 
             # Cache activity
             if settings.cache.ENABLED:
@@ -249,7 +249,7 @@ class PlatformService:
                     "sentiment_score": min(20, base_score * 0.2),
                     "influence_score": min(20, base_score * 0.2),
                 },
-                "calculated_at": datetime.utcnow().isoformat(),
+                "calculated_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:

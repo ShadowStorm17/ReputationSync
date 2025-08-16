@@ -6,7 +6,7 @@ Provides error tracking, logging, and recovery capabilities.
 import json
 import logging
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type
 
@@ -37,13 +37,13 @@ class ErrorTracker:
     ) -> Dict[str, Any]:
         """Track error occurrence."""
         try:
-            error_id = f"error:{datetime.utcnow().isoformat()}"
+            error_id = f"error:{datetime.now(timezone.utc).isoformat()}"
             error_data = {
                 'type': error.__class__.__name__,
                 'message': str(error),
                 'traceback': traceback.format_exc(),
                 'context': context,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
 
             # Store error
@@ -99,7 +99,7 @@ class ErrorTracker:
 
             # Update error timeline
             timeline_key = f"error_timeline:{
-                datetime.utcnow().strftime('%Y%m%d')}"
+                datetime.now(timezone.utc).strftime('%Y%m%d')}"
             await self.redis.hincrby(timeline_key, error_type, 1)
             await self.redis.expire(timeline_key, self.retention_period)
 
@@ -246,9 +246,9 @@ class ErrorService:
         """Get error statistics."""
         try:
             if not start_date:
-                start_date = datetime.utcnow()
+                start_date = datetime.now(timezone.utc)
             if not end_date:
-                end_date = datetime.utcnow()
+                end_date = datetime.now(timezone.utc)
 
             # Get overall stats
             overall_stats = await self.tracker.redis.hgetall('error_stats')

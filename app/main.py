@@ -3,70 +3,63 @@ Main application module.
 Initializes and configures the FastAPI application.
 """
 
+# app/main.py
+
 import logging
+from datetime import datetime, timezone
 import asyncio
-import sys
-import json
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseSettings
 
-from app.core.config import get_settings
-from app.core.error_handling import (
-    ErrorCategory,
-    ErrorSeverity,
-    ReputationError,
-)
+from app.core.config import Settings, get_settings
+from app.core.middleware.auth import AuthMiddleware
+from app.core.middleware.rate_limit import RateLimitMiddleware
+from app.core.middleware.headers import HeadersMiddleware
+from app.core.middleware.request_logging import RequestLoggingMiddleware
+from app.core.middleware.error_handling import ErrorHandlingMiddleware
+from app.core.middleware.caching import CachingMiddleware
+from app.core.middleware.transformation import TransformationMiddleware
 from app.core.metrics import metrics_manager
-from app.core.middleware import (
-    CachingMiddleware,
-    ErrorHandlingMiddleware,
-    RequestLoggingMiddleware,
-    SecurityMiddleware,
-    TransformationMiddleware,
-)
+from app.core.lifecycle import on_startup, on_shutdown
+from app.core.errors import ReputationError, ErrorResponseModel
+from app.core.security import get_current_admin_user, User
+
 from app.routers import (
-    analytics,
+    reputation,
+    customer,
     api_key,
     content_analysis,
-    customer,
+    analytics,
     platforms,
-    reputation,
+    dashboard,
+    analysis,
+    crisis,
+    websocket,
+    response,
+    monitoring,
 )
-from app.routers.dashboard import router as dashboard_router
-from app.core.security import get_current_active_user, User
-from app.routers.analysis import router as analysis_router
-from app.routers.crisis import router as crisis_router
-from app.routers.websocket import router as websocket_router
-from app.routers.response import router as response_router
-from app.routers.monitoring import router as monitoring_router
 
-from dotenv import load_dotenv
-load_dotenv()
-
-print('DEBUG: app/main.py loaded')
-
-# Get settings
-settings = get_settings()
+# Load settings via Pydantic BaseSettings
+settings: Settings = get_settings()
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=settings.LOG_LEVEL,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("reputation_sync")
 
-# Create FastAPI app
 app = FastAPI(
     title="Reputation Management API",
-    description="API for managing reputation across social media platforms",
     version="1.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    docs_url="/api/v1/docs",
+    redoc_url=None,
+    openapi_url="/api/v1/openapi.json",
 )
 
-# Add CORS middleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -75,200 +68,80 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add custom middleware
+# Middleware order: Logging → Auth → Rate Limit → Headers → Caching → Transform → Error Handling
 app.add_middleware(RequestLoggingMiddleware)
-app.add_middleware(SecurityMiddleware)
-app.add_middleware(ErrorHandlingMiddleware)
+app.add_middleware(AuthMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(HeadersMiddleware)
 app.add_middleware(CachingMiddleware)
 app.add_middleware(TransformationMiddleware)
+app.add_middleware(ErrorHandlingMiddleware)
 
-# Include routers
-app.include_router(reputation.router, prefix="/api/v1", tags=["reputation"])
-app.include_router(customer.router, prefix="/api/v1", tags=["customers"])
-app.include_router(api_key.router, prefix="/api/v1", tags=["api-keys"])
-app.include_router(
-    content_analysis.router, prefix="/api/v1", tags=["content-analysis"]
-)
-app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
-app.include_router(platforms.router, prefix="/api/v1", tags=["platforms"])
-app.include_router(dashboard_router, prefix="/api/v1", tags=["dashboard"])
-app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
-app.include_router(crisis_router, prefix="/api/v1", tags=["crisis"])
-app.include_router(websocket_router)
-app.include_router(response_router, prefix="/api/v1", tags=["response"])
-app.include_router(monitoring_router, prefix="/api/v1", tags=["monitoring"])
+# Lifecycle events
+app.add_event_handler("startup", on_startup)
+app.add_event_handler("shutdown", on_shutdown)
 
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup."""
-    try:
-        if not asyncio.iscoroutinefunction(metrics_manager.record_system_metric):
-            print("FATAL: record_system_metric is not async!", file=sys.stderr)
-            raise RuntimeError("record_system_metric is not async!")
-        print(f"Type of metrics_manager.record_system_metric: {type(metrics_manager.record_system_metric)}")
-        print(f"Is coroutine function: {asyncio.iscoroutinefunction(metrics_manager.record_system_metric)}")
-        logger.debug(f"Type of metrics_manager.record_system_metric: {type(metrics_manager.record_system_metric)}")
-        logger.debug(f"Is coroutine function: {asyncio.iscoroutinefunction(metrics_manager.record_system_metric)}")
-        # Initialize metrics manager
-        await metrics_manager.initialize()
-        logger.info("Metrics manager initialized")
-
-        # Record startup metric
-        await metrics_manager.record_system_metric(
-            metric_type="startup", value=1, labels={"status": "success"}
-        )
-        logger.info("Application started successfully")
-    except Exception as e:
-        logger.error(f"Error during startup: {str(e)}")
-        raise
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Clean up resources on shutdown."""
-    try:
-        # Shutdown metrics manager
-        await metrics_manager.shutdown()
-        logger.info("Metrics manager shut down")
-
-        # Record shutdown metric
-        await metrics_manager.record_system_metric(
-            metric_type="shutdown", value=1, labels={"status": "success"}
-        )
-        logger.info("Application shut down successfully")
-    except Exception as e:
-        logger.error(f"Error during shutdown: {str(e)}")
-        raise
-
-
+# Exception handlers
 @app.exception_handler(ReputationError)
-async def reputation_error_handler(request: Request, exc: ReputationError):
-    """Handle ReputationError exceptions."""
-    # Record error metric
-    await metrics_manager.record_error(
-        error_type=exc.__class__.__name__,
-        severity=exc.severity,
-        category=exc.category,
+async def handle_reputation_error(request: Request, exc: ReputationError):
+    # Internal logging and metrics
+    await metrics_manager.record_error(exc)
+    logger.warning(f"{exc.category} - {exc.message}")
+    return ErrorResponseModel(
+        code=exc.code,
+        message=exc.message,
         details=exc.details,
-    )
-
-    # Log error
-    logger.error(
-        f"ReputationError: {exc.message}",
-        extra={
-            "severity": exc.severity,
-            "category": exc.category,
-            "details": exc.details,
-        },
-    )
-
-    return {
-        "error": exc.message,
-        "severity": exc.severity,
-        "category": exc.category,
-        "details": exc.details,
-    }
-
+    ).dict(), exc.status_code
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Handle unhandled exceptions."""
-    # Record error metric
-    await metrics_manager.record_error(
-        error_type=exc.__class__.__name__,
-        severity=ErrorSeverity.HIGH,
-        category=ErrorCategory.SYSTEM,
-        details={"error": str(exc)},
+async def handle_unexpected_error(request: Request, exc: Exception):
+    await metrics_manager.record_error(exc, severity="HIGH", category="SYSTEM")
+    logger.error("Unexpected error", exc_info=exc)
+    # Return generic message
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Internal server error",
     )
 
-    # Log error
-    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+# Health checks (public)
+@app.get("/", include_in_schema=False)
+def root() -> dict:
+    return {"status": "ok", "version": settings.APP_VERSION}
 
-    return {
-        "error": "Internal server error",
-        "severity": ErrorSeverity.HIGH,
-        "category": ErrorCategory.SYSTEM,
-        "details": {"error": str(exc)},
-    }
-
-
-@app.get("/")
-async def root():
-    """Root endpoint."""
-    return {
-        "name": "Reputation Management API",
-        "status": "operational",
-        "version": "1.0.0",
-        "docs_url": "/api/docs",
-    }
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
+@app.get("/health", tags=["health"])
+def health() -> dict:
     return {
         "status": "healthy",
-        "version": app.version
+        "version": settings.APP_VERSION,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
+# API v1 router group
+api_v1 = FastAPI(
+    openapi_prefix="/api/v1",
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
+)
 
-@app.get("/api/v1/status")
-async def api_status():
-    """API status endpoint."""
-    from fastapi import Response
-    return Response(
-        content=json.dumps({
-            "status": "operational",
-            "version": app.version,
-            "timestamp": "2025-07-13T10:00:00Z"
-        }),
-        media_type="application/json",
-        headers={"Warning": "299 - 'deprecated'"}
-    )
+api_v1.include_router(reputation.router, prefix="/reputation", tags=["Reputation"])
+api_v1.include_router(customer.router, prefix="/customers", tags=["Customers"])
+api_v1.include_router(content_analysis.router, prefix="/content-analysis", tags=["Content Analysis"])
+api_v1.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+api_v1.include_router(platforms.router, prefix="/platforms", tags=["Platforms"])
+api_v1.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+api_v1.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
+api_v1.include_router(crisis.router, prefix="/crisis", tags=["Crisis"])
+api_v1.include_router(response.router, prefix="/response", tags=["Response"])
+api_v1.include_router(monitoring.router, prefix="/monitoring", tags=["Monitoring"])
 
+# Secure API-key management
+@api_v1.post("/api-keys", status_code=status.HTTP_201_CREATED, tags=["API Keys"])
+async def create_api_key(current_user: User = Depends(get_current_admin_user)):
+    key = await api_key.create_key(owner=current_user.id)
+    return {"key": key.plaintext, "created_at": key.created_at}
 
-@app.get("/api/v2/status")
-async def api_status_v2():
-    from fastapi import Response
-    return Response(
-        content=json.dumps({
-            "status": "operational",
-            "version": "2.0.0",
-            "timestamp": "2025-07-13T10:00:00Z"
-        }),
-        media_type="application/json",
-        headers={"Warning": "299 - 'experimental'"}
-    )
+@api_v1.delete("/api-keys/{key_id}", tags=["API Keys"])
+async def revoke_api_key(key_id: str, current_user: User = Depends(get_current_admin_user)):
+    await api_key.revoke_key(key_id, revoked_by=current_user.id)
+    return {"message": "API key revoked successfully", "key_id": key_id}
 
-
-@app.get("/platforms")
-async def platforms_root(current_user: User = Depends(get_current_active_user)):
-    """Platforms root endpoint."""
-    return {
-        "message": "Platforms API",
-        "endpoints": [
-            "/api/v1/platforms/list",
-            "/api/v1/platforms/status",
-            "/api/v1/platforms/metrics"
-        ]
-    }
-
-
-@app.post("/create_api_key")
-async def create_api_key():
-    """Create a new API key."""
-    return {
-        "key": "test_api_key_123",
-        "name": "test_key",
-        "created_at": "2025-07-13T10:00:00Z"
-    }
-
-
-@app.post("/api/keys/{key}/revoke")
-async def revoke_api_key(key: str):
-    """Revoke an API key."""
-    return {
-        "message": f"API key {key} revoked successfully",
-        "status": "revoked"
-    }
+app.mount("/api/v1", api_v1)

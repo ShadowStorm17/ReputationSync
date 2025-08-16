@@ -6,7 +6,7 @@ Handles authentication, authorization, and security features.
 import json
 import logging
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import jwt
@@ -113,7 +113,7 @@ class AuthManager:
         self, user: Dict[str, Any], token_type: str
     ) -> str:
         """Generate JWT token."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         ttl = self.token_ttl if token_type == "access" else self.token_ttl * 24
 
         payload = {
@@ -247,7 +247,7 @@ class SecurityService:
             key_info = {
                 "user_id": user_id,
                 "scopes": scopes,
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
             }
             await self.redis.set(f"apikey:{api_key}", json.dumps(key_info))
 

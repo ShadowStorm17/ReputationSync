@@ -5,7 +5,7 @@ Handles request rate limiting with distributed support.
 
 import asyncio
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from app.core.config import get_settings
@@ -171,7 +171,7 @@ class RateLimiter:
                 "redis_count": 0,
                 "redis_ttl": 0,
                 "local_count": 0,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
             # Get Redis info
@@ -192,7 +192,7 @@ class RateLimiter:
             logger.error(f"Rate limit info error: {str(e)}", exc_info=True)
             return {
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
     async def reset_rate_limit(self, key: str) -> None:

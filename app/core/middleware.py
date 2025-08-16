@@ -10,7 +10,7 @@ import logging
 import os
 import time
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set
 
 import xmltodict
@@ -19,6 +19,11 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.types import ASGIApp
 
 from .config import get_settings
+from .constants import (
+    METRICS_ENDPOINT, HEALTH_ENDPOINT, DOCS_ENDPOINT, REDOC_ENDPOINT,
+    OPENAPI_ENDPOINT, APP_LOG_FILE, CONTENT_TYPE_JSON, SECURITY_HEADERS,
+    MAX_REQUEST_SIZE, MAX_BODY_SIZE
+)
 from .error_handling import ErrorCategory, ErrorSeverity, ReputationError
 from .metrics import metrics_manager
 from .rate_limiter import rate_limiter
@@ -35,13 +40,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         """Initialize middleware."""
         super().__init__(app)
         self._exclude_paths: Set[str] = {
-            "/metrics",
-            "/health",
-            "/docs",
-            "/redoc",
-            "/openapi.json"
+            METRICS_ENDPOINT,
+            HEALTH_ENDPOINT,
+            DOCS_ENDPOINT,
+            REDOC_ENDPOINT,
+            OPENAPI_ENDPOINT
         }
-        self._max_body_size: int = 1024 * 1024  # 1MB
+        self._max_body_size: int = MAX_BODY_SIZE
         self._log_file_size_limit: int = 100 * 1024 * 1024  # 100MB
         self._log_rotation_interval: int = 24 * 60 * 60  # 24 hours
         self._last_rotation: float = time.time()
@@ -92,12 +97,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 current_time = time.time()
                 if current_time - self._last_rotation >= self._log_rotation_interval:
                     # Check log file size
-                    if os.path.exists("app.log"):
-                        size = os.path.getsize("app.log")
+                    if os.path.exists(APP_LOG_FILE):
+                        size = os.path.getsize(APP_LOG_FILE)
                         if size >= self._log_file_size_limit:
                             # Rotate log file
-                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                            os.rename("app.log", f"app_{timestamp}.log")
+                            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+                            os.rename(APP_LOG_FILE, f"app_{timestamp}.log")
                             logger.info("Log file rotated")
 
                     self._last_rotation = current_time
@@ -288,7 +293,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                         "severity": error.severity.value,
                         "category": error.category.value,
                         "correlation_id": error.context.get("correlation_id"),
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                         "request_id": error.context.get("request_id"),
                         "context": error.context
                     }),
@@ -344,7 +349,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                         "severity": ErrorSeverity.HIGH.value,
                         "category": ErrorCategory.SYSTEM.value,
                         "correlation_id": error_context.get("correlation_id"),
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                         "request_id": error_context.get("request_id"),
                         "context": error_context
                     }),
@@ -369,10 +374,10 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             response = Response(
                 content=json.dumps({
                     "error": "Internal server error",
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.now(timezone.utc).isoformat()
                 }),
                 status_code=500,
-                media_type="application/json"
+                media_type=CONTENT_TYPE_JSON
             )
 
             # Add security headers
@@ -398,11 +403,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         """Initialize middleware."""
         super().__init__(app)
         self._exclude_paths = {
-            "/metrics",
-            "/health",
-            "/docs",
-            "/redoc",
-            "/openapi.json"
+            METRICS_ENDPOINT,
+            HEALTH_ENDPOINT,
+            DOCS_ENDPOINT,
+            REDOC_ENDPOINT,
+            OPENAPI_ENDPOINT
         }
         self._ip_lists = {
             "whitelist": set(),
@@ -422,16 +427,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         }
         self._suspicious_ips = set()
         self._ip_block_duration = 3600  # 1 hour
-        self._max_request_size = 10 * 1024 * 1024  # 10MB
-        self._security_headers = {
-            "X-Content-Type-Options": "nosniff",
-            "X-Frame-Options": "DENY",
-            "X-XSS-Protection": "1; mode=block",
-            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-            "Content-Security-Policy": "default-src 'self'",
-            "Referrer-Policy": "strict-origin-when-cross-origin",
-            "Permissions-Policy": "geolocation=(), microphone=(), camera=()"
-        }
+        self._max_request_size = MAX_REQUEST_SIZE
+        self._security_headers = SECURITY_HEADERS
         self._ip_lists_file = "ip_lists.json"
         self._ip_lists_lock = asyncio.Lock()
         self._load_ip_lists()
@@ -493,17 +490,6 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                         category=ErrorCategory.SECURITY
                     )
 
-            # Strictly validate Content-Type
-            if request.method in {"POST", "PUT", "PATCH"}:
-                content_type = request.headers.get("content-type", "").split(";")[0].strip()
-                if content_type != "application/json":
-                    raise ReputationError(
-                        message="Invalid Content-Type. Only application/json is allowed.",
-                        severity=ErrorSeverity.HIGH,
-                        category=ErrorCategory.SECURITY
-                    )
-
-            # Block suspicious cookies
             if "cookie" in request.headers:
                 cookie_val = request.headers["cookie"].lower()
                 if any(domain in cookie_val for domain in ["malicious.com", "session="]):
@@ -673,8 +659,10 @@ class CachingMiddleware(BaseHTTPMiddleware):
         try:
             if os.path.exists(self._cache_file):
                 async with self._cache_lock:
-                    with open(self._cache_file, "r") as f:
-                        data = json.load(f)
+                    import aiofiles
+                    async with aiofiles.open(self._cache_file, "r") as f:
+                        content = await f.read()
+                        data = json.loads(content)
                         self._cache = {
                             k: {
                                 "data": self._decrypt_value(v["data"]) if self._cache_encryption else v["data"],
@@ -690,15 +678,16 @@ class CachingMiddleware(BaseHTTPMiddleware):
         """Save cache to disk."""
         try:
             async with self._cache_lock:
-                with open(self._cache_file, "w") as f:
-                    data = {
-                        k: {
-                            "data": self._encrypt_value(v["data"]) if self._cache_encryption else v["data"],
-                            "expires": v["expires"].isoformat()
-                        }
-                        for k, v in self._cache.items()
+                import aiofiles
+                data = {
+                    k: {
+                        "data": self._encrypt_value(v["data"]) if self._cache_encryption else v["data"],
+                        "expires": v["expires"].isoformat()
                     }
-                    json.dump(data, f)
+                    for k, v in self._cache.items()
+                }
+                async with aiofiles.open(self._cache_file, "w") as f:
+                    await f.write(json.dumps(data))
         except Exception as e:
             logger.error("Cache save error: %s", str(e))
 
@@ -706,8 +695,10 @@ class CachingMiddleware(BaseHTTPMiddleware):
         """Load cache stats from disk."""
         try:
             if os.path.exists(self._stats_file):
-                with open(self._stats_file, "r") as f:
-                    self._cache_stats = json.load(f)
+                import aiofiles
+                async with aiofiles.open(self._stats_file, "r") as f:
+                    content = await f.read()
+                    self._cache_stats = json.loads(content)
         except Exception as e:
             logger.error("Stats load error: %s", str(e))
             self._cache_stats = {"hits": 0, "misses": 0, "evictions": 0}
@@ -715,8 +706,9 @@ class CachingMiddleware(BaseHTTPMiddleware):
     async def _save_stats(self) -> None:
         """Save cache stats to disk."""
         try:
-            with open(self._stats_file, "w") as f:
-                json.dump(self._cache_stats, f)
+            import aiofiles
+            async with aiofiles.open(self._stats_file, "w") as f:
+                await f.write(json.dumps(self._cache_stats))
         except Exception as e:
             logger.error("Stats save error: %s", str(e))
 
@@ -771,9 +763,9 @@ class CachingMiddleware(BaseHTTPMiddleware):
             if request.method in {"POST", "PUT", "PATCH"}:
                 body = await request.body()
                 if body:
-                    key_parts.append(hashlib.md5(body).hexdigest())
+                    key_parts.append(hashlib.sha256(body).hexdigest())
 
-            return hashlib.md5("|".join(key_parts).encode()).hexdigest()
+            return hashlib.sha256("|".join(key_parts).encode()).hexdigest()
         except Exception as e:
             logger.error("Cache key generation error: %s", str(e))
             return str(uuid.uuid4())
@@ -786,7 +778,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                     return None
 
                 cache_entry = self._cache[key]
-                if cache_entry["expires"] <= datetime.utcnow():
+                if cache_entry["expires"] <= datetime.now(timezone.utc):
                     del self._cache[key]
                     self._cache_stats["evictions"] += 1
                     return None
@@ -817,7 +809,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                     # Add to cache
                     self._cache[key] = {
                         "data": body,
-                        "expires": datetime.utcnow() +
+                        "expires": datetime.now(timezone.utc) +
                         timedelta(
                             seconds=self._default_ttl)}
 
@@ -848,7 +840,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
     async def _cleanup_cache(self):
         """Clean up expired cache entries."""
         try:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             expired_keys = [
                 k for k, v in self._cache.items()
                 if v["expires"] <= current_time
@@ -1230,7 +1222,7 @@ class TransformationMiddleware(BaseHTTPMiddleware):
                 # Inject _request_timestamp at the top level if not present
                 if depth == 0 and "_request_timestamp" not in transformed:
                     from datetime import datetime
-                    transformed["_request_timestamp"] = datetime.utcnow().isoformat()
+                    transformed["_request_timestamp"] = datetime.now(timezone.utc).isoformat()
                 return transformed
 
             elif isinstance(data, list):

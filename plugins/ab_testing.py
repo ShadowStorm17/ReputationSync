@@ -6,7 +6,7 @@ Enables testing of reputation strategies and measuring their impact.
 from typing import Dict, List, Any, Optional, Union, TypedDict
 import random
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.core.plugins.base import ABTestingPlugin, PluginType, PluginMetadata
 from app.core.error_handling import ReputationError, ErrorSeverity, ErrorCategory
 
@@ -132,8 +132,8 @@ class ReputationABTesting(ABTestingPlugin):
                 "description": description,
                 "variants": variants,
                 "metrics": metrics,
-                "start_date": datetime.now(),
-                "end_date": datetime.now() + timedelta(days=duration_days),
+                "start_date": datetime.now(timezone.utc),
+                "end_date": datetime.now(timezone.utc) + timedelta(days=duration_days),
                 "status": "active",
                 "assignments": {},
                 "results": {metric: {variant["name"]: [] for variant in variants}
@@ -334,7 +334,7 @@ class ReputationABTesting(ABTestingPlugin):
             
             # End experiment
             experiment["status"] = "ended"
-            experiment["end_date"] = datetime.now()
+            experiment["end_date"] = datetime.now(timezone.utc)
             
             # Calculate final results
             results = await self.get_experiment_results(experiment_id)

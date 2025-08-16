@@ -11,7 +11,7 @@ This script will:
 import asyncio
 import sys
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from typing import List, Dict
 import aiosmtplib
@@ -48,7 +48,7 @@ class KeyRotationManager:
     
     async def get_expiring_keys(self) -> List[Dict]:
         """Get list of API keys that will expire soon."""
-        warning_date = datetime.utcnow() + timedelta(days=self.warning_days)
+        warning_date = datetime.now(timezone.utc) + timedelta(days=self.warning_days)
         expiring_keys = []
         
         # In production, this would query a database
@@ -114,7 +114,7 @@ class KeyRotationManager:
         try:
             async for key_data in self._get_all_keys():
                 expires_at = datetime.fromisoformat(key_data["expires_at"])
-                if expires_at <= datetime.utcnow():
+                if expires_at <= datetime.now(timezone.utc):
                     await api_key_manager.revoke_api_key(key_data["api_key"])
                     logger.info(f"Revoked expired key for client: {key_data['client_id']}")
         except Exception as e:
@@ -128,7 +128,7 @@ class KeyRotationManager:
         yield {
             "client_id": "test_client",
             "api_key": "test_key",
-            "expires_at": (datetime.utcnow() + timedelta(days=10)).isoformat()
+            "expires_at": (datetime.now(timezone.utc) + timedelta(days=10)).isoformat()
         }
 
 async def main():

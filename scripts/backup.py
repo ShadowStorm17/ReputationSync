@@ -14,7 +14,7 @@ import shutil
 import logging
 import asyncio
 import aiohttp
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import tarfile
 import redis
@@ -47,7 +47,7 @@ class BackupManager:
             password=settings.REDIS_PASSWORD,
             decode_responses=True
         )
-        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self.remote_storage_url = os.getenv("REMOTE_STORAGE_URL")
         self.remote_storage_key = os.getenv("REMOTE_STORAGE_KEY")
     
@@ -107,7 +107,7 @@ class BackupManager:
         
         try:
             headers = {"Authorization": f"Bearer {self.remote_storage_key}"}
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
                 with open(file_path, "rb") as f:
                     data = aiohttp.FormData()
                     data.add_field("file",
@@ -134,7 +134,7 @@ class BackupManager:
         """Remove backups older than specified days."""
         try:
             for backup_file in self.backup_dir.glob("*"):
-                if backup_file.stat().st_mtime < (datetime.now().timestamp() - days * 86400):
+                if backup_file.stat().st_mtime < (datetime.now(timezone.utc).timestamp() - days * 86400):
                     backup_file.unlink()
                     logger.info(f"Removed old backup: {backup_file}")
         except Exception as e:

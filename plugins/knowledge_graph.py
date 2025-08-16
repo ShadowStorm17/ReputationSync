@@ -5,7 +5,7 @@ Builds and maintains a knowledge graph of entities and relationships.
 
 from typing import Dict, List, Any, Optional, Union, TypedDict
 import networkx as nx
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.plugins.base import KnowledgeGraphPlugin, PluginType, PluginMetadata
 from app.core.error_handling import ReputationError, ErrorSeverity, ErrorCategory
 
@@ -151,7 +151,7 @@ class ReputationKnowledgeGraph(KnowledgeGraphPlugin):
             entity_id = f"{entity_type}_{len(self.graph.nodes)}"
             
             # Create entity data
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             entity_data: EntityData = {
                 "id": entity_id,
                 "type": entity_type,
@@ -237,7 +237,7 @@ class ReputationKnowledgeGraph(KnowledgeGraphPlugin):
                 "target_id": target_id,
                 "type": relationship_type,
                 "attributes": attributes or {},
-                "created_at": datetime.now()
+                "created_at": datetime.now(timezone.utc)
             }
             
             # Add relationship to graph

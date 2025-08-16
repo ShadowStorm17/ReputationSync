@@ -11,7 +11,7 @@ import threading
 import zlib
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 
 from cryptography.fernet import Fernet
@@ -42,11 +42,11 @@ class CacheItem:
 
     key: str
     value: Any
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
     size_bytes: int = 0
     access_count: int = 0
-    last_accessed: datetime = field(default_factory=datetime.utcnow)
+    last_accessed: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     compressed: bool = False
     encrypted: bool = False
 
@@ -84,7 +84,8 @@ class Cache:
             try:
                 await task
             except asyncio.CancelledError:
-                pass
+                logger.info(f"Task {task} was cancelled during shutdown")
+                raise
         self._background_tasks.clear()
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
@@ -103,7 +104,7 @@ class Cache:
                     return default
 
                 # Check expiration
-                if item.expires_at and datetime.utcnow() > item.expires_at:
+                if item.expires_at and datetime.now(timezone.utc) > item.expires_at:
                     # Expired item
                     del self._data[cache_key]
                     self._size_bytes -= item.size_bytes
@@ -113,7 +114,7 @@ class Cache:
 
                 # Update access stats
                 item.access_count += 1
-                item.last_accessed = datetime.utcnow()
+                item.last_accessed = datetime.now(timezone.utc)
 
                 # Move to end (most recently used)
                 self._data.move_to_end(cache_key)
@@ -185,7 +186,7 @@ class Cache:
 
             # Set expiration if TTL provided
             if ttl is not None:
-                item.expires_at = datetime.utcnow() + timedelta(seconds=ttl)
+                item.expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl)
 
             with self._lock:
                 # Remove old item if exists
@@ -335,7 +336,7 @@ class Cache:
         """Get the next item to evict."""
         try:
             # First, try to find expired items
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             expired = [
                 (k, v)
                 for k, v in self._data.items()
@@ -359,7 +360,7 @@ class Cache:
         """Clean up expired cache items."""
         while True:
             try:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(timezone.utc)
 
                 with self._lock:
                     # Find expired items
@@ -422,7 +423,7 @@ class Cache:
                         if (
                             item.access_count < avg_accesses * 0.2
                             and (  # 20% of average
-                                datetime.utcnow()
+                                datetime.now(timezone.utc)
                                 -
                                 # 1 hour
                                 item.last_accessed

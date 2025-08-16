@@ -5,7 +5,7 @@ Handles data synchronization and platform-specific interactions.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 import aiohttp
@@ -45,7 +45,8 @@ class LinkedInAdapter(PlatformAdapter):
         """Initialize LinkedIn adapter."""
         self.api_key = api_key
         self.base_url = "https://api.linkedin.com/v2"
-        self.session = aiohttp.ClientSession()
+        self.timeout = aiohttp.ClientTimeout(total=30)
+        self.session = aiohttp.ClientSession(timeout=self.timeout)
 
     async def fetch_data(
         self, endpoint: str, params: Dict[str, Any]
@@ -87,7 +88,8 @@ class TwitterAdapter(PlatformAdapter):
         self.api_key = api_key
         self.api_secret = api_secret
         self.base_url = "https://api.twitter.com/2"
-        self.session = aiohttp.ClientSession()
+        self.timeout = aiohttp.ClientTimeout(total=30)
+        self.session = aiohttp.ClientSession(timeout=self.timeout)
 
     async def fetch_data(
         self, endpoint: str, params: Dict[str, Any]
@@ -148,14 +150,14 @@ class DataSynchronizer:
 
         interval = self.sync_intervals.get(platform, 3600)
         time_since_sync = (
-            datetime.utcnow() - self.last_sync[platform]
+            datetime.now(timezone.utc) - self.last_sync[platform]
         ).total_seconds()
 
         return time_since_sync >= interval
 
     async def mark_synced(self, platform: str):
         """Mark platform as synced."""
-        self.last_sync[platform] = datetime.utcnow()
+        self.last_sync[platform] = datetime.now(timezone.utc)
 
 
 class DataTransformer:
@@ -226,7 +228,7 @@ class IntegrationService:
         self, platform: str, params: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Fetch data from specified platform."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         if platform not in self.adapters:
             raise ValueError(f"Unsupported platform: {platform}")
@@ -249,13 +251,13 @@ class IntegrationService:
             await self.synchronizer.mark_synced(platform)
 
             # Record latency
-            duration = (datetime.utcnow() - start_time).total_seconds()
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             INTEGRATION_LATENCY.observe(duration)
 
             return {
                 "status": "success",
                 "data": transformed_data,
-                "synced_at": datetime.utcnow().isoformat(),
+                "synced_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -277,7 +279,7 @@ class IntegrationService:
             return {
                 "status": "success",
                 "response": response,
-                "posted_at": datetime.utcnow().isoformat(),
+                "posted_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -318,7 +320,7 @@ class IntegrationService:
                     platform, "never"
                 ),
                 "sync_interval": self.synchronizer.sync_intervals[platform],
-                "checked_at": datetime.utcnow().isoformat(),
+                "checked_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -326,5 +328,5 @@ class IntegrationService:
             return {
                 "status": "offline",
                 "error": str(e),
-                "checked_at": datetime.utcnow().isoformat(),
+                "checked_at": datetime.now(timezone.utc).isoformat(),
             }

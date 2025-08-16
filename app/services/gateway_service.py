@@ -5,10 +5,9 @@ Provides API gateway functionality and request handling.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import urljoin
-
 import aiohttp
 
 from app.core.config import get_settings
@@ -68,7 +67,7 @@ class Gateway:
         self.cache_service = cache_service
         self.rate_limit_service = rate_limit_service
         self.routes: Dict[str, Route] = {}
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
         self.middleware: List[Callable] = []
 
     def add_route(self, path: str, target: str, **kwargs) -> Route:
@@ -102,7 +101,7 @@ class Gateway:
 
             # Update metrics
             route.metrics["total_requests"] += 1
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
 
             # Check authentication
             if route.auth_required and self.auth_service:
@@ -170,7 +169,7 @@ class Gateway:
                     )
 
                 # Update metrics
-                end_time = datetime.utcnow()
+                end_time = datetime.now(timezone.utc)
                 response_time = (end_time - start_time).total_seconds()
 
                 if response.status < 400:

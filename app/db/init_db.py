@@ -4,7 +4,7 @@ Creates initial database schema and default data.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -54,7 +54,7 @@ async def init_db():
                     hashed_password=get_password_hash("admin123"),
                     subscription_tier="admin",
                     is_active=True,
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
                 session.add(admin)
                 await session.commit()

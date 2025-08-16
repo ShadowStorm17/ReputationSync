@@ -5,7 +5,7 @@ Handles asynchronous processing of heavy computations.
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional
 
 from app.core.cache import cache_manager
@@ -33,7 +33,7 @@ class TaskManager:
             # Store task metadata
             self.results[task_id] = {
                 "status": "running",
-                "started_at": datetime.utcnow().isoformat(),
+                "started_at": datetime.now(timezone.utc).isoformat(),
                 "args": args,
                 "kwargs": kwargs,
             }
@@ -50,7 +50,7 @@ class TaskManager:
             self.results[task_id] = {
                 "status": "failed",
                 "error": str(e),
-                "started_at": datetime.utcnow().isoformat(),
+                "started_at": datetime.now(timezone.utc).isoformat(),
             }
             raise
 

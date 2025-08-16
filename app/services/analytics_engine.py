@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 import numpy as np
@@ -125,7 +125,7 @@ class AnalyticsEngine:
                         growth_metrics,
                     ]
                 ),
-                "analyzed_at": datetime.utcnow().isoformat(),
+                "analyzed_at": datetime.now(timezone.utc).isoformat(),
             }
 
             return combined_metrics

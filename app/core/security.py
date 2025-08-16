@@ -7,7 +7,7 @@ import hashlib
 import ipaddress
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Union
 
 import redis.asyncio as redis
@@ -76,9 +76,9 @@ class SecurityManager:
     ) -> str:
         """Create JWT access token."""
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(timezone.utc) + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(
+            expire = datetime.now(timezone.utc) + timedelta(
                 minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
             )
 
@@ -87,7 +87,7 @@ class SecurityManager:
             "sub": str(subject),
             "scopes": scopes,
             "jti": secrets.token_hex(16),  # Unique token ID
-            "iat": datetime.utcnow().timestamp(),
+            "iat": datetime.now(timezone.utc).timestamp(),
         }
 
         encoded_jwt = jwt.encode(
@@ -349,7 +349,7 @@ async def get_current_user_by_api_key(
             )
 
         # Check timestamp (within 5 minutes)
-        current_time = int(datetime.now().timestamp())
+        current_time = int(datetime.now(timezone.utc).timestamp())
         if abs(current_time - int(timestamp)) > 300:
             raise HTTPException(
                 status_code=401,
@@ -397,9 +397,9 @@ def create_access_token(
     """Create JWT access token."""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM

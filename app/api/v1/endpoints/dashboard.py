@@ -64,7 +64,7 @@ async def fetch_dashboard_data() -> Dict[str, Any]:
     engagement_metrics = await get_engagement_metrics()
 
     # Get recent activities
-    recent_activities = await get_recent_activities()
+    recent_activities = get_recent_activities()
 
     # Calculate changes
     total_score_change = calculate_percentage_change(
@@ -103,7 +103,7 @@ async def fetch_dashboard_data() -> Dict[str, Any]:
     }
 
 
-async def get_recent_activities() -> List[Dict[str, Any]]:
+def get_recent_activities() -> List[Dict[str, Any]]:
     """Get recent user activities."""
     # This would typically come from your database
     # For now, returning mock data

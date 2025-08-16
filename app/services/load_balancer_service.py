@@ -6,7 +6,7 @@ Provides load balancing and server health monitoring.
 import asyncio
 import logging
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -88,7 +88,7 @@ class LoadBalancer:
         self.unhealthy_threshold = unhealthy_threshold
         self.servers: Dict[str, Server] = {}
         self.current_index = 0
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
         self.running = False
 
     async def add_server(
@@ -191,7 +191,7 @@ class LoadBalancer:
             async with self.session.get(
                 f"{server.url}/health", timeout=5
             ) as response:
-                server.last_check = datetime.utcnow()
+                server.last_check = datetime.now(timezone.utc)
 
                 if response.status == 200:
                     metrics = await response.json()

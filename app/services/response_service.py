@@ -5,8 +5,9 @@ Provides intelligent responses to reputation-related interactions.
 
 import json
 import logging
+import hashlib
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -565,7 +566,8 @@ class ABTester:
             return None
 
         # Select variant based on user_id
-        variant_index = hash(user_id) % len(variants)
+        user_digest = int(hashlib.sha256(user_id.encode("utf-8")).hexdigest(), 16)
+        variant_index = user_digest % len(variants)
         variant = variants[variant_index]
 
         # Record exposure
@@ -649,7 +651,7 @@ class ResponseService:
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Handle incoming interaction."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         # Generate base response
         response = await self.generator.generate_response(
@@ -684,7 +686,7 @@ class ResponseService:
         )
 
         # Record latency
-        duration = (datetime.utcnow() - start_time).total_seconds()
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         RESPONSE_GENERATION_LATENCY.observe(duration)
 
         return response
@@ -700,7 +702,7 @@ class ResponseService:
             'message': message,
             'response': response,
             'context': context,
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }
 
         await self.redis.lpush(
@@ -977,7 +979,7 @@ class ResponseService:
                 "response": response,
                 "sentiment": sentiment,
                 "context": context,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
             await self.redis.lpush(
@@ -1034,7 +1036,7 @@ class ResponseService:
     ) -> Dict:
         """Check for potential crisis situations with advanced detection."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
 
             # Analyze metrics
             crisis_indicators = await self._analyze_crisis_indicators(metrics)
@@ -1057,9 +1059,9 @@ class ResponseService:
                 "indicators": crisis_indicators,
                 "response_plan": response_plan,
                 "metadata": {
-                    "checked_at": datetime.utcnow().isoformat(),
+                    "checked_at": datetime.now(timezone.utc).isoformat(),
                     "processing_time": (
-                        datetime.utcnow() - start_time
+                        datetime.now(timezone.utc) - start_time
                     ).total_seconds(),
                     "timeframe": timeframe
                 }
@@ -1269,7 +1271,7 @@ class ResponseService:
                 'original_text': text,
                 'sentiment': sentiment,
                 'response': response,
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'user_id': user_id
             }
 
@@ -1292,15 +1294,15 @@ class ResponseService:
     ) -> Dict:
         """Escalate an issue for human intervention."""
         try:
-            issue_id = f"issue_{datetime.utcnow().timestamp()}"
+            issue_id = f"issue_{datetime.now(timezone.utc).timestamp()}"
 
             # Enrich issue data
             issue_data.update({
                 'id': issue_id,
                 'status': 'open',
                 'priority': priority,
-                'created_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat()
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'updated_at': datetime.now(timezone.utc).isoformat()
             })
 
             # Store issue
@@ -1357,7 +1359,7 @@ class ResponseService:
                 'negative_mentions': negative_count,
                 'total_mentions': len(mentions),
                 'average_sentiment': avg_sentiment,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
 
             if is_crisis:
@@ -1382,7 +1384,7 @@ class ResponseService:
 
             issue = json.loads(issue_data)
             issue.update(updates)
-            issue['updated_at'] = datetime.utcnow().isoformat()
+            issue['updated_at'] = datetime.now(timezone.utc).isoformat()
 
             await self.redis.hset(
                 'issues',
@@ -1467,7 +1469,7 @@ class ResponseService:
             )
 
             # Store crisis record
-            crisis_id = f"crisis_{datetime.utcnow().timestamp()}"
+            crisis_id = f"crisis_{datetime.now(timezone.utc).timestamp()}"
             await self.redis.hset(
                 'crises',
                 crisis_id,

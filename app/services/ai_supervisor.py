@@ -6,7 +6,7 @@ Provides intelligent monitoring, improvement suggestions, and automated maintena
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List
 
@@ -75,7 +75,7 @@ class AISupervisor:
     def __init__(self):
         """Initialize the AI supervisor."""
         self.improvements: List[ImprovementSuggestion] = []
-        self.last_analysis = datetime.utcnow()
+        self.last_analysis = datetime.now(timezone.utc)
         self.analysis_interval = timedelta(hours=1)
         self.pending_approvals: Dict[str, ImprovementSuggestion] = {}
         self.implemented_changes: Dict[str, ImprovementSuggestion] = {}
@@ -130,7 +130,7 @@ class AISupervisor:
         """Analyze system for potential improvements."""
         while self.running:
             try:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(timezone.utc)
 
                 if (current_time - self.last_analysis) >= self.analysis_interval:
                     # Analyze performance
@@ -359,7 +359,7 @@ Status: {improvement.status.value}
             # Create improvement suggestion for anomaly
             suggestion = ImprovementSuggestion(
                 id=f"anomaly_{
-                    datetime.utcnow().isoformat()}",
+                    datetime.now(timezone.utc).isoformat()}",
                 type=ImprovementType.RELIABILITY,
                 title=f"Anomaly detected in {metric_name}",
                 description=f"Detected anomalous value ({
@@ -377,7 +377,7 @@ Status: {improvement.status.value}
                     "value": value,
                     "mean": mean,
                     "std_dev": std_dev},
-                created_at=datetime.utcnow())
+                created_at=datetime.now(timezone.utc))
 
             await self.submit_for_approval(suggestion)
 

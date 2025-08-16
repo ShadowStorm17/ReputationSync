@@ -192,3 +192,24 @@ class MetricsWindow:
         self.duration = duration
         self.values = deque()
         self.timestamps = deque()
+
+
+# --- Aggregated multi-platform reputation models ---
+class PlatformBreakdown(BaseModel):
+    platform: str
+    username: str
+    overall_score: float = Field(..., ge=0.0, le=100.0)
+    weight: float = Field(..., ge=0.0)
+    sentiment_score: float
+    engagement_score: float
+    influence_score: float
+    growth_score: float
+
+
+class MultiPlatformReputation(BaseModel):
+    person: str = Field(..., description="Person identifier (username or customer id)")
+    timeframe: str = Field(..., description="Analysis timeframe")
+    overall_score: float = Field(..., ge=0.0, le=100.0)
+    weights: Dict[str, float] = Field(..., description="Weights applied per platform")
+    breakdown: List[PlatformBreakdown]
+    calculated_at: datetime

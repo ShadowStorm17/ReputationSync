@@ -5,7 +5,7 @@ Provides service registry and health monitoring.
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -50,8 +50,8 @@ class ServiceInstance:
         self.health_check_interval = health_check_interval
         self.status = ServiceStatus.UNKNOWN
         self.last_check = None
-        self.registered_at = datetime.utcnow()
-        self.last_heartbeat = datetime.utcnow()
+        self.registered_at = datetime.now(timezone.utc)
+        self.last_heartbeat = datetime.now(timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert instance to dictionary."""
@@ -81,7 +81,7 @@ class ServiceRegistry:
         self.heartbeat_timeout = heartbeat_timeout
         self.cleanup_interval = cleanup_interval
         self.services: Dict[str, Dict[str, ServiceInstance]] = {}
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
         self.running = False
 
     async def register_instance(
@@ -148,7 +148,7 @@ class ServiceRegistry:
                 return False
 
             instance = self.services[service_name][instance_id]
-            instance.last_heartbeat = datetime.utcnow()
+            instance.last_heartbeat = datetime.now(timezone.utc)
 
             return True
 
@@ -169,7 +169,7 @@ class ServiceRegistry:
                 instance.health_check_url,
                 timeout=5
             ) as response:
-                instance.last_check = datetime.utcnow()
+                instance.last_check = datetime.now(timezone.utc)
 
                 if response.status == 200:
                     instance.status = ServiceStatus.RUNNING
@@ -186,7 +186,7 @@ class ServiceRegistry:
     async def cleanup_expired_instances(self):
         """Remove expired instances."""
         try:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             expired_timeout = timedelta(seconds=self.heartbeat_timeout)
 
             for service_name in list(self.services.keys()):

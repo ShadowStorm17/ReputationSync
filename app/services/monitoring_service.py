@@ -5,7 +5,7 @@ Provides comprehensive monitoring capabilities.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import psutil
@@ -71,7 +71,7 @@ class MetricsCollector:
     async def store_metrics(self, metric_type: str, metrics: Dict[str, Any]):
         """Store metrics in Redis."""
         try:
-            timestamp = datetime.utcnow().isoformat()
+            timestamp = datetime.now(timezone.utc).isoformat()
             key = f"metrics:{metric_type}:{timestamp}"
 
             await self.redis.set(
@@ -106,7 +106,7 @@ class PerformanceMonitor:
             )
 
             # Store in Redis
-            timestamp = datetime.utcnow().isoformat()
+            timestamp = datetime.now(timezone.utc).isoformat()
             request_data = {
                 "method": method,
                 "endpoint": endpoint,
@@ -138,9 +138,9 @@ class PerformanceMonitor:
         """Get performance statistics."""
         try:
             if not start_time:
-                start_time = datetime.utcnow() - timedelta(hours=1)
+                start_time = datetime.now(timezone.utc) - timedelta(hours=1)
             if not end_time:
-                end_time = datetime.utcnow()
+                end_time = datetime.now(timezone.utc)
 
             # Get request log
             request_log = []
@@ -245,7 +245,7 @@ class HealthChecker:
 
             return {
                 "status": status,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "metrics": {
                     "cpu_percent": cpu_percent,
                     "memory_percent": memory_percent,
@@ -323,7 +323,7 @@ class MonitoringService:
             "type": alert_type,
             "message": message,
             "severity": severity,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
 
     def _get_recent_alerts(self, severity=None, limit=None):

@@ -3,7 +3,7 @@ Enhanced analytics service with advanced reputation metrics.
 Provides ML-powered insights and predictive analytics.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -42,7 +42,7 @@ class ReputationScore:
         return {
             "overall_score": score,
             "subscores": subscores,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 
@@ -82,7 +82,7 @@ class TrendAnalyzer:
                          days: int) -> Dict[str, float]:
         """Calculate trend over specified period."""
         recent_data = df[df["timestamp"] >
-                         datetime.utcnow() - timedelta(days=days)]
+                         datetime.now(timezone.utc) - timedelta(days=days)]
 
         if len(recent_data) < 2:
             return {"slope": 0, "change_rate": 0}
@@ -118,7 +118,7 @@ class TrendAnalyzer:
 
         return [
             {
-                "date": (datetime.utcnow() + timedelta(days=i)).isoformat(),
+                "date": (datetime.now(timezone.utc) + timedelta(days=i)).isoformat(),
                 "predicted_score": float(score),
             }
             for i, score in enumerate(predictions)
@@ -147,7 +147,7 @@ class TrendAnalyzer:
         future_features = []
 
         for i in range(30):  # Predict 30 days ahead
-            future_date = datetime.utcnow() + timedelta(days=i)
+            future_date = datetime.now(timezone.utc) + timedelta(days=i)
             features = [
                 last_values["sentiment_score"],
                 last_values["engagement_rate"],
@@ -419,7 +419,7 @@ class RealtimeTrendAnalyzer:
     async def analyze_realtime_trends(
             self, data: pd.DataFrame) -> Dict[str, Any]:
         """Analyze real-time trends in reputation metrics."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         trends = {}
 
         for window_name, window_size in self.window_sizes.items():
@@ -553,7 +553,7 @@ class EnhancedAnalytics:
         competitor_data: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Perform comprehensive reputation analysis."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         # Convert historical data to DataFrame
         df = pd.DataFrame(historical_data)
@@ -579,7 +579,7 @@ class EnhancedAnalytics:
             )
 
         # Record latency
-        duration = (datetime.utcnow() - start_time).total_seconds()
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         ANALYTICS_LATENCY.observe(duration)
 
         return {
@@ -588,5 +588,5 @@ class EnhancedAnalytics:
             "anomalies": anomalies,
             "realtime_trends": realtime_trends,
             "competitor_analysis": competitor_analysis,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
         }

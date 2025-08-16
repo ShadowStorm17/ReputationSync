@@ -5,7 +5,7 @@ Handles continuous monitoring, analysis, and self-improvement of the API.
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 from app.core.error_handling import ErrorCategory, ErrorSeverity
@@ -93,7 +93,7 @@ class AutonomousAIService:
                 # Store analysis results
                 self._improvement_history.append(
                     {
-                        "timestamp": datetime.utcnow(),
+                        "timestamp": datetime.now(timezone.utc),
                         "patterns": patterns,
                         "optimizations": optimizations,
                     }

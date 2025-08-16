@@ -10,10 +10,10 @@ print("--- Starting Instagram Graph API test ---")
 print("Requesting:", url)
 
 try:
-    response = httpx.get(url)
+    response = httpx.get(url, timeout=30.0)
     print("Status code:", response.status_code)
     print("Response:", response.text)
 except Exception as e:
     print("Exception occurred:", e)
 
-print("--- End of test ---") 
+print("--- End of test ---")

@@ -5,7 +5,7 @@ Tracks and benchmarks against competing brands.
 
 from typing import Dict, List, Any, Optional, Union, TypedDict
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.core.plugins.base import CompetitorPlugin, PluginType, PluginMetadata
 from app.core.error_handling import ReputationError, ErrorSeverity, ErrorCategory
 
@@ -99,7 +99,7 @@ class ReputationCompetitor(CompetitorPlugin):
                 "domains": domains,
                 "social_handles": social_handles,
                 "metrics": metrics or self.config.get("metrics", []),
-                "added_at": datetime.now(),
+                "added_at": datetime.now(timezone.utc),
                 "last_updated": None
             }
             
@@ -136,7 +136,7 @@ class ReputationCompetitor(CompetitorPlugin):
             # Update metrics
             for metric in competitor["metrics"]:
                 value = await self._fetch_metric(competitor, metric)
-                timestamp = datetime.now()
+                timestamp = datetime.now(timezone.utc)
                 
                 # Add new value
                 self.metrics[competitor_id][metric].append({
@@ -149,7 +149,7 @@ class ReputationCompetitor(CompetitorPlugin):
                     self.metrics[competitor_id][metric] = self.metrics[competitor_id][metric][-max_history:]
             
             # Update last updated timestamp
-            competitor["last_updated"] = datetime.now()
+            competitor["last_updated"] = datetime.now(timezone.utc)
             
             return True
             

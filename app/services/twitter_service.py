@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 import httpx
@@ -50,7 +50,7 @@ class TwitterService:
                 "listed_count": user_data["public_metrics"]["listed_count"],
                 "is_verified": user_data["verified"],
                 "created_at": user_data["created_at"],
-                "fetched_at": datetime.utcnow().isoformat()}
+                "fetched_at": datetime.now(timezone.utc).isoformat()}
 
             # Cache metrics
             if settings.cache.ENABLED:
@@ -130,7 +130,7 @@ class TwitterService:
                 },
                 "period": {
                     "start": since.isoformat(),
-                    "end": datetime.utcnow().isoformat()
+                    "end": datetime.now(timezone.utc).isoformat()
                 }
             }
 

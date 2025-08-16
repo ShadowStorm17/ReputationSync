@@ -5,6 +5,7 @@ Handles reputation management endpoints.
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from datetime import timezone
 
 from fastapi import (
     APIRouter,
@@ -32,6 +33,8 @@ from app.models.reputation import (
     ReputationAlert,
     ReputationMetrics,
     ReputationScore,
+    MultiPlatformReputation,
+    PlatformBreakdown,
 )
 from app.services.analytics_engine import AnalyticsEngine
 from app.services.comment_service import CommentService
@@ -118,7 +121,7 @@ async def get_reputation_score(
             growth_score=predictions.growth_potential,
             overall_score=analytics.calculate_overall_score(),
             timeframe=timeframe,
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(timezone.utc),
             trend_direction=trends.direction if trends else "stable",
             trend_magnitude=trends.magnitude if trends else 0.0,
             confidence_score=analytics.confidence_score,
@@ -194,7 +197,7 @@ async def get_reputation_metrics(
             growth_predictions=predictions.metrics,
             risk_factors=analytics.risk_factors,
             timeframe=timeframe,
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(timezone.utc),
             historical_data=historical_data,
         )
 
@@ -243,7 +246,7 @@ async def analyze_comment(
 
         result = {
             "analysis": analysis,
-            "analyzed_at": datetime.utcnow().isoformat(),
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
         if context:
@@ -318,7 +321,7 @@ async def generate_report(
                 report_id=report["id"],
             )
 
-        return {**report, "generated_at": datetime.utcnow().isoformat()}
+        return {**report, "generated_at": datetime.now(timezone.utc).isoformat()}
 
     except ValueError as e:
         raise HTTPException(
@@ -459,4 +462,115 @@ async def resolve_alert(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error resolving alert",
+        )
+
+
+@router.get("/aggregate", response_model=MultiPlatformReputation)
+@track_performance
+@handle_errors(ErrorSeverity.HIGH, ErrorCategory.BUSINESS)
+@rate_limit(limit=20, period=3600)  # 20 requests per hour
+@cache_response(ttl=300)  # Cache for 5 minutes
+async def aggregate_reputation(
+    person: str = Query(..., description="Person identifier (username/customer id)"),
+    platforms: List[str] = Query(..., description="List of platforms"),
+    usernames: List[str] = Query(..., description="List of usernames aligned with platforms"),
+    timeframe: str = Query("30d", description="Timeframe for analysis"),
+    weights: Optional[str] = Query(None, description="JSON map of platform->weight"),
+    current_user: User = Depends(get_current_active_user),
+) -> MultiPlatformReputation:
+    """Aggregate multi-platform reputation for a person.
+
+    platforms and usernames must be the same length and aligned by index.
+    weights is an optional JSON string like: {"twitter": 0.6, "linkedin": 0.4}
+    """
+    try:
+        if len(platforms) != len(usernames):
+            raise ValueError("platforms and usernames must be the same length")
+
+        # Validate inputs and prepare weights
+        for p in platforms:
+            validate_platform(p)
+        for u in usernames:
+            validate_username(u)
+
+        weight_map: Dict[str, float] = {}
+        if weights:
+            try:
+                import json as _json
+                parsed = _json.loads(weights)
+                if not isinstance(parsed, dict):
+                    raise ValueError("weights must be a JSON object of platform->weight")
+                weight_map = {str(k): float(v) for k, v in parsed.items()}
+            except Exception as e:
+                raise ValueError(f"Invalid weights: {e}")
+
+        # Equal weights by default
+        n = len(platforms)
+        default_weight = 1.0 / n if n > 0 else 0.0
+
+        breakdown: List[PlatformBreakdown] = []
+
+        for p, u in zip(platforms, usernames):
+            # Use existing services similar to get_reputation_score
+            sentiment = await sentiment_service.analyze_user_sentiment(p, u)
+            predictions = await predictive_service.get_reputation_predictions(p, u)
+            analytics = await analytics_engine.get_user_analytics(p, u)
+
+            # Compute overall score using existing analytics method
+            platform_overall = analytics.calculate_overall_score()
+
+            w = float(weight_map.get(p, default_weight))
+
+            breakdown.append(
+                PlatformBreakdown(
+                    platform=p,
+                    username=u,
+                    overall_score=platform_overall,
+                    weight=w,
+                    sentiment_score=sentiment.score,
+                    engagement_score=analytics.engagement_score,
+                    influence_score=analytics.influence_score,
+                    growth_score=predictions.growth_potential,
+                )
+            )
+
+        # Normalize weights to sum to 1 (avoid division by zero)
+        total_w = sum(b.weight for b in breakdown)
+        if total_w <= 0:
+            total_w = 1.0
+        norm_breakdown = []
+        for b in breakdown:
+            norm_w = b.weight / total_w
+            norm_breakdown.append(
+                PlatformBreakdown(
+                    platform=b.platform,
+                    username=b.username,
+                    overall_score=b.overall_score,
+                    weight=norm_w,
+                    sentiment_score=b.sentiment_score,
+                    engagement_score=b.engagement_score,
+                    influence_score=b.influence_score,
+                    growth_score=b.growth_score,
+                )
+            )
+
+        composite_score = sum(b.overall_score * b.weight for b in norm_breakdown)
+
+        return MultiPlatformReputation(
+            person=person,
+            timeframe=timeframe,
+            overall_score=composite_score,
+            weights={b.platform: b.weight for b in norm_breakdown},
+            breakdown=norm_breakdown,
+            calculated_at=datetime.now(timezone.utc),
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error aggregating reputation",
         )

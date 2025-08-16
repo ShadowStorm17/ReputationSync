@@ -26,7 +26,7 @@ async def test_instagram():
         print("httpx response:", response.text)
 
         # --- requests test ---
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=30)
         print("requests status:", r.status_code)
         print("requests response:", r.text)
 

@@ -5,7 +5,7 @@ Provides advanced metrics collection and reporting capabilities.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -37,7 +37,7 @@ class MetricsCollector:
         self, metric_name: str, value: float, tags: Dict[str, str]
     ):
         """Record metric value with tags."""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
 
         # Store raw metric
         await self._store_raw_metric(metric_name, value, tags, timestamp)
@@ -55,9 +55,9 @@ class MetricsCollector:
     ) -> Dict[str, Any]:
         """Get metrics data."""
         if not start_time:
-            start_time = datetime.utcnow() - timedelta(hours=1)
+            start_time = datetime.now(timezone.utc) - timedelta(hours=1)
         if not end_time:
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
 
         results = {}
         for metric_name in metric_names:
@@ -202,7 +202,7 @@ class MetricsAnalyzer:
         window: int = 24,
     ) -> Dict[str, Any]:
         """Analyze metrics over time window."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = self._get_start_time(end_time, timeframe, window)
 
         # Get metrics data
@@ -346,7 +346,7 @@ class MetricsService:
             return {
                 "status": "success",
                 "count": len(metrics),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -371,7 +371,7 @@ class MetricsService:
                 "analysis": analysis,
                 "timeframe": timeframe,
                 "window": window,
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -402,7 +402,7 @@ class MetricsService:
                 "status": "success",
                 "summary": summary,
                 "timeframe": timeframe,
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:

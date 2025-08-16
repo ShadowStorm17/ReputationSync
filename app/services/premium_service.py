@@ -3,7 +3,7 @@ Premium service.
 Handles premium features and additional revenue streams.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from app.core.error_handling import ErrorCategory, ErrorSeverity, handle_errors
@@ -125,7 +125,7 @@ class PremiumService:
         total_cost = base_cost + metrics_cost
 
         report = CustomReport(
-            report_id=f"REP-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            report_id=f"REP-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             customer_id=user_id,
             report_type=report_type,
             format=format,
@@ -163,7 +163,7 @@ class PremiumService:
         total_cost = base_cost + data_cost
 
         export = DataExport(
-            export_id=f"EXP-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            export_id=f"EXP-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             customer_id=user_id,
             format=format,
             data_range={"start": start_date, "end": end_date},
@@ -199,7 +199,7 @@ class PremiumService:
         total_cost = base_cost + data_cost
 
         access = HistoricalData(
-            access_id=f"HDA-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            access_id=f"HDA-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             customer_id=user_id,
             start_date=start_date,
             end_date=end_date,
@@ -207,7 +207,7 @@ class PremiumService:
             retention_period=retention_period,
             access_level="premium",
             cost=total_cost,
-            expires_at=datetime.utcnow() + timedelta(days=retention_period)
+            expires_at=datetime.now(timezone.utc) + timedelta(days=retention_period)
         )
 
         return access
@@ -230,7 +230,7 @@ class PremiumService:
         total_cost = base_cost + integration_cost
 
         integration = CustomIntegration(
-            integration_id=f"INT-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            integration_id=f"INT-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             customer_id=user_id,
             integration_type=integration_type,
             platform=platform,
@@ -262,7 +262,7 @@ class PremiumService:
         total_cost = base_cost + duration_cost
 
         session = TrainingSession(
-            session_id=f"TRN-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            session_id=f"TRN-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             customer_id=user_id,
             session_type=session_type,
             duration=duration,

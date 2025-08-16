@@ -3,7 +3,7 @@ Database repository.
 Provides database access layer.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from sqlalchemy import delete, update
@@ -48,7 +48,7 @@ class Repository(Generic[ModelType]):
         self, db: AsyncSession, obj_in: Dict[str, Any]
     ) -> ModelType:
         """Create."""
-        obj_in["created_at"] = datetime.utcnow()
+        obj_in["created_at"] = datetime.now(timezone.utc)
         db_obj = self.model(**obj_in)
         db.add(db_obj)
         await db.commit()
@@ -59,7 +59,7 @@ class Repository(Generic[ModelType]):
         self, db: AsyncSession, id: Any, obj_in: Dict[str, Any]
     ) -> Optional[ModelType]:
         """Update."""
-        obj_in["updated_at"] = datetime.utcnow()
+        obj_in["updated_at"] = datetime.now(timezone.utc)
         query = (
             update(self.model)
             .where(self.model.id == id)

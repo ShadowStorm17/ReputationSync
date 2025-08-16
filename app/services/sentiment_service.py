@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Union
 
 import numpy as np
@@ -15,6 +15,7 @@ from transformers import (
 )
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import asyncio
+import hashlib
 
 from app.core.cache import cache
 from app.core.config import get_settings
@@ -76,11 +77,11 @@ class SentimentService:
     async def analyze_text(self, text: str) -> Dict:
         """Perform comprehensive sentiment analysis on text."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.analysis_counter.inc()
 
             # Check cache
-            cache_key = f"sentiment:{hash(text)}"
+            cache_key = "sentiment:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
             cached_result = await cache.get(cache_key)
             if cached_result:
                 return cached_result
@@ -101,9 +102,9 @@ class SentimentService:
 
             # Add metadata
             analysis["metadata"] = {
-                "analyzed_at": datetime.utcnow().isoformat(),
+                "analyzed_at": datetime.now(timezone.utc).isoformat(),
                 "processing_time": (
-                    datetime.utcnow() - start_time
+                    datetime.now(timezone.utc) - start_time
                 ).total_seconds(),
                 "models_used": ["distilbert", "bert", "vader"],
                 "confidence": self._calculate_confidence(results),
@@ -114,7 +115,7 @@ class SentimentService:
 
             # Record latency
             SENTIMENT_ANALYSIS_LATENCY.observe(
-                (datetime.utcnow() - start_time).total_seconds()
+                (datetime.now(timezone.utc) - start_time).total_seconds()
             )
 
             return analysis
@@ -400,14 +401,14 @@ class SentimentService:
                 "average_score": avg_score,
                 "total_analyzed": total,
                 "timeframe": timeframe,
-                "analyzed_at": datetime.utcnow().isoformat(),
+                "analyzed_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
             logger.error(f"Error analyzing sentiment trends: {str(e)}")
             return {
                 "error": str(e),
-                "analyzed_at": datetime.utcnow().isoformat(),
+                "analyzed_at": datetime.now(timezone.utc).isoformat(),
             }
 
     async def analyze_trend(
@@ -418,7 +419,7 @@ class SentimentService:
         """Analyze sentiment trend over time."""
         try:
             # Group texts by time windows
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             windows = {}
 
             for text_data in texts:
@@ -507,7 +508,7 @@ class SentimentService:
         """Analyze sentiment of text using TextBlob."""
         try:
             # Check cache first
-            cache_key = f"sentiment:{hash(text)}"
+            cache_key = "sentiment:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
             cached = await cache.get(cache_key)
             if cached:
                 return cached
@@ -591,7 +592,7 @@ class SentimentService:
             return {
                 "overall_score": overall_score,
                 "component_scores": scores,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "timeframe": timeframe,
             }
 

@@ -6,7 +6,8 @@ Handles caching, connection pooling, and batch processing.
 import asyncio
 import json
 import logging
-from datetime import datetime
+import hashlib
+from datetime import datetime, timezone
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, TypeVar
 
@@ -145,7 +146,7 @@ class BatchProcessor:
         """Add item to batch."""
         if batch_type not in self.batches:
             self.batches[batch_type] = []
-            self.last_flush[batch_type] = datetime.utcnow()
+            self.last_flush[batch_type] = datetime.now(timezone.utc)
 
         self.batches[batch_type].append(item)
 
@@ -153,7 +154,7 @@ class BatchProcessor:
         if len(self.batches[batch_type]) >= self.batch_size:
             await self.process_batch(batch_type)
         elif (
-            datetime.utcnow() - self.last_flush[batch_type]
+            datetime.now(timezone.utc) - self.last_flush[batch_type]
         ).total_seconds() >= self.flush_interval:
             await self.process_batch(batch_type)
 
@@ -178,7 +179,7 @@ class BatchProcessor:
 
             # Clear processed items
             self.batches[batch_type] = []
-            self.last_flush[batch_type] = datetime.utcnow()
+            self.last_flush[batch_type] = datetime.now(timezone.utc)
 
         except Exception as e:
             logger.error(f"Error processing batch: {str(e)}")
@@ -209,11 +210,12 @@ def cache_result(
             cache_manager = CacheManager()
 
             # Generate cache key
-            cache_key = f"{key_prefix}:{
-                func.__name__}:{
-                hash(
-                    str(args) +
-                    str(kwargs))}"
+            key_material = {
+                "args": args,
+                "kwargs": kwargs,
+            }
+            digest = hashlib.sha256(json.dumps(key_material, default=str, sort_keys=True).encode("utf-8")).hexdigest()
+            cache_key = f"{key_prefix}:{func.__name__}:{digest}"
 
             # Try to get from cache
             cached_result = await cache_manager.get(cache_key)
@@ -248,7 +250,8 @@ class OptimizationService:
         """Optimize database query."""
         try:
             # Get cached result
-            cache_key = f"query:{hash(query + str(params))}"
+            digest = hashlib.sha256(json.dumps({"q": query, "p": params}, default=str, sort_keys=True).encode("utf-8")).hexdigest()
+            cache_key = f"query:{digest}"
             cached_result = await self.cache_manager.get(cache_key)
             if cached_result:
                 return cached_result

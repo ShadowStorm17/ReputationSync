@@ -6,7 +6,7 @@ Provides multi-level caching and intelligent cache management.
 import hashlib
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Callable, Dict, Optional
 
@@ -91,7 +91,7 @@ class MemoryStrategy(CacheStrategy):
 
             # Check expiration
             if "expires_at" in cache_data:
-                if datetime.utcnow() > cache_data["expires_at"]:
+                if datetime.now(timezone.utc) > cache_data["expires_at"]:
                     del self.cache[key]
                     return None
 
@@ -106,10 +106,10 @@ class MemoryStrategy(CacheStrategy):
     ) -> bool:
         """Set value in memory."""
         try:
-            cache_data = {"value": value, "created_at": datetime.utcnow()}
+            cache_data = {"value": value, "created_at": datetime.now(timezone.utc)}
 
             if ttl:
-                cache_data["expires_at"] = datetime.utcnow() + timedelta(
+                cache_data["expires_at"] = datetime.now(timezone.utc) + timedelta(
                     seconds=ttl
                 )
 
@@ -222,8 +222,8 @@ def cache_result(
                 key_parts = [
                     key_prefix,
                     func.__name__,
-                    hashlib.md5(str(args).encode()).hexdigest(),
-                    hashlib.md5(str(kwargs).encode()).hexdigest(),
+                    hashlib.sha256(str(args).encode()).hexdigest(),
+                    hashlib.sha256(str(kwargs).encode()).hexdigest(),
                 ]
             else:
                 key_parts = [key_prefix, func.__name__]

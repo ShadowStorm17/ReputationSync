@@ -4,7 +4,7 @@ Provides event sourcing and event store functionality.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
@@ -36,7 +36,7 @@ class Event(BaseModel):
     event_data: Dict[str, Any]
     metadata: Dict[str, Any]
     version: int
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = datetime.now(timezone.utc)
 
 
 class EventStore:
@@ -137,7 +137,7 @@ class EventStore:
             self.snapshots[aggregate_key] = {
                 "data": snapshot,
                 "version": len(events),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
             return True

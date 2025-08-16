@@ -6,7 +6,7 @@ Provides instant alerts for reputation changes and important events.
 import json
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import redis.asyncio as redis
@@ -87,7 +87,7 @@ class WebSocketNotifier(NotificationChannel):
                     {
                         "message": message,
                         "data": data,
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                 )
                 return True
@@ -209,7 +209,7 @@ class DeliveryTracker:
             "user_id": user_id,
             "channel": channel,
             "success": success,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         # Store delivery record
@@ -274,7 +274,7 @@ class NotificationService:
         batch: bool = False,
     ) -> Dict[str, Any]:
         """Send notification through specified channels."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         notification = {
             "id": str(uuid.uuid4()),
@@ -282,7 +282,7 @@ class NotificationService:
             "type": notification_type,
             "message": message,
             "data": data,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         if batch:
@@ -302,7 +302,7 @@ class NotificationService:
         results = await self._process_queue()
 
         # Record latency
-        duration = (datetime.utcnow() - start_time).total_seconds()
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         NOTIFICATION_LATENCY.observe(duration)
 
         return results

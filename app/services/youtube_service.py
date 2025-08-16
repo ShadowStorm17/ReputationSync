@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 
 import httpx
@@ -54,7 +54,7 @@ class YouTubeService:
                     channel["statistics"]["subscriberCount"]),
                 "video_count": int(
                     channel["statistics"]["videoCount"]),
-                "fetched_at": datetime.utcnow().isoformat()}
+                "fetched_at": datetime.now(timezone.utc).isoformat()}
 
             if settings.cache.ENABLED:
                 await cache.set(cache_key, channel_info, ttl=self.cache_ttl)
@@ -226,7 +226,7 @@ class YouTubeService:
                     "engagement_rate": engagement_rate
                 },
                 "timeframe": timeframe,
-                "analyzed_at": datetime.utcnow().isoformat()
+                "analyzed_at": datetime.now(timezone.utc).isoformat()
             }
 
         except Exception as e:

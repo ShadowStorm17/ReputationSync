@@ -9,7 +9,7 @@ import hmac
 import hashlib
 from typing import Dict, Optional
 from locust import HttpUser, task, between, events
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 class InstagramStatsUser(HttpUser):
     """Simulated user for load testing."""
@@ -87,8 +87,8 @@ class InstagramStatsUser(HttpUser):
     def get_post_stats(self):
         """Test post statistics endpoint."""
         # Get last 7 days of posts
-        end_date = datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        start_date = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
         
         headers = self.sign_request(
             "GET",

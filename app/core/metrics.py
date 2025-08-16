@@ -8,9 +8,10 @@ import logging
 import threading
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, TypedDict
+import re
 
 import numpy as np
 import psutil
@@ -20,6 +21,7 @@ from app.core.config import get_settings
 from app.core.errors import ErrorCategory
 from app.models.reputation import AlertConfig, AlertEvent, MetricsWindow
 from app.core.error_utils import handle_errors, ErrorSeverity
+from app.core.constants import METRIC_NAME_PATTERN, UNDERSCORE_PATTERN
 
 # Performance metrics
 REQUEST_DURATION = Histogram(
@@ -227,7 +229,7 @@ class MetricsManager:
         self._windows = {}  # <-- Fix: initialize _windows
         self._initialize_default_metrics()
 
-    async def _analyze_metrics(self, *args, **kwargs):
+    async def _analyze_metrics(self):
         """Analyze metrics periodically."""
         while True:
             try:
@@ -239,6 +241,9 @@ class MetricsManager:
                 
                 await asyncio.sleep(30)  # Run every 30 seconds
                 
+            except asyncio.CancelledError:
+                logger.info("Metrics analysis task was cancelled")
+                raise
             except Exception as e:
                 logger.error(f"Error analyzing metrics: {str(e)}")
                 await asyncio.sleep(60)
@@ -359,11 +364,12 @@ class MetricsManager:
             try:
                 await task
             except asyncio.CancelledError:
-                pass
+                logger.info(f"Task {task} was cancelled during shutdown")
+                raise
         self._background_tasks.clear()
 
     @handle_errors(ErrorSeverity.LOW, ErrorCategory.SYSTEM)
-    async def record_request(self, request, response, request_size: int, response_size: int, *args, **kwargs):
+    async def record_request(self, request, response, request_size: int, response_size: int):
         """Record request metrics."""
         try:
             endpoint = request.url.path
@@ -450,7 +456,7 @@ class MetricsManager:
     ):
         """Store a metric value in time windows."""
         try:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             
             with self._lock:
                 # Initialize windows if needed
@@ -506,7 +512,7 @@ class MetricsManager:
         """Clean up old metrics periodically."""
         while True:
             try:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(timezone.utc)
                 
                 with self._lock:
                     # Clean up each metric type
@@ -535,6 +541,9 @@ class MetricsManager:
                 
                 await asyncio.sleep(60)  # Run every minute
                 
+            except asyncio.CancelledError:
+                logger.info("Metrics cleanup task was cancelled")
+                raise
             except Exception as e:
                 logger.error(f"Error cleaning up metrics: {str(e)}")
                 await asyncio.sleep(60)
@@ -542,23 +551,13 @@ class MetricsManager:
     async def _calculate_aggregates(self):
         """Calculate aggregate metrics."""
         try:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             with self._lock:
                 for metric_name, windows in self._windows.items():
                     for duration, window in windows.items():
                         if window.values:
                             # Calculate statistics
                             values = np.array(window.values)
-                            stats = {
-                                "count": len(values),
-                                "mean": float(np.mean(values)),
-                                "std": float(np.std(values)),
-                                "min": float(np.min(values)),
-                                "max": float(np.max(values)),
-                                "median": float(np.median(values)),
-                                "p95": float(np.percentile(values, 95)),
-                                "p99": float(np.percentile(values, 99))
-                            }
                             # Update stats
                             self._update_stats(metric_name, duration, values)
         except Exception as e:
@@ -567,7 +566,7 @@ class MetricsManager:
     async def _check_alerts(self):
         """Check alert conditions and trigger alerts if needed."""
         try:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             for alert_name, alert_config in self._alerts.items():
                 # Check if alert is in cooldown
                 if alert_name in self._alert_history:
@@ -617,11 +616,10 @@ class MetricsManager:
 
     def _sanitize_metric_name(self, name: str) -> str:
         """Sanitize metric name by replacing special characters with underscores."""
-        import re
         # Replace special characters with underscores
-        sanitized = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+        sanitized = re.sub(METRIC_NAME_PATTERN, '_', name)
         # Remove multiple consecutive underscores
-        sanitized = re.sub(r'_+', '_', sanitized)
+        sanitized = re.sub(UNDERSCORE_PATTERN, '_', sanitized)
         # Remove leading/trailing underscores
         sanitized = sanitized.strip('_')
         return sanitized
@@ -819,6 +817,7 @@ class MetricsManager:
 
         except Exception as e:
             logger.error(f"Error recording error metric: {str(e)}")
+            from app.core.error_handling import ReputationError
             raise ReputationError(
                 message=f"Failed to record error metric: {str(e)}",
                 severity=ErrorSeverity.ERROR,
@@ -934,9 +933,9 @@ def track_latency(name: str):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             try:
-                start_time = datetime.utcnow()
+                start_time = datetime.now(timezone.utc)
                 result = await func(*args, **kwargs)
-                duration = (datetime.utcnow() - start_time).total_seconds()
+                duration = (datetime.now(timezone.utc) - start_time).total_seconds()
 
                 # Record latency
                 Histogram(
@@ -950,9 +949,7 @@ def track_latency(name: str):
             except Exception as e:
                 logger.error(f"Error tracking latency for {name}: {str(e)}")
                 raise
-
         return wrapper
-
     return decorator
 
 def track_performance(func):

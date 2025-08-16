@@ -5,7 +5,7 @@ Provides advanced rate limiting capabilities.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import redis.asyncio as redis
@@ -41,7 +41,7 @@ class FixedWindowStrategy(RateLimitStrategy):
         """Check rate limit using fixed window."""
         try:
             # Get current window
-            window_key = f"{key}:{int(datetime.utcnow().timestamp() / window)}"
+            window_key = f"{key}:{int(datetime.now(timezone.utc).timestamp() / window)}"
 
             # Get current count
             count = await self.redis.get(window_key)
@@ -82,7 +82,7 @@ class SlidingWindowStrategy(RateLimitStrategy):
     ) -> Dict[str, Any]:
         """Check rate limit using sliding window."""
         try:
-            now = datetime.utcnow().timestamp()
+            now = datetime.now(timezone.utc).timestamp()
             window_start = now - window
 
             # Remove old entries
@@ -135,7 +135,7 @@ class TokenBucketStrategy(RateLimitStrategy):
     ) -> Dict[str, Any]:
         """Check rate limit using token bucket."""
         try:
-            now = datetime.utcnow().timestamp()
+            now = datetime.now(timezone.utc).timestamp()
 
             # Get bucket data
             bucket_key = f"bucket:{key}"
@@ -257,7 +257,7 @@ class RateLimitService:
             redis = limiter.redis
 
             if strategy_name == "fixed":
-                window_key = f"{key}:{int(datetime.utcnow().timestamp())}"
+                window_key = f"{key}:{int(datetime.now(timezone.utc).timestamp())}"
                 count = await redis.get(window_key)
                 ttl = await redis.ttl(window_key)
 
@@ -268,7 +268,7 @@ class RateLimitService:
                 }
 
             elif strategy_name == "sliding":
-                now = datetime.utcnow().timestamp()
+                now = datetime.now(timezone.utc).timestamp()
                 count = await redis.zcard(key)
                 oldest = await redis.zrange(key, 0, 0, withscores=True)
 

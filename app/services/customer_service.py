@@ -4,7 +4,7 @@ Handles customer profile operations and business logic.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 
 from app.core.error_handling import (
@@ -86,7 +86,7 @@ class CustomerService:
         """Create a new customer profile."""
         try:
             # Generate unique ID
-            profile_id = f"cust_{datetime.utcnow().timestamp()}"
+            profile_id = f"cust_{datetime.now(timezone.utc).timestamp()}"
 
             # Create profile
             profile = CustomerProfile(
@@ -165,7 +165,7 @@ class CustomerService:
                 setattr(profile, field, value)
 
             # Update timestamp
-            profile.updated_at = datetime.utcnow()
+            profile.updated_at = datetime.now(timezone.utc)
 
             # Store updated profile
             self._profiles[customer_id] = profile
@@ -262,7 +262,7 @@ class CustomerService:
             customer.subscription.features = self._subscription_features[
                 new_plan
             ]
-            customer.subscription.updated_at = datetime.utcnow()
+            customer.subscription.updated_at = datetime.now(timezone.utc)
 
             # Update profile
             return await self.update_profile(

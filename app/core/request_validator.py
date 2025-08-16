@@ -9,7 +9,7 @@ import json
 import re
 import uuid
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import unquote
 
@@ -35,7 +35,7 @@ class RequestValidator:
         self._cache = {}
         self._cache_ttl = 300  # 5 minutes
         self._cache_cleanup_interval = 60  # 1 minute
-        self._last_cleanup = datetime.utcnow()
+        self._last_cleanup = datetime.now(timezone.utc)
 
         # Security patterns
         self._sql_injection_patterns = [
@@ -373,7 +373,7 @@ class RequestValidator:
     async def _cleanup_cache(self) -> None:
         """Clean up validation cache."""
         try:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             if (current_time -
                     self._last_cleanup).total_seconds() >= self._cache_cleanup_interval:
                 async with self._validation_lock:
@@ -407,9 +407,9 @@ class RequestValidator:
             if request.method in {"POST", "PUT", "PATCH"}:
                 body = request.body()
                 if body:
-                    key_parts.append(hashlib.md5(body).hexdigest())
+                    key_parts.append(hashlib.sha256(body).hexdigest())
 
-            return hashlib.md5("|".join(key_parts).encode()).hexdigest()
+            return hashlib.sha256("|".join(key_parts).encode()).hexdigest()
         except Exception as e:
             logger.error("Cache key generation error: %s", str(e))
             return str(uuid.uuid4())

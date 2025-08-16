@@ -6,7 +6,7 @@ Handles API key generation, validation, and tracking.
 import logging
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 from app.core.error_handling import (
@@ -96,7 +96,7 @@ class APIKeyService:
         """Create a new API key."""
         try:
             # Generate unique ID and key
-            key_id = f"key_{datetime.utcnow().timestamp()}"
+            key_id = f"key_{datetime.now(timezone.utc).timestamp()}"
             api_key = self._generate_api_key()
 
             # Get permissions based on subscription plan
@@ -163,7 +163,7 @@ class APIKeyService:
             # Update key status
             key.status = APIKeyStatus.REVOKED
             key.is_active = False
-            key.metadata["revoked_at"] = datetime.utcnow().isoformat()
+            key.metadata["revoked_at"] = datetime.now(timezone.utc).isoformat()
 
             # Store updated key
             self._keys[key_id] = key
@@ -227,7 +227,7 @@ class APIKeyService:
                 )
 
             # Check if key has expired
-            if key.expires_at and datetime.utcnow() > key.expires_at:
+            if key.expires_at and datetime.now(timezone.utc) > key.expires_at:
                 key.status = APIKeyStatus.EXPIRED
                 key.is_active = False
                 self._keys[key.id] = key
@@ -249,7 +249,7 @@ class APIKeyService:
                 )
 
             # Update usage
-            key.last_used_at = datetime.utcnow()
+            key.last_used_at = datetime.now(timezone.utc)
             key.usage_count += 1
             self._keys[key.id] = key
 
@@ -340,7 +340,7 @@ class APIKeyService:
     async def cleanup_expired_keys(self):
         """Clean up expired API keys."""
         try:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             expired_keys = [
                 key
                 for key in self._keys.values()

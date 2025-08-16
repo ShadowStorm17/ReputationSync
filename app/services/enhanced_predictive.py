@@ -4,7 +4,7 @@ Provides advanced predictive analytics with deep learning and ensemble methods.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -93,7 +93,7 @@ class EnhancedPredictive:
     ) -> Dict[str, Any]:
         """Generate reputation predictions using ensemble methods."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.prediction_counter.inc()
 
             # Prepare data
@@ -116,14 +116,14 @@ class EnhancedPredictive:
 
             # Record latency
             PREDICTION_LATENCY.observe(
-                (datetime.utcnow() - start_time).total_seconds()
+                (datetime.now(timezone.utc) - start_time).total_seconds()
             )
 
             return {
                 "predictions": ensemble_pred,
                 "anomalies": anomalies,
                 "model_metrics": self.model_metrics,
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:

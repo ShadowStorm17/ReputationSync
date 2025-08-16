@@ -6,7 +6,7 @@ Provides analytics collection, processing, and reporting.
 import logging
 import statistics
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -36,7 +36,7 @@ class RequestMetrics:
         method: str,
         status_code: int,
         response_time: float,
-        timestamp: datetime = None,
+        timestamp: Optional[datetime] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ):
         """Initialize request metrics."""
@@ -44,7 +44,7 @@ class RequestMetrics:
         self.method = method
         self.status_code = status_code
         self.response_time = response_time
-        self.timestamp = timestamp or datetime.utcnow()
+        self.timestamp = timestamp or datetime.now(timezone.utc)
         self.metadata = metadata or {}
 
     def to_dict(self) -> Dict[str, Any]:

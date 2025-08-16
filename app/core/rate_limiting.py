@@ -7,7 +7,7 @@ import asyncio
 import logging
 import threading
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from prometheus_client import Counter, Gauge
@@ -45,7 +45,7 @@ class RateLimitState:
     burst_tokens: int = field(
         default_factory=lambda: settings.rate_limit.DEFAULT_LIMIT
     )
-    last_refill: datetime = field(default_factory=datetime.utcnow)
+    last_refill: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     adaptive_limit: int = field(
         default_factory=lambda: settings.rate_limit.DEFAULT_LIMIT
     )
@@ -88,7 +88,7 @@ class RateLimiter:
             # Get or create state
             state = self._get_state(client_id, endpoint)
 
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             window_start = current_time - timedelta(
                 seconds=settings.rate_limit.DEFAULT_WINDOW
             )
@@ -164,7 +164,7 @@ class RateLimiter:
         """Clean up old requests periodically."""
         while True:
             try:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(timezone.utc)
                 window_start = current_time - timedelta(
                     seconds=settings.rate_limit.DEFAULT_WINDOW
                 )
@@ -199,7 +199,7 @@ class RateLimiter:
         """Refill burst tokens periodically."""
         while True:
             try:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(timezone.utc)
 
                 with self._lock:
                     for endpoint in self._states.values():
@@ -291,7 +291,7 @@ class RateLimiter:
         """Get current rate limit status."""
         try:
             state = self._get_state(client_id, endpoint)
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             window_start = current_time - timedelta(
                 seconds=settings.rate_limit.DEFAULT_WINDOW
             )

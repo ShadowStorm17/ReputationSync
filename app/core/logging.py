@@ -10,7 +10,7 @@ import sys
 import threading
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -20,6 +20,7 @@ from contextlib import contextmanager
 from prometheus_client import Counter, Gauge, Histogram
 
 from app.core.config import get_settings
+from app.core.constants import APP_LOG_FILE
 settings = get_settings()
 
 # Enhanced logging metrics
@@ -75,7 +76,7 @@ class StructuredLogRecord(logging.LogRecord):
         """Initialize structured log record."""
         super().__init__(*args, **kwargs)
         self.context = LogContext.get_context().copy()
-        self.timestamp = datetime.utcnow().isoformat()
+        self.timestamp = datetime.now(timezone.utc).isoformat()
         self.trace_id = self.context.get("trace_id")
         self.correlation_id = self.context.get("correlation_id")
 
@@ -136,7 +137,7 @@ class StructuredFormatter(logging.Formatter):
         """Format log record as JSON."""
         message = {
             "timestamp": getattr(
-                record, "timestamp", datetime.utcnow().isoformat()
+                record, "timestamp", datetime.now(timezone.utc).isoformat()
             ),
             "level": record.levelname,
             "message": record.getMessage(),
@@ -210,9 +211,9 @@ class EnhancedLogger:
         log_dir.mkdir(exist_ok=True)
 
         file_handler = RotatingFileHandler(
-            log_dir / "app.log",
-            maxBytes=10 * 1024 * 1024,
-            backupCount=5,  # 10MB
+            log_dir / APP_LOG_FILE,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
         )
         file_handler.setFormatter(
             StructuredFormatter(

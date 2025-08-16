@@ -4,7 +4,7 @@ Tests the performance, security, and reliability enhancements.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch, AsyncMock
 from app.core.optimizations import (
     HierarchicalCache,
@@ -104,7 +104,7 @@ class TestCircuitBreaker:
     async def test_reset_timeout(self, circuit_breaker):
         """Test circuit breaker reset timeout."""
         circuit_breaker.state = "open"
-        circuit_breaker.last_failure_time = datetime.utcnow() - timedelta(seconds=31)
+        circuit_breaker.last_failure_time = datetime.now(timezone.utc) - timedelta(seconds=31)
         
         @circuit_breaker
         async def test_func():

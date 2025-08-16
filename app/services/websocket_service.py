@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 from asyncio import Lock, Semaphore
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional, Set
 from uuid import uuid4
 
@@ -36,13 +36,13 @@ class WebSocketConnection:
         self.send = send
         self.metadata = metadata or {}
         self.subscriptions: Set[str] = set()
-        self.connected_at = datetime.utcnow()
-        self.last_message = datetime.utcnow()
+        self.connected_at = datetime.now(timezone.utc)
+        self.last_message = datetime.now(timezone.utc)
         self.lock = Lock()
 
     def is_stale(self) -> bool:
         """Check if connection is stale."""
-        return (datetime.utcnow() - self.last_message) > timedelta(
+        return (datetime.now(timezone.utc) - self.last_message) > timedelta(
             seconds=CONNECTION_TIMEOUT
         )
 
@@ -68,7 +68,7 @@ class WebSocketChannel:
         self.metadata = metadata or {}
         self.connections: Dict[str, WebSocketConnection] = {}
         self.message_handlers: List[Callable] = []
-        self.created_at = datetime.utcnow()
+        self.created_at = datetime.now(timezone.utc)
         self.lock = Lock()
         self.semaphore = Semaphore(MAX_CONCURRENT_OPERATIONS)
 
@@ -158,7 +158,7 @@ class WebSocketChannel:
             if not connection:
                 return
 
-            connection.last_message = datetime.utcnow()
+            connection.last_message = datetime.now(timezone.utc)
 
             # Trigger handlers
             async with self.semaphore:

@@ -4,7 +4,7 @@ Provides ML-based forecasting and trend analysis.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -93,7 +93,7 @@ class PredictiveService:
     ) -> Dict:
         """Predict reputation trends using ensemble of models."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.prediction_counter.inc()
 
             # Extract and prepare data
@@ -123,16 +123,16 @@ class PredictiveService:
                     "timeframe": timeframe,
                     "models_used": ["rf", "lstm", "prophet"],
                     "features_used": list(features.columns),
-                    "predicted_at": datetime.utcnow().isoformat(),
+                    "predicted_at": datetime.now(timezone.utc).isoformat(),
                     "processing_time": (
-                        datetime.utcnow() - start_time
+                        datetime.now(timezone.utc) - start_time
                     ).total_seconds(),
                 },
             }
 
             # Record latency
             PREDICTION_LATENCY.observe(
-                (datetime.utcnow() - start_time).total_seconds()
+                (datetime.now(timezone.utc) - start_time).total_seconds()
             )
 
             return response
@@ -616,7 +616,7 @@ class PredictiveService:
                 "issues": significant_issues,
                 "total_analyzed": len(mentions) + len(comments),
                 "threshold": threshold,
-                "analyzed_at": datetime.utcnow().isoformat(),
+                "analyzed_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -655,7 +655,7 @@ class PredictiveService:
                 "strengths": insights["strengths"],
                 "weaknesses": insights["weaknesses"],
                 "opportunities": insights["opportunities"],
-                "analyzed_at": datetime.utcnow().isoformat(),
+                "analyzed_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 import httpx
@@ -74,7 +74,7 @@ class InstagramAPI:
                 "username": data.get("username"),
                 "account_type": data.get("account_type"),
                 "media_count": data.get("media_count"),
-                "fetched_at": datetime.utcnow().isoformat(),
+                "fetched_at": datetime.now(timezone.utc).isoformat(),
             }
 
             # Cache the result

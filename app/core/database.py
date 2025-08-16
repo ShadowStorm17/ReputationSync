@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.pool import QueuePool
 
 from .config import get_settings
+from .constants import DB_MANAGER_NOT_INITIALIZED
 from .error_handling import ErrorCategory, ErrorSeverity, ReputationError
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class DatabaseManager:
             # Create engine with connection pooling
             self._engine = create_engine(
                 settings.database.URL,
-    poolclass=QueuePool,
+                poolclass=QueuePool,
                 pool_size=settings.database.POOL_SIZE,
                 max_overflow=settings.database.MAX_OVERFLOW,
                 pool_timeout=settings.database.POOL_TIMEOUT,
@@ -106,7 +107,7 @@ class DatabaseManager:
         """Get a database session."""
         if not self._initialized:
             raise ReputationError(
-                message="Database manager not initialized",
+                message=DB_MANAGER_NOT_INITIALIZED,
                 severity=ErrorSeverity.ERROR,
                 category=ErrorCategory.SYSTEM,
             )
@@ -131,7 +132,7 @@ class DatabaseManager:
         try:
             if not self._initialized:
                 raise ReputationError(
-                    message="Database manager not initialized",
+                    message=DB_MANAGER_NOT_INITIALIZED,
                     severity=ErrorSeverity.ERROR,
                     category=ErrorCategory.SYSTEM,
                 )
@@ -152,7 +153,7 @@ class DatabaseManager:
         try:
             if not self._initialized:
                 raise ReputationError(
-                    message="Database manager not initialized",
+                    message=DB_MANAGER_NOT_INITIALIZED,
                     severity=ErrorSeverity.ERROR,
                     category=ErrorCategory.SYSTEM,
                 )

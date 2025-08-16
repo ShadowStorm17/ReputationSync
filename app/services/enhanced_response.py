@@ -4,7 +4,7 @@ Provides advanced response generation with context awareness and personalization
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import torch
@@ -73,7 +73,7 @@ class EnhancedResponse:
     ) -> Dict[str, Any]:
         """Generate enhanced response with context awareness."""
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             self.generation_counter.inc()
 
             # Analyze sentiment
@@ -101,14 +101,14 @@ class EnhancedResponse:
 
             # Record latency
             RESPONSE_GENERATION_LATENCY.observe(
-                (datetime.utcnow() - start_time).total_seconds()
+                (datetime.now(timezone.utc) - start_time).total_seconds()
             )
 
             return {
                 "response": validated_response,
                 "sentiment": sentiment,
                 "context_used": enhanced_context,
-                "generated_at": datetime.utcnow().isoformat()
+                "generated_at": datetime.now(timezone.utc).isoformat()
             }
 
         except Exception as e:
@@ -127,7 +127,7 @@ class EnhancedResponse:
             enhanced = {
                 "sentiment": sentiment,
                 "length": len(text),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
             if context:

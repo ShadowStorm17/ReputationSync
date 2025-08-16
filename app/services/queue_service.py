@@ -6,7 +6,7 @@ Provides job queuing and processing capabilities.
 import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
 
@@ -43,7 +43,7 @@ class Job:
         self.status = "pending"
         self.result = None
         self.error = None
-        self.created_at = datetime.utcnow()
+        self.created_at = datetime.now(timezone.utc)
         self.started_at = None
         self.completed_at = None
 
@@ -168,7 +168,7 @@ class Queue:
         try:
             # Update job status
             job.status = "processing"
-            job.started_at = datetime.utcnow()
+            job.started_at = datetime.now(timezone.utc)
             job.attempts += 1
 
             await self.redis.set(
@@ -187,7 +187,7 @@ class Queue:
 
             # Update job status
             job.status = "completed"
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
             job.result = result
 
             await self.redis.set(

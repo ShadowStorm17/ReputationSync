@@ -24,7 +24,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-async def authenticate_user(
+def authenticate_user(
     db: Session, username: str, password: str
 ) -> Optional[User]:
     """Authenticate a user."""
@@ -36,7 +36,7 @@ async def authenticate_user(
     return user
 
 
-async def get_current_user(
+def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
 ) -> User:
     """Get current authenticated user."""
@@ -47,7 +47,7 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
         )
         username: str = payload.get("sub")
         if username is None:
@@ -61,7 +61,7 @@ async def get_current_user(
     return user
 
 
-async def get_current_active_user(
+def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Get current active user."""

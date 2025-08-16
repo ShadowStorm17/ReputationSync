@@ -5,7 +5,7 @@ Tests the LinkedIn platform integration.
 
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from app.services.linkedin_service import LinkedInService
 
 @pytest.fixture
@@ -150,7 +150,7 @@ class TestLinkedInService:
         """Test comment posting."""
         expected_response = {
             "id": "test_comment_id",
-            "created": {"time": int(datetime.now().timestamp())}
+            "created": {"time": int(datetime.now(timezone.utc).timestamp())}
         }
         
         # Mock aiohttp ClientSession
@@ -213,7 +213,7 @@ class TestLinkedInService:
         mock_session_instance.get.return_value = mock_context
         
         # Mock the LinkedInService.analyze_engagement method to return the mock_response
-        linkedin_service.analyze_engagement = AsyncMock(return_value={"total_comments": 2, "sentiment_distribution": {}, "engagement_score": 12.5, "analyzed_at": datetime.now().isoformat()})
+        linkedin_service.analyze_engagement = AsyncMock(return_value={"total_comments": 2, "sentiment_distribution": {}, "engagement_score": 12.5, "analyzed_at": datetime.now(timezone.utc).isoformat()})
         
         result = await linkedin_service.analyze_engagement(
             access_token,

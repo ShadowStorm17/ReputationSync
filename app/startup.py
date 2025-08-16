@@ -5,7 +5,7 @@ Provides comprehensive initialization, validation, and health checks.
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from prometheus_client import Counter, Gauge, Histogram
 
@@ -92,7 +92,7 @@ class StartupManager:
         """Start a single component."""
         try:
             logger.info(f"Starting component: {name}")
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
 
             component = self.components[name]
 
@@ -107,7 +107,7 @@ class StartupManager:
                     raise Exception(f"Component {name} failed health check")
 
             # Update metrics
-            duration = (datetime.utcnow() - start_time).total_seconds()
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             STARTUP_TIME.labels(component=name).observe(duration)
             COMPONENT_READY.labels(component=name).set(1)
 

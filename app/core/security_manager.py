@@ -8,7 +8,7 @@ import ipaddress
 import json
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Set
 
 import jwt
@@ -157,7 +157,7 @@ class SecurityManager:
         """Create JWT access token."""
         try:
             to_encode = data.copy()
-            expire = datetime.utcnow() + timedelta(minutes=security_settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            expire = datetime.now(timezone.utc) + timedelta(minutes=security_settings.ACCESS_TOKEN_EXPIRE_MINUTES)
             to_encode.update({"exp": expire})
             return jwt.encode(
                 to_encode,
@@ -174,7 +174,7 @@ class SecurityManager:
         """Create JWT refresh token."""
         try:
             to_encode = data.copy()
-            expire = datetime.utcnow() + timedelta(days=security_settings.REFRESH_TOKEN_EXPIRE_DAYS)
+            expire = datetime.now(timezone.utc) + timedelta(days=security_settings.REFRESH_TOKEN_EXPIRE_DAYS)
             to_encode.update({"exp": expire})
             return jwt.encode(
                 to_encode,
@@ -253,7 +253,7 @@ class SecurityManager:
             async with self._ip_block_lock:
                 if ip in self._ip_block_store:
                     block_data = self._ip_block_store[ip]
-                    if block_data["expires"] > datetime.utcnow():
+                    if block_data["expires"] > datetime.now(timezone.utc):
                         return True
                     else:
                         # Clean up expired block
@@ -284,8 +284,8 @@ class SecurityManager:
             # Add to local store
             async with self._ip_block_lock:
                 self._ip_block_store[ip] = {
-                    "timestamp": datetime.utcnow(),
-                    "expires": datetime.utcnow() +
+                    "timestamp": datetime.now(timezone.utc),
+                    "expires": datetime.now(timezone.utc) +
                     timedelta(
                         seconds=self._ip_block_expiry)}
                 monitoring_manager.track_security_event(
@@ -304,7 +304,7 @@ class SecurityManager:
                     return
 
             async with self._ip_block_lock:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(timezone.utc)
                 expired_ips = [
                     ip for ip, data in self._ip_block_store.items()
                     if data["expires"] <= current_time

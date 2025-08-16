@@ -7,7 +7,7 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Dict, List
 
@@ -63,7 +63,7 @@ class MonitorState:
     metrics: Dict = field(default_factory=dict)
     baselines: Dict = field(default_factory=dict)
     active_alerts: List = field(default_factory=list)
-    last_check: datetime = field(default_factory=datetime.utcnow)
+    last_check: datetime = field(default_factory=datetime.now)
     status: str = "active"
     health: Dict = field(
         default_factory=lambda: {
@@ -118,7 +118,7 @@ class EnhancedMonitoring:
 
         # Service health checks
         self.service_health = {
-            service: {"status": "healthy", "last_check": datetime.utcnow()}
+            service: {"status": "healthy", "last_check": datetime.now(timezone.utc)}
             for service in ["sentiment", "predictive", "comment", "response"]
         }
 
@@ -191,7 +191,7 @@ class EnhancedMonitoring:
             self._validate_input(entity_id, config)
 
             # Create monitor ID with timestamp
-            monitor_id = f"monitor_{entity_id}_{datetime.utcnow().timestamp()}"
+            monitor_id = f"monitor_{entity_id}_{datetime.now(timezone.utc).timestamp()}"
 
             # Initialize monitor with redundancy
             monitor = await self._initialize_monitor_with_backup(
@@ -251,7 +251,7 @@ class EnhancedMonitoring:
         """Clean up old monitoring data."""
         while True:
             try:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(timezone.utc)
                 for monitor_id, state in list(self.active_monitors.items()):
                     if (current_time - state.last_check) > timedelta(days=7):
                         await self._archive_monitor_data(monitor_id)
@@ -348,7 +348,7 @@ class EnhancedMonitoring:
             try:
                 # TODO: Implement service health check
                 service["status"] = "healthy"
-                service["last_check"] = datetime.utcnow()
+                service["last_check"] = datetime.now(timezone.utc)
             except Exception as e:
                 service["status"] = "unhealthy"
                 logger.error(f"Service {service_name} unhealthy: {str(e)}")

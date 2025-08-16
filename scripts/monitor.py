@@ -95,7 +95,7 @@ class MonitoringManager:
     async def check_api_health(self) -> None:
         """Check API health status."""
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 async with session.get(self.health_url) as response:
                     if response.status != 200:
                         await self.alert_manager.send_alert(
@@ -113,7 +113,7 @@ class MonitoringManager:
     async def check_metrics(self) -> None:
         """Check Prometheus metrics."""
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 async with session.get(self.metrics_url) as response:
                     if response.status == 200:
                         text = await response.text()
