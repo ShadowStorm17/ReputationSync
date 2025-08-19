@@ -123,14 +123,14 @@ class InstagramAPI:
 
         except httpx.HTTPStatusError as e:
             record_instagram_request("error")
-            logger.error("Instagram Graph API error for user %s: %s", username, e)
+            logger.error("Instagram Graph API error for user %s", username, exc_info=True)
             raise HTTPException(
                 status_code=e.response.status_code,
                 detail=f"Instagram API error: {str(e)}",
             )
         except Exception as e:
             record_instagram_request("error")
-            logger.error("Error fetching Instagram user %s: %s", username, e)
+            logger.error("Error fetching Instagram user %s", username, exc_info=True)
             raise HTTPException(
                 status_code=503,
                 detail="Instagram service temporarily unavailable",
@@ -171,7 +171,7 @@ class InstagramAPI:
             return posts
 
         except Exception as e:
-            logger.error("Error fetching posts for %s: %s", username, e)
+            logger.error("Error fetching posts for %s", username, exc_info=True)
             raise HTTPException(
                 status_code=503, detail="Error fetching Instagram posts"
             )
@@ -206,7 +206,7 @@ class InstagramAPI:
             return comments
 
         except Exception as e:
-            logger.error("Error fetching comments for post %s: %s", post_id, e)
+            logger.error("Error fetching comments for post %s", post_id, exc_info=True)
             raise HTTPException(
                 status_code=503, detail="Error fetching Instagram comments"
             )

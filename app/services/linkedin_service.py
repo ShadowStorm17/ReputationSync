@@ -130,7 +130,7 @@ class LinkedInService:
                         self.error_counter.inc()
                         error_data = await response.json()
                         logger.error("LinkedIn API error: %s", error_data)
-                        raise IntegrationError("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error", error_data)
 
         except Exception as e:
             self.error_counter.inc()
@@ -190,7 +190,7 @@ class LinkedInService:
                         self.error_counter.inc()
                         error_data = await response.json()
                         logger.error("LinkedIn API error: %s", error_data)
-                        raise IntegrationError("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error", error_data)
 
         except Exception as e:
             self.error_counter.inc()
@@ -246,7 +246,7 @@ class LinkedInService:
                         self.error_counter.inc()
                         error_data = await response.json()
                         logger.error("LinkedIn API error: %s", error_data)
-                        raise IntegrationError("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error", error_data)
 
         except Exception as e:
             self.error_counter.inc()
@@ -301,7 +301,7 @@ class LinkedInService:
                         self.error_counter.inc()
                         error_data = await response.json()
                         logger.error("LinkedIn API error: %s", error_data)
-                        raise IntegrationError("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error", error_data)
 
         except Exception as e:
             self.error_counter.inc()
@@ -356,7 +356,7 @@ class LinkedInService:
                         self.error_counter.inc()
                         error_data = await response.json()
                         logger.error("LinkedIn API error: %s", error_data)
-                        raise IntegrationError("LinkedIn API error: %s", error_data)
+                        raise IntegrationError("LinkedIn API error", error_data)
 
         except Exception as e:
             self.error_counter.inc()

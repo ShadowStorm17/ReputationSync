@@ -107,7 +107,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error("Middleware error: %s", e, exc_info=True)
             raise ReputationError(
-                message=f"Middleware processing failed: {str(e)}",
+                message="Middleware processing failed",
                 severity=ErrorSeverity.ERROR,
                 category=ErrorCategory.SYSTEM
             )
@@ -473,7 +473,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     self._ip_lists["whitelist"] = set(data.get("whitelist", []))
                     self._ip_lists["blacklist"] = set(data.get("blacklist", []))
         except (OSError, json.JSONDecodeError) as e:
-            logger.error("Error loading IP lists: %s", str(e), exc_info=True)
+            logger.error("Error loading IP lists: %s", e, exc_info=True)
 
     def _save_ip_lists(self) -> None:
         """Save IP lists to file."""
@@ -485,7 +485,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             with open(self._ip_lists_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False)
         except (OSError, TypeError) as e:
-            logger.error("Error saving IP lists: %s", str(e), exc_info=True)
+            logger.error("Error saving IP lists: %s", e, exc_info=True)
 
     async def dispatch(
         self,
@@ -584,7 +584,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 response.headers["X-RateLimit-Remaining"] = str(max(0, rate_limit["requests"] - rate_info.get("local_count", 0)))
                 response.headers["X-RateLimit-Reset"] = str(int(time.time() + rate_limit["period"]))
             except Exception as e:
-                logger.error("Error adding rate limit headers: %s", e)
+                logger.error("Error adding rate limit headers: %s", e, exc_info=True)
             for header, value in self._security_headers.items():
                 response.headers[header] = value
             return response
@@ -593,7 +593,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error("Security middleware error: %s", e, exc_info=True)
             raise ReputationError(
-                message=f"Security check failed: {str(e)}",
+                message="Security check failed",
                 severity=ErrorSeverity.HIGH,
                 category=ErrorCategory.SECURITY
             )
@@ -675,7 +675,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             await self._load_stats()
             logger.info("Cache initialized")
         except Exception as e:
-            logger.error("Cache initialization error: %s", str(e))
+            logger.error("Cache initialization error: %s", e, exc_info=True)
             raise
 
     async def shutdown(self) -> None:
@@ -685,7 +685,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             await self._save_stats()
             logger.info("Cache shut down")
         except Exception as e:
-            logger.error("Cache shutdown error: %s", str(e))
+            logger.error("Cache shutdown error: %s", e, exc_info=True)
             raise
 
     async def _load_cache(self) -> None:
@@ -713,9 +713,9 @@ class CachingMiddleware(BaseHTTPMiddleware):
                                     "expires": datetime.fromisoformat(v["expires"]),
                                 }
                             except Exception as e:
-                                logger.error("Cache load entry error for key %s: %s", k, str(e))
+                                logger.error("Cache load entry error for key %s: %s", k, e, exc_info=True)
         except (OSError, json.JSONDecodeError, ValueError) as e:
-            logger.error("Cache load error: %s", str(e))
+            logger.error("Cache load error: %s", e, exc_info=True)
             self._cache = {}
 
     async def _save_cache(self) -> None:
@@ -740,7 +740,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                 async with aiofiles.open(self._cache_file, "w", encoding="utf-8") as f:
                     await f.write(json.dumps(data, ensure_ascii=False))
         except (OSError, TypeError, ValueError) as e:
-            logger.error("Cache save error: %s", str(e))
+            logger.error("Cache save error: %s", e, exc_info=True)
 
     async def _load_stats(self) -> None:
         """Load cache stats from disk."""
@@ -751,7 +751,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                     content = await f.read()
                     self._cache_stats = json.loads(content)
         except (OSError, json.JSONDecodeError) as e:
-            logger.error("Stats load error: %s", str(e))
+            logger.error("Stats load error: %s", e, exc_info=True)
             self._cache_stats = {"hits": 0, "misses": 0, "evictions": 0}
 
     async def _save_stats(self) -> None:
@@ -761,7 +761,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             async with aiofiles.open(self._stats_file, "w", encoding="utf-8") as f:
                 await f.write(json.dumps(self._cache_stats, ensure_ascii=False))
         except (OSError, TypeError, ValueError) as e:
-            logger.error("Stats save error: %s", str(e))
+            logger.error("Stats save error: %s", e, exc_info=True)
 
     async def dispatch(self, request: Request, call_next):
         """Process the request."""
@@ -791,7 +791,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            logger.error("Cache dispatch error: %s", str(e))
+            logger.error("Cache dispatch error: %s", e, exc_info=True)
             return await call_next(request)
 
     def _should_cache(self, request: Request) -> bool:
@@ -818,7 +818,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
 
             return hashlib.sha256("|".join(key_parts).encode()).hexdigest()
         except Exception as e:
-            logger.error("Cache key generation error: %s", str(e))
+            logger.error("Cache key generation error: %s", e, exc_info=True)
             return str(uuid.uuid4())
 
     async def _get_cached_response(self, key: str) -> Optional[Response]:
@@ -840,7 +840,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                     headers={"X-Cache": "HIT"}
                 )
         except Exception as e:
-            logger.error("Cache get error: %s", str(e))
+            logger.error("Cache get error: %s", e, exc_info=True)
             return None
 
     async def _cache_response(self, key: str, response: Response):
@@ -871,7 +871,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                         await self._save_stats()
                         self._last_cleanup = time.time()
         except Exception as e:
-            logger.error("Cache set error: %s", str(e))
+            logger.error("Cache set error: %s", e, exc_info=True)
 
     async def _evict_oldest(self):
         """Evict oldest cache entry."""
@@ -886,7 +886,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             del self._cache[oldest_key]
             self._cache_stats["evictions"] += 1
         except Exception as e:
-            logger.error("Cache eviction error: %s", str(e))
+            logger.error("Cache eviction error: %s", e, exc_info=True)
 
     async def _cleanup_cache(self):
         """Clean up expired cache entries."""
@@ -906,7 +906,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                     f"Cleaned up {len(expired_keys)} expired cache entries"
                 )
         except Exception as e:
-            logger.error("Cache cleanup error: %s", str(e))
+            logger.error("Cache cleanup error: %s", e, exc_info=True)
 
     def _is_cacheable(self, response: Response) -> bool:
         """Check if response is cacheable."""
@@ -932,7 +932,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
 
             return True
         except Exception as e:
-            logger.error("Cacheable check error: %s", str(e))
+            logger.error("Cacheable check error: %s", e, exc_info=True)
         return False
 
     async def clear_cache(self):
@@ -945,7 +945,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
                 await self._save_stats()
                 logger.info("Cache cleared")
         except Exception as e:
-            logger.error("Cache clear error: %s", str(e))
+            logger.error("Cache clear error: %s", e, exc_info=True)
             raise
 
     def _encrypt_value(self, value: bytes) -> str:
@@ -963,7 +963,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             # Store nonce + ciphertext as base64 string
             return base64.b64encode(nonce + ciphertext).decode("ascii")
         except Exception as e:
-            logger.error("Cache encryption error: %s", str(e))
+            logger.error("Cache encryption error: %s", e, exc_info=True)
             return base64.b64encode(value).decode("ascii")
 
     def _decrypt_value(self, value: str) -> bytes:
@@ -981,7 +981,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             nonce, ciphertext = combined[:12], combined[12:]
             return aesgcm.decrypt(nonce, ciphertext, None)
         except Exception as e:
-            logger.error("Cache decryption error: %s", str(e))
+            logger.error("Cache decryption error: %s", e, exc_info=True)
             # On failure, return empty bytes to avoid propagating corrupted data
             return b""
 

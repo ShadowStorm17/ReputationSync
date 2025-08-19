@@ -131,7 +131,8 @@ def handle_errors(
             except ReputationError as e:
                 # Log the error
                 logger.error(
-                    f"Reputation error: {str(e)}",
+                    "Reputation error: %s",
+                    e,
                     extra={
                         "severity": e.severity,
                         "category": e.category,
@@ -157,7 +158,8 @@ def handle_errors(
             except Exception as e:
                 # Log unexpected errors
                 logger.error(
-                    f"Unexpected error: {str(e)}",
+                    "Unexpected error: %s",
+                    e,
                     exc_info=True,
                     extra={"severity": severity, "category": category},
                 )
