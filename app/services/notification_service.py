@@ -40,7 +40,7 @@ class EmailNotifier(NotificationChannel):
             # Implement email sending logic
             return True
         except Exception as e:
-            logger.error(f"Email notification error: {str(e)}")
+            logger.error("Email notification error: %s", e)
             return False
 
 
@@ -55,7 +55,7 @@ class WebhookNotifier(NotificationChannel):
             # Implement webhook sending logic
             return True
         except Exception as e:
-            logger.error(f"Webhook notification error: {str(e)}")
+            logger.error("Webhook notification error: %s", e)
             return False
 
 
@@ -93,7 +93,7 @@ class WebSocketNotifier(NotificationChannel):
                 return True
             return False
         except Exception as e:
-            logger.error(f"WebSocket notification error: {str(e)}")
+            logger.error("WebSocket notification error: %s", e)
             return False
 
 
@@ -108,7 +108,7 @@ class SlackNotifier(NotificationChannel):
             # Implement Slack sending logic
             return True
         except Exception as e:
-            logger.error(f"Slack notification error: {str(e)}")
+            logger.error("Slack notification error: %s", e)
             return False
 
 

@@ -186,7 +186,7 @@ class Gateway:
                 return result
 
         except Exception as e:
-            logger.error(f"Request handling error: {str(e)}")
+            logger.error("Request handling error: %s", e)
             return {"status": 500, "body": {"error": "Internal server error"}}
 
     async def close(self):
@@ -248,7 +248,7 @@ class GatewayService:
             }
 
         except Exception as e:
-            logger.error(f"Add route error: {str(e)}")
+            logger.error("Add route error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_metrics(self, gateway_name: str) -> Dict[str, Any]:
@@ -268,7 +268,7 @@ class GatewayService:
             return {"status": "success", "metrics": metrics}
 
         except Exception as e:
-            logger.error(f"Get metrics error: {str(e)}")
+            logger.error("Get metrics error: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def close_all(self):
@@ -280,4 +280,4 @@ class GatewayService:
             self.gateways.clear()
 
         except Exception as e:
-            logger.error(f"Close all error: {str(e)}")
+            logger.error("Close all error: %s", e)

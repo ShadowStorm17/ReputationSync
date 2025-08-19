@@ -78,7 +78,7 @@ class DataValidator:
             }
 
         except Exception as e:
-            logger.error(f"Validation error: {str(e)}")
+            logger.error("Validation error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)
@@ -177,7 +177,7 @@ class DataValidator:
             }
 
         except Exception as e:
-            logger.error(f"Field validation error: {str(e)}")
+            logger.error("Field validation error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)
@@ -242,7 +242,7 @@ class DataSanitizer:
             }
 
         except Exception as e:
-            logger.error(f"Sanitization error: {str(e)}")
+            logger.error("Sanitization error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)
@@ -327,7 +327,7 @@ class ValidationService:
             }
 
         except Exception as e:
-            logger.error(f"Validation and sanitization error: {str(e)}")
+            logger.error("Validation and sanitization error: %s", e)
             return {
                 'status': 'error',
                 'message': str(e)

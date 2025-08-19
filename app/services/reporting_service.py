@@ -65,7 +65,7 @@ class ReportingService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating reputation report: {str(e)}")
+            logger.error("Error generating reputation report: %s", e)
             raise
 
     async def generate_competitor_analysis(
@@ -120,7 +120,7 @@ class ReportingService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating competitor analysis: {str(e)}")
+            logger.error("Error generating competitor analysis: %s", e)
             raise
 
     async def generate_trend_report(
@@ -159,7 +159,7 @@ class ReportingService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating trend report: {str(e)}")
+            logger.error("Error generating trend report: %s", e)
             raise
 
     def _generate_overview(

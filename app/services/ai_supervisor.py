@@ -123,7 +123,7 @@ class AISupervisor:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in continuous monitoring: {str(e)}")
+                logger.error("Error in continuous monitoring: %s", e)
                 await asyncio.sleep(10)  # Wait before retrying
 
     async def _improvement_analysis(self):
@@ -154,7 +154,7 @@ class AISupervisor:
                 await asyncio.sleep(3600)  # Analyze every hour
 
             except Exception as e:
-                logger.error(f"Error in improvement analysis: {str(e)}")
+                logger.error("Error in improvement analysis: %s", e)
                 await asyncio.sleep(3600)
 
     async def _performance_optimization(self):
@@ -173,7 +173,7 @@ class AISupervisor:
                 await asyncio.sleep(1800)  # Optimize every 30 minutes
 
             except Exception as e:
-                logger.error(f"Error in performance optimization: {str(e)}")
+                logger.error("Error in performance optimization: %s", e)
                 await asyncio.sleep(1800)
 
     async def submit_for_approval(
@@ -188,13 +188,12 @@ class AISupervisor:
 
             # Log submission
             logger.info(
-                f"Improvement submitted for approval: {
-                    improvement.id}")
+                "Improvement submitted for approval: %s", improvement.id)
 
             return report
 
         except Exception as e:
-            logger.error(f"Error submitting improvement: {str(e)}")
+            logger.error("Error submitting improvement: %s", e)
             raise
 
     async def approve_improvement(self, improvement_id: str) -> bool:
@@ -218,12 +217,12 @@ class AISupervisor:
                 AUTOMATED_FIXES.inc()
 
                 logger.info(
-                    f"Improvement {improvement_id} implemented successfully")
+                    "Improvement %s implemented successfully", improvement_id)
 
             return success
 
         except Exception as e:
-            logger.error(f"Error implementing improvement: {str(e)}")
+            logger.error("Error implementing improvement: %s", e)
             return False
 
     async def reject_improvement(
@@ -239,12 +238,12 @@ class AISupervisor:
             improvement.status = ChangeStatus.REJECTED
 
             # Log rejection
-            logger.info(f"Improvement {improvement_id} rejected: {reason}")
+            logger.info("Improvement %s rejected: %s", improvement_id, reason)
 
             del self.pending_approvals[improvement_id]
 
         except Exception as e:
-            logger.error(f"Error rejecting improvement: {str(e)}")
+            logger.error("Error rejecting improvement: %s", e)
             raise
 
     def _generate_improvement_report(
@@ -302,7 +301,7 @@ Status: {improvement.status.value}
             SYSTEM_HEALTH.set(health_score)
 
         except Exception as e:
-            logger.error(f"Error monitoring system health: {str(e)}")
+            logger.error("Error monitoring system health: %s", e)
 
     async def _analyze_system_metrics(self):
         """Analyze system performance metrics."""
@@ -325,7 +324,7 @@ Status: {improvement.status.value}
                 self.system_metrics[metric_name] = self.system_metrics[metric_name][-288:]
 
         except Exception as e:
-            logger.error(f"Error analyzing system metrics: {str(e)}")
+            logger.error("Error analyzing system metrics: %s", e)
 
     async def _detect_anomalies(self):
         """Detect system anomalies."""
@@ -346,7 +345,7 @@ Status: {improvement.status.value}
                     await self._handle_anomaly(metric_name, current_value, mean, std_dev)
 
         except Exception as e:
-            logger.error(f"Error detecting anomalies: {str(e)}")
+            logger.error("Error detecting anomalies: %s", e)
 
     async def _handle_anomaly(
             self,
@@ -382,7 +381,7 @@ Status: {improvement.status.value}
             await self.submit_for_approval(suggestion)
 
         except Exception as e:
-            logger.error(f"Error handling anomaly: {str(e)}")
+            logger.error("Error handling anomaly: %s", e)
 
     async def _analyze_performance(self) -> List[ImprovementSuggestion]:
         """Analyze system performance for improvements."""
@@ -401,7 +400,7 @@ Status: {improvement.status.value}
             improvements.extend(model_improvements)
 
         except Exception as e:
-            logger.error(f"Error analyzing performance: {str(e)}")
+            logger.error("Error analyzing performance: %s", e)
 
         return improvements
 
@@ -422,7 +421,7 @@ Status: {improvement.status.value}
             improvements.extend(recovery_improvements)
 
         except Exception as e:
-            logger.error(f"Error analyzing reliability: {str(e)}")
+            logger.error("Error analyzing reliability: %s", e)
 
         return improvements
 
@@ -443,7 +442,7 @@ Status: {improvement.status.value}
             improvements.extend(gpu_improvements)
 
         except Exception as e:
-            logger.error(f"Error analyzing resource usage: {str(e)}")
+            logger.error("Error analyzing resource usage: %s", e)
 
         return improvements
 
@@ -451,11 +450,11 @@ Status: {improvement.status.value}
             self, improvement: ImprovementSuggestion) -> bool:
         """Implement an approved improvement."""
         try:
-            logger.info(f"Implementing improvement: {improvement.id}")
+            logger.info("Implementing improvement: %s", improvement.id)
 
             # Execute implementation plan
             for step, details in improvement.implementation_plan.items():
-                logger.info(f"Executing step {step}: {details}")
+                logger.info("Executing step %s: %s", step, details)
 
                 # Execute step-specific logic
                 if step == "model_optimization":
@@ -468,7 +467,7 @@ Status: {improvement.status.value}
             return True
 
         except Exception as e:
-            logger.error(f"Error implementing improvement: {str(e)}")
+            logger.error("Error implementing improvement: %s", e)
             return False
 
     # Helper methods for metric collection

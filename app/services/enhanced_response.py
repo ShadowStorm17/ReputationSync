@@ -113,7 +113,7 @@ class EnhancedResponse:
 
         except Exception as e:
             self.error_counter.inc()
-            logger.error(f"Error generating enhanced response: {str(e)}")
+            logger.error("Error generating enhanced response: %s", e)
             raise
 
     async def _enhance_context(
@@ -140,7 +140,7 @@ class EnhancedResponse:
             return enhanced
 
         except Exception as e:
-            logger.error(f"Error enhancing context: {str(e)}")
+            logger.error("Error enhancing context: %s", e)
             return {"error": str(e)}
 
     async def _generate_contextual_response(
@@ -180,7 +180,7 @@ class EnhancedResponse:
             return response
 
         except Exception as e:
-            logger.error(f"Error generating contextual response: {str(e)}")
+            logger.error("Error generating contextual response: %s", e)
             return self._get_fallback_response(context)
 
     async def _validate_response(
@@ -213,7 +213,7 @@ class EnhancedResponse:
             return response
 
         except Exception as e:
-            logger.error(f"Error validating response: {str(e)}")
+            logger.error("Error validating response: %s", e)
             return self._get_fallback_response(context)
 
     def _prepare_prompt(

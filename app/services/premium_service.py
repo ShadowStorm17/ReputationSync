@@ -293,10 +293,10 @@ class PremiumService:
         """Generate a custom report (background task)."""
         try:
             # Implementation for report generation
-            logger.info(f"Generating report {report_id}")
+            logger.info("Generating report %s", report_id)
             # Add report generation logic here
         except Exception as e:
-            logger.error(f"Error generating report {report_id}: {str(e)}")
+            logger.error("Error generating report %s: %s", report_id, e)
             raise
 
     @track_performance
@@ -305,10 +305,8 @@ class PremiumService:
         """Set up a custom integration (background task)."""
         try:
             # Implementation for integration setup
-            logger.info(f"Setting up integration {integration_id}")
+            logger.info("Setting up integration %s", integration_id)
             # Add integration setup logic here
         except Exception as e:
-            logger.error(
-                f"Error setting up integration {integration_id}: {
-                    str(e)}")
+            logger.error("Error setting up integration %s: %s", integration_id, e)
             raise

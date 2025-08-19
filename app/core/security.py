@@ -92,7 +92,7 @@ class SecurityManager:
         }
 
         encoded_jwt = jwt.encode(
-            to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+            to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM
         )
         return encoded_jwt
 
@@ -100,7 +100,7 @@ class SecurityManager:
         """Verify JWT token."""
         try:
             payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+                token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
             )
             return payload
         except JWTError:
@@ -412,7 +412,7 @@ def create_access_token(
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+        to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM
     )
     return encoded_jwt
 
@@ -431,7 +431,7 @@ def verify_token(token: str) -> Optional[dict]:
     """Verify JWT token."""
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
         )
         return payload
     except JWTError:
@@ -440,10 +440,22 @@ def verify_token(token: str) -> Optional[dict]:
 
 def get_cors_middleware(app_instance) -> CORSMiddleware:
     """Get CORS middleware configuration for the given app instance."""
+    origins = settings.CORS_ORIGINS
+    # Avoid insecure combination of wildcard origins and credentials
+    allow_credentials = True
+    if any(o == "*" for o in origins):
+        allow_credentials = False
+        # Optional: warn in non-development environments
+        if not (settings.DEBUG or settings.TESTING):
+            import logging
+            logging.getLogger(__name__).warning(
+                "CORS origins include '*' - disabling credentials to avoid security risks."
+            )
+
     return CORSMiddleware(
         app=app_instance,
-        allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=True,
+        allow_origins=origins,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
         expose_headers=["X-Total-Count"],

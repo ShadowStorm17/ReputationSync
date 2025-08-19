@@ -468,7 +468,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         """Load IP lists from file."""
         try:
             if os.path.exists(self._ip_lists_file):
-                with open(self._ip_lists_file, "r") as f:
+                with open(self._ip_lists_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     self._ip_lists["whitelist"] = set(data.get("whitelist", []))
                     self._ip_lists["blacklist"] = set(data.get("blacklist", []))
@@ -482,8 +482,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 "whitelist": list(self._ip_lists["whitelist"]),
                 "blacklist": list(self._ip_lists["blacklist"]),
             }
-            with open(self._ip_lists_file, "w") as f:
-                json.dump(data, f)
+            with open(self._ip_lists_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False)
         except (OSError, TypeError) as e:
             logger.error("Error saving IP lists: %s", str(e), exc_info=True)
 
@@ -651,6 +651,12 @@ class CachingMiddleware(BaseHTTPMiddleware):
             "/api/v1/health"
         }
         self._exclude_methods = {"POST", "PUT", "DELETE", "PATCH"}
+        self._content_types: Set[str] = {
+            CONTENT_TYPE_JSON,
+            "application/xml",
+            "text/plain",
+            "text/html"
+        }
         self._cache_file = "cache.json"
         self._stats_file = "cache_stats.json"
         self._cache_lock = asyncio.Lock()
@@ -688,7 +694,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
             if os.path.exists(self._cache_file):
                 async with self._cache_lock:
                     import aiofiles
-                    async with aiofiles.open(self._cache_file, "r") as f:
+                    async with aiofiles.open(self._cache_file, "r", encoding="utf-8") as f:
                         content = await f.read()
                         data = json.loads(content)
                         self._cache = {}
@@ -731,8 +737,8 @@ class CachingMiddleware(BaseHTTPMiddleware):
                         "data": stored,
                         "expires": v["expires"].isoformat(),
                     }
-                async with aiofiles.open(self._cache_file, "w") as f:
-                    await f.write(json.dumps(data))
+                async with aiofiles.open(self._cache_file, "w", encoding="utf-8") as f:
+                    await f.write(json.dumps(data, ensure_ascii=False))
         except (OSError, TypeError, ValueError) as e:
             logger.error("Cache save error: %s", str(e))
 
@@ -741,7 +747,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
         try:
             if os.path.exists(self._stats_file):
                 import aiofiles
-                async with aiofiles.open(self._stats_file, "r") as f:
+                async with aiofiles.open(self._stats_file, "r", encoding="utf-8") as f:
                     content = await f.read()
                     self._cache_stats = json.loads(content)
         except (OSError, json.JSONDecodeError) as e:
@@ -752,8 +758,8 @@ class CachingMiddleware(BaseHTTPMiddleware):
         """Save cache stats to disk."""
         try:
             import aiofiles
-            async with aiofiles.open(self._stats_file, "w") as f:
-                await f.write(json.dumps(self._cache_stats))
+            async with aiofiles.open(self._stats_file, "w", encoding="utf-8") as f:
+                await f.write(json.dumps(self._cache_stats, ensure_ascii=False))
         except (OSError, TypeError, ValueError) as e:
             logger.error("Stats save error: %s", str(e))
 

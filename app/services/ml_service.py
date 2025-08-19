@@ -72,7 +72,7 @@ class TrendPredictor:
             }
 
         except Exception as e:
-            logger.error(f"Error predicting trends: {str(e)}")
+            logger.error("Error predicting trends: %s", e)
             return {"status": "error", "message": str(e)}
 
     def _prepare_features(self, df: pd.DataFrame) -> np.ndarray:
@@ -160,7 +160,7 @@ class AnomalyDetector:
             }
 
         except Exception as e:
-            logger.error(f"Error detecting anomalies: {str(e)}")
+            logger.error("Error detecting anomalies: %s", e)
             return {"status": "error", "message": str(e)}
 
     def _prepare_features(self, df: pd.DataFrame) -> np.ndarray:
@@ -220,7 +220,7 @@ class PatternAnalyzer:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing patterns: {str(e)}")
+            logger.error("Error analyzing patterns: %s", e)
             return {"status": "error", "message": str(e)}
 
     def _prepare_features(self, df: pd.DataFrame) -> np.ndarray:
@@ -337,7 +337,7 @@ class MLService:
             }
 
         except Exception as e:
-            logger.error(f"Error performing analysis: {str(e)}")
+            logger.error("Error performing analysis: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def _analyze_sentiment(
@@ -360,7 +360,7 @@ class MLService:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing sentiment: {str(e)}")
+            logger.error("Error analyzing sentiment: %s", e)
             return {"status": "error", "message": str(e)}
 
     def _summarize_sentiments(

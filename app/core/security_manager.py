@@ -51,13 +51,15 @@ class SecurityManager:
     def _load_ip_lists(self) -> None:
         """Load IP lists from file."""
         try:
-            if os.path.exists(self._ip_lists_file):
-                with open(self._ip_lists_file, "r") as f:
-                    data = json.load(f)
-                    self._ip_lists["whitelist"] = set(data.get("whitelist", []))
-                    self._ip_lists["blacklist"] = set(data.get("blacklist", []))
+            with open(self._ip_lists_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                self._ip_lists["whitelist"] = set(data.get("whitelist", []))
+                self._ip_lists["blacklist"] = set(data.get("blacklist", []))
+        except FileNotFoundError:
+            # No lists file yet; keep defaults
+            return
         except (OSError, json.JSONDecodeError, ValueError, TypeError) as e:
-            logger.error("Error loading IP lists: %s", str(e), exc_info=True)
+            logger.error("Error loading IP lists: %s", e, exc_info=True)
 
     def _save_ip_lists(self) -> None:
         """Save IP lists to file."""
@@ -66,8 +68,8 @@ class SecurityManager:
                 "whitelist": list(self._ip_lists["whitelist"]),
                 "blacklist": list(self._ip_lists["blacklist"]),
             }
-            with open(self._ip_lists_file, "w") as f:
-                json.dump(data, f)
+            with open(self._ip_lists_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False)
         except (OSError, TypeError, ValueError) as e:
             logger.error("Error saving IP lists: %s", str(e), exc_info=True)
 
@@ -439,6 +441,16 @@ class SecurityManager:
 
             # Add Content Security Policy
             response.headers["Content-Security-Policy"] = security_settings.CONTENT_SECURITY_POLICY
+
+            # Add Referrer-Policy
+            response.headers["Referrer-Policy"] = security_settings.REFERRER_POLICY
+
+            # Add Permissions-Policy
+            response.headers["Permissions-Policy"] = security_settings.PERMISSIONS_POLICY
+
+            # Remove Server header if present
+            if "server" in response.headers:
+                del response.headers["server"]
 
             return response
         except Exception as e:

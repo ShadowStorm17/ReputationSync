@@ -118,12 +118,11 @@ class Settings(BaseSettings):
         import yaml
         
         for config_path in DEFAULT_CONFIG_PATHS:
-            if os.path.exists(config_path):
-                try:
-                    with open(config_path, 'r') as f:
-                        return yaml.safe_load(f) or {}
-                except Exception as e:
-                    continue
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return yaml.safe_load(f) or {}
+            except Exception:
+                continue
         return {}
 
     def _validate_environment(self) -> bool:

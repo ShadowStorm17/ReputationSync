@@ -10,13 +10,14 @@ logger = logging.getLogger(__name__)
 class APIClient:
     """Client for interacting with the ReputationSync API."""
 
-    def __init__(self, api_key: str, base_url: str = "https://api.reputationsync.com"):
+    def __init__(self, api_key: str, base_url: str = "https://api.reputationsync.com", timeout: float | int | None = None):
         """
         Initialize the API client.
         
         Args:
             api_key (str): The API key for authentication
             base_url (str): The base URL of the API
+            timeout (float|int|None): Timeout (seconds) for HTTP requests; defaults to 30s
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip('/')
@@ -25,6 +26,14 @@ class APIClient:
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
         })
+        # Default timeout for all requests
+        env_timeout = os.getenv('API_CLIENT_TIMEOUT_SECONDS')
+        try:
+            self.timeout: float | None = float(env_timeout) if env_timeout is not None else 30.0
+        except ValueError:
+            self.timeout = 30.0
+        if timeout is not None:
+            self.timeout = float(timeout)
 
     def record_usage(self, endpoint: str, user_id: int, response_time: Optional[int] = None, success: bool = True):
         """
@@ -46,12 +55,13 @@ class APIClient:
             
             response = self.session.post(
                 f'{self.base_url}/api/record-usage',
-                json=data
+                json=data,
+                timeout=self.timeout
             )
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            logger.error("Failed to record API usage: %s", str(e))
+            logger.error("Failed to record API usage: %s", e)
             return None
 
     def __enter__(self):
@@ -60,12 +70,23 @@ class APIClient:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         end_time = time.time()
-        self.last_response_time = int((end_time - self.start_time) * 1000)  # Convert to milliseconds
+        if self.start_time is not None:
+            self.last_response_time = int((end_time - self.start_time) * 1000)  # Convert to milliseconds
+        else:
+            self.last_response_time = 0
+        # Ensure the underlying session is closed to prevent resource leaks
+        try:
+            self.session.close()
+        except Exception as e:
+            logger.debug("Error closing APIClient session: %s", e)
         return False  # Don't suppress exceptions
 
 def example_usage():
     # Example usage of the API client
-    api_key = os.getenv('API_KEY', 'your-api-key-here')
+    api_key = os.getenv('API_KEY')
+    if not api_key:
+        logger.warning("API_KEY not set in environment; skipping example_usage.")
+        return
     client = APIClient(api_key)
 
     # Example 1: Basic usage

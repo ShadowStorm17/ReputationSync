@@ -350,7 +350,7 @@ class MetricsService:
             }
 
         except Exception as e:
-            logger.error(f"Error tracking metrics: {str(e)}")
+            logger.error("Error tracking metrics: %s", e)
             return {"status": "error", "message": str(e)}
 
     @cache_warmer(["metrics_analysis"])
@@ -375,7 +375,7 @@ class MetricsService:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing metrics: {str(e)}")
+            logger.error("Error analyzing metrics: %s", e)
             return {"status": "error", "message": str(e)}
 
     async def get_metrics_summary(
@@ -406,5 +406,5 @@ class MetricsService:
             }
 
         except Exception as e:
-            logger.error(f"Error getting metrics summary: {str(e)}")
+            logger.error("Error getting metrics summary: %s", e)
             return {"status": "error", "message": str(e)}

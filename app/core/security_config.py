@@ -175,15 +175,17 @@ class SecuritySettings(BaseSettings):
         "CONTENT_SECURITY_POLICY",
         (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "img-src 'self' data: https:; "
-            "font-src 'self' https://cdn.jsdelivr.net; "
-            "connect-src 'self' https://api.example.com; "
-            "frame-ancestors 'none'; "
-            "form-action 'self'; "
             "base-uri 'self'; "
-            "object-src 'none'"
+            "frame-ancestors 'none'; "
+            "object-src 'none'; "
+            "form-action 'self'; "
+            "img-src 'self' data:; "
+            "font-src 'self'; "
+            "connect-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self'; "
+            "upgrade-insecure-requests; "
+            "block-all-mixed-content"
         ),
     )
 

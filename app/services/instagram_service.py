@@ -83,10 +83,14 @@ class InstagramAPI:
         access_token = os.getenv("INSTAGRAM_ACCESS_TOKEN")
         masked = (access_token[:4] + "...") if access_token else "None"
         logger.debug("Using INSTAGRAM_ACCESS_TOKEN (masked): %s", masked)
-        url = f"https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token={access_token}"
+        url = (
+            "https://graph.instagram.com/me"
+            "?fields=id,username,account_type,media_count"
+        )
         logger.debug("Requesting Instagram Graph API /me endpoint")
-        headers = {}
-        logger.debug("INSTAGRAM API headers: %s", headers)
+        headers = {"Authorization": f"Bearer {access_token}"} if access_token else {}
+        # Do not log full headers to avoid leaking tokens
+        logger.debug("Prepared Authorization header for Instagram Graph API request")
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(url, headers=headers)

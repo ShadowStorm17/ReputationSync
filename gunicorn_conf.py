@@ -45,7 +45,7 @@ def post_fork(server, worker):
     server.log.info("Worker spawned (pid: %s)", worker.pid)
 
 def pre_fork(server, worker):
-    pass
+    server.log.debug("Preparing to fork a new worker")
 
 def pre_exec(server):
     server.log.info("Forked child, re-executing.")

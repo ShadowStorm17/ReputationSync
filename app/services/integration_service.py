@@ -261,7 +261,7 @@ class IntegrationService:
             }
 
         except Exception as e:
-            logger.error(f"Error fetching {platform} data: {str(e)}")
+            logger.error("Error fetching %s data: %s", platform, e)
             raise
 
     @CircuitBreaker(failure_threshold=3, reset_timeout=30)
@@ -283,7 +283,7 @@ class IntegrationService:
             }
 
         except Exception as e:
-            logger.error(f"Error posting to {platform}: {str(e)}")
+            logger.error("Error posting to %s: %s", platform, e)
             raise
 
     async def stream_platform_events(self, platform: str):
@@ -300,7 +300,7 @@ class IntegrationService:
                 yield transformed_event
 
         except Exception as e:
-            logger.error(f"Error streaming {platform} events: {str(e)}")
+            logger.error("Error streaming %s events: %s", platform, e)
             raise
 
     @cache_warmer(["platform_status"])
@@ -324,7 +324,7 @@ class IntegrationService:
             }
 
         except Exception as e:
-            logger.error(f"Error checking {platform} status: {str(e)}")
+            logger.error("Error checking %s status: %s", platform, e)
             return {
                 "status": "offline",
                 "error": str(e),

@@ -74,7 +74,7 @@ class TwitterService:
 
         except Exception as e:
             logger.error(
-                f"Error getting Twitter metrics for {username}: {str(e)}"
+                "Error getting Twitter metrics for %s: %s", username, e
             )
             return None
 
@@ -150,7 +150,7 @@ class TwitterService:
 
         except Exception as e:
             logger.error(
-                f"Error getting Twitter activity for {username}: {str(e)}"
+                "Error getting Twitter activity for %s: %s", username, e
             )
             return None
 
@@ -203,7 +203,7 @@ class TwitterService:
             return mentions
 
         except Exception as e:
-            logger.error(f"Error searching Twitter mentions: {str(e)}")
+            logger.error("Error searching Twitter mentions: %s", e)
             return None
 
     def _get_headers(self) -> Dict[str, str]:

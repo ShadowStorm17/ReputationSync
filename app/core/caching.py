@@ -5,8 +5,11 @@ Provides comprehensive caching with compression, encryption, and intelligent evi
 
 import asyncio
 import hashlib
+import json
 import logging
 import pickle
+import io
+import builtins
 import threading
 import zlib
 from collections import OrderedDict, defaultdict
@@ -292,7 +295,20 @@ class Cache:
 
     def _calculate_size(self, value: Any) -> int:
         """Calculate size of a value in bytes."""
-        return len(pickle.dumps(value))
+        try:
+            if isinstance(value, bytes):
+                return len(value)
+            if isinstance(value, str):
+                return len(value.encode("utf-8"))
+            # Prefer JSON for safe estimation
+            try:
+                encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+                return len(encoded)
+            except (TypeError, ValueError):
+                # Fallback to repr size
+                return len(repr(value).encode("utf-8"))
+        except Exception:
+            return 0
 
     def _should_compress(self, value: Any) -> bool:
         """Determine if a value should be compressed."""
@@ -325,11 +341,41 @@ class Cache:
             logger.error("Decompression error: %s", e)
             return value
 
+    class SafeUnpickler(pickle.Unpickler):
+        """Restricted unpickler allowing only safe built-in types."""
+
+        # Allowlist of safe builtins
+        SAFE_BUILTINS = {
+            "builtins": {
+                "dict",
+                "list",
+                "set",
+                "tuple",
+                "str",
+                "bytes",
+                "int",
+                "float",
+                "bool",
+                "NoneType",
+            }
+        }
+
+        def find_class(self, module: str, name: str):
+            if module in self.SAFE_BUILTINS and name in self.SAFE_BUILTINS[module]:
+                return getattr(builtins, name)
+            raise pickle.UnpicklingError(
+                f"Global '{module}.{name}' is not allowed for security reasons"
+            )
+
+        @classmethod
+        def loads(cls, data: bytes):
+            return cls(io.BytesIO(data)).load()
+
     def _encrypt_value(self, value: Any) -> bytes:
         """Encrypt a value."""
         try:
             if not isinstance(value, bytes):
-                value = pickle.dumps(value)
+                value = pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL)
             return self._fernet.encrypt(value)
         except Exception as e:
             logger.error("Encryption error: %s", e)
@@ -339,7 +385,8 @@ class Cache:
         """Decrypt a value."""
         try:
             decrypted = self._fernet.decrypt(value)
-            return pickle.loads(decrypted)
+            # Use restricted unpickler to mitigate RCE risks
+            return self.SafeUnpickler.loads(decrypted)
         except Exception as e:
             logger.error("Decryption error: %s", e)
             return value
@@ -482,29 +529,6 @@ class Cache:
             except Exception as e:
                 logger.error("Cache optimization error: %s", e)
                 await asyncio.sleep(60)
-
-    async def get_stats(self) -> Dict[str, Any]:
-        """Get cache statistics."""
-
-        def _op() -> Dict[str, Any]:
-            try:
-                with self._lock:
-                    return {
-                        "size_bytes": self._size_bytes,
-                        "item_count": len(self._data),
-                        "hits": dict(self._stats["hits"]),
-                        "misses": dict(self._stats["misses"]),
-                        "evictions": dict(self._stats["evictions"]),
-                        "memory_usage": self._size_bytes
-                        / (settings.cache.MAX_SIZE_MB * 1024 * 1024),
-                    }
-
-            except Exception as e:
-                logger.error("Get cache stats error: %s", e)
-                return {}
-
-        return await asyncio.to_thread(_op)
-
 
 # Global cache instance
 cache = Cache()

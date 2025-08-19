@@ -283,7 +283,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Track request error: {str(e)}")
+            logger.error("Track request error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def get_endpoint_stats(
@@ -377,7 +377,7 @@ class AnalyticsService:
                 return {"status": "success", "window": window, "stats": stats}
 
         except Exception as e:
-            logger.error(f"Get stats error: {str(e)}")
+            logger.error("Get stats error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def get_top_endpoints(
@@ -453,7 +453,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Get top endpoints error: {str(e)}")
+            logger.error("Get top endpoints error: %s", e)
             return {"status": "error", "message": str(e)}
 
     def get_error_analysis(
@@ -546,7 +546,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Get error analysis error: {str(e)}")
+            logger.error("Get error analysis error: %s", e)
             return {"status": "error", "message": str(e)}
 
     @track_performance

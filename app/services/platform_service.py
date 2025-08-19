@@ -57,7 +57,7 @@ class PlatformService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error fetching {platform} data: {str(e)}")
+            logger.error("Error fetching %s data: %s", platform, e)
             record_platform_request(platform, "error")
             raise HTTPException(
                 status_code=500, detail=f"Error fetching {platform} data"
@@ -90,7 +90,7 @@ class PlatformService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error monitoring {platform} mentions: {str(e)}")
+            logger.error("Error monitoring %s mentions: %s", platform, e)
             raise HTTPException(
                 status_code=500, detail=f"Error monitoring {platform} mentions"
             )
@@ -134,7 +134,7 @@ class PlatformService:
             return metrics
 
         except Exception as e:
-            logger.error(f"Error getting platform metrics: {str(e)}")
+            logger.error("Error getting platform metrics: %s", e)
             return None
 
     async def get_recent_activity(
@@ -182,7 +182,7 @@ class PlatformService:
             return activity
 
         except Exception as e:
-            logger.error(f"Error getting recent activity: {str(e)}")
+            logger.error("Error getting recent activity: %s", e)
             return None
 
     async def get_reputation_score(
@@ -253,7 +253,7 @@ class PlatformService:
             }
 
         except Exception as e:
-            logger.error(f"Error calculating reputation score: {str(e)}")
+            logger.error("Error calculating reputation score: %s", e)
             return None
 
     def get_supported_platforms(self) -> List[str]:
